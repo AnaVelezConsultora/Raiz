@@ -93,7 +93,10 @@ create table familias (
   registrador_nombre     text not null,
   registrador_org        text,
   registrador_tel        text,
-  registrador_perfil_id  uuid references perfiles(id),
+  -- Se llena solo con el usuario que inserta. Antes quedaba nulo y la politica
+  -- "el lider ve lo suyo" no encontraba nada: el voluntario grababa un caso y
+  -- acto seguido dejaba de verlo.
+  registrador_perfil_id  uuid references perfiles(id) default auth.uid(),
   fuente_dato            text not null,        -- presencial, whatsapp, llamada, lider, otra_entidad
   consentimiento         boolean not null default false,
 
@@ -326,8 +329,20 @@ create table sync_kobo (
 -- 8. VISTAS
 -- =============================================================================
 
+-- ADVERTENCIA SOBRE VISTAS EN POSTGRESQL
+-- Una vista se ejecuta con los permisos de SU DUENO, no de quien consulta. Por
+-- defecto eso SALTA las politicas de acceso por fila: cualquier usuario autenticado
+-- podria leer por la vista lo que la tabla le niega. En una vista con nombres y
+-- telefonos de familias eso es una fuga completa del censo.
+--
+-- Por eso:
+--   - Las vistas con identidad llevan security_invoker = true y respetan RLS.
+--   - Las vistas agregadas o anonimizadas se dejan como estan a proposito, porque
+--     su unica razon de existir es ser una ventana controlada.
+
 -- 8.1 Tablero interno: una fila por familia con todo lo que se consulta a diario.
-create view v_familias_tablero as
+--     CON IDENTIDAD: se ejecuta con los permisos de quien consulta.
+create view v_familias_tablero with (security_invoker = true) as
 select
   f.id, f.codigo, f.zona, f.municipio,
   coalesce(f.vereda, f.barrio)         as lugar,
@@ -399,7 +414,8 @@ group by e.nombre
 order by sin_respuesta desc;
 
 -- 8.4 Deteccion de duplicados. Se revisa, no se borra automaticamente.
-create view v_posibles_duplicados as
+--     CON IDENTIDAD indirecta (documento y telefono): respeta RLS.
+create view v_posibles_duplicados with (security_invoker = true) as
 select a.id as id_a, a.codigo as codigo_a, b.id as id_b, b.codigo as codigo_b,
        case when a.num_doc = b.num_doc then 'mismo documento'
             when a.tel_1  = b.tel_1   then 'mismo telefono'
@@ -439,35 +455,77 @@ language sql stable as $$
   select mi_rol() in ('coordinador', 'custodio', 'validador')
 $$;
 
+-- FAMILIAS -------------------------------------------------------------------
 -- La mesa ve y edita todo.
 create policy mesa_lee_familias   on familias for select using (es_mesa());
 create policy mesa_edita_familias on familias for all    using (es_mesa()) with check (es_mesa());
 
--- El lider ve unicamente lo que el mismo reporto.
-create policy lider_lee_lo_suyo on familias for select
+-- El lider y el digitador ven unicamente lo que ellos mismos reportaron.
+create policy propio_lee_familias on familias for select
   using (registrador_perfil_id = auth.uid());
 
--- El digitador carga pero no exporta la base.
-create policy digitador_inserta on familias for insert
-  with check (mi_rol() = 'digitador');
+-- Cualquier usuario activo puede CREAR un caso, pero solo a su propio nombre.
+-- La condicion sobre registrador_perfil_id impide firmar un registro como otro.
+create policy propio_crea_familias on familias for insert
+  with check (auth.uid() is not null and registrador_perfil_id = auth.uid());
 
--- Las tablas hijas heredan el permiso de la familia.
-create policy hija_viviendas    on viviendas    for all
+-- Y puede corregir lo suyo mientras no lo haya verificado la mesa.
+create policy propio_edita_familias on familias for update
+  using (registrador_perfil_id = auth.uid() and estado_verificacion <> 'verificado')
+  with check (registrador_perfil_id = auth.uid());
+
+-- TABLAS HIJAS ---------------------------------------------------------------
+-- Heredan el permiso de la familia: la subconsulta pasa por el RLS de familias,
+-- de modo que solo se ve o se escribe sobre casos que ya se pueden ver.
+create policy hija_viviendas on viviendas for all
   using (exists (select 1 from familias f where f.id = familia_id))
-  with check (es_mesa());
-create policy hija_produccion   on produccion   for all
+  with check (exists (select 1 from familias f where f.id = familia_id));
+
+create policy hija_produccion on produccion for all
   using (exists (select 1 from familias f where f.id = familia_id))
-  with check (es_mesa());
-create policy hija_fotos        on fotos        for all
+  with check (exists (select 1 from familias f where f.id = familia_id));
+
+create policy hija_fotos on fotos for all
   using (exists (select 1 from familias f where f.id = familia_id))
-  with check (es_mesa());
-create policy hija_remisiones   on remisiones   for all using (es_mesa()) with check (es_mesa());
-create policy hija_ayudas       on ayudas       for all using (es_mesa()) with check (es_mesa());
+  with check (exists (select 1 from familias f where f.id = familia_id));
+
 create policy hija_seguimientos on seguimientos for all
   using (exists (select 1 from familias f where f.id = familia_id))
-  with check (auth.uid() is not null);
+  with check (exists (select 1 from familias f where f.id = familia_id));
 
-create policy perfil_propio on perfiles for select using (id = auth.uid() or es_mesa());
+-- Remisiones y ayudas son gestion institucional: solo la mesa.
+create policy mesa_remisiones on remisiones for all using (es_mesa()) with check (es_mesa());
+create policy mesa_ayudas     on ayudas     for all using (es_mesa()) with check (es_mesa());
+
+-- PERFILES -------------------------------------------------------------------
+create policy perfil_lee on perfiles for select using (id = auth.uid() or es_mesa());
+
+-- Solo el custodio asigna roles. Sin esta politica nadie podia ascender a nadie y
+-- todos los voluntarios quedaban atrapados en el rol minimo para siempre.
+create policy custodio_administra_perfiles on perfiles for update
+  using (mi_rol() = 'custodio') with check (mi_rol() = 'custodio');
+
+-- La auditoria se protege en la seccion 10, junto a la creacion de su tabla.
+
+alter table sync_kobo enable row level security;
+create policy sync_kobo_mesa on sync_kobo for all using (es_mesa()) with check (es_mesa());
+
+-- CATALOGOS ------------------------------------------------------------------
+-- No son sensibles, pero se activa RLS para que la regla sea "todo denegado salvo
+-- lo declarado" y no haya que acordarse de revisar tabla por tabla.
+alter table organizaciones enable row level security;
+alter table entidades      enable row level security;
+create policy catalogo_org      on organizaciones for select using (auth.uid() is not null);
+create policy catalogo_ent      on entidades      for select using (auth.uid() is not null);
+create policy catalogo_org_mesa on organizaciones for all using (es_mesa()) with check (es_mesa());
+create policy catalogo_ent_mesa on entidades      for all using (es_mesa()) with check (es_mesa());
+
+-- PERMISOS DE LA API ---------------------------------------------------------
+-- Supabase expone por HTTP todo lo que este en el esquema publico. El visitante
+-- anonimo solo debe alcanzar lo agregado y anonimizado, nada mas.
+revoke all on v_familias_tablero, v_posibles_duplicados from anon;
+grant select on v_mapa_publico, v_estadisticas, v_estado_gestion to anon;
+grant select on v_familias_tablero, v_posibles_duplicados to authenticated;
 
 -- =============================================================================
 -- 10. AUDITORIA MINIMA
@@ -483,6 +541,17 @@ create table auditoria (
   despues     jsonb,
   creado_en   timestamptz not null default now()
 );
+
+-- Guarda copia completa de cada fila antes y despues, INCLUIDA la identidad. Sin
+-- RLS, cualquier usuario autenticado podria leer por aqui el censo entero, saltando
+-- todas las politicas de las tablas originales.
+alter table auditoria enable row level security;
+
+create policy auditoria_solo_custodia on auditoria for select
+  using (mi_rol() in ('custodio', 'coordinador'));
+
+-- Nadie escribe a mano en la auditoria: solo el disparador, que corre como definer.
+revoke insert, update, delete on auditoria from anon, authenticated;
 
 create or replace function fn_auditar() returns trigger
 language plpgsql security definer set search_path = public as $$
