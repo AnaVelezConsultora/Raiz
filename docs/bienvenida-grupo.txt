@@ -1,0 +1,114 @@
+========================================================
+A. DESCRIPCION DEL GRUPO
+(campo "Descripcion del grupo" en WhatsApp - debe ser corta)
+========================================================
+
+Raiz - equipo tecnico voluntario
+
+Construimos una herramienta libre para caracterizar familias afectadas por
+desastres y hacerle seguimiento a cada caso hasta que la entidad competente
+responda. Empezamos por el sismo en Sevilla, Valle del Cauca, con vocacion de
+servir a cualquier municipio.
+
+Funciona sin internet: el voluntario registra en la vereda y sincroniza cuando
+hay senal.
+
+Aqui NO se publican datos personales de familias. Ley 1581 de 2012.
+
+Repositorio: https://github.com/anavelezconsultoria/raiz
+
+
+========================================================
+B. MENSAJE DE BIENVENIDA (fijar en el grupo)
+========================================================
+
+Bienvenidos y bienvenidas.
+
+EL PROBLEMA
+En Sevilla hay familias afectadas por el sismo en zona urbana y rural. La
+informacion existe, pero esta regada: llega por WhatsApp, en listas sueltas y en
+cuadernos. Asi no se puede pedir nada. Una entidad no responde a un audio, y la
+cooperacion internacional no gestiona recursos sobre una lista de nombres en una
+libreta.
+
+EL OBJETIVO
+Que cada familia afectada quede caracterizada una sola vez, con datos que la
+entidad competente pueda usar, y que quede registro de que se le remitio, a
+quien, con que numero de radicado y que respondieron.
+
+No es un censo para tener una cifra. Es un instrumento de seguimiento: sirve para
+decir "estas 137 familias fueron caracterizadas, estas 83 fueron remitidas, estas
+41 siguen sin respuesta despues de 20 dias".
+
+QUE YA FUNCIONA
+La herramienta se llama Raiz. Hoy, probada y andando:
+
+- Formulario de caracterizacion en 4 pasos: quien reporta y donde, quienes viven
+  ahi, la vivienda y el dano, prioridad y necesidad.
+- Funciona SIN CONEXION. El voluntario registra en la vereda, toma fotos y
+  captura coordenada GPS por satelite. Todo queda guardado en el celular y se
+  sincroniza cuando vuelve a haber senal.
+- Guardado incremental: si se cierra la aplicacion en el paso 3, al volver el
+  registro sigue ahi.
+- Cola de sincronizacion que envia primero los casos de riesgo de vida y no
+  duplica un registro aunque se corte el envio a la mitad.
+- Modelo de datos en PostgreSQL con control de acceso por rol, vista publica
+  anonimizada y auditoria de cambios.
+- Costo de infraestructura: cero.
+
+QUE FALTA
+- Autenticacion y roles. Es lo que bloquea conectar la base central.
+- Tablero de cifras y mapa de afectacion.
+- Pruebas reales en campo con lideres de vereda.
+- Que sirva para cualquier municipio, no solo para Sevilla.
+- Ajustar el formulario al formato oficial del consejo municipal de gestion del
+  riesgo, para que ninguna entidad pueda devolver el reporte por forma.
+
+POR DONDE EMPEZAR HOY
+Escoja una y avise en el grupo cual toma, para no repetir trabajo:
+
+1. Instalar Raiz en su celular, poner el aparato en modo avion, registrar un caso
+   de prueba y contar aqui todo lo que le incomodo. Esta es la tarea mas util de
+   todas y no requiere tocar codigo.
+2. Autenticacion con roles: coordinador, validador, digitador, lider.
+3. Tablero de cifras y mapa.
+4. Revisar el modelo de datos contra lo que exige la entidad.
+5. Documentacion para que un voluntario nuevo arranque sin preguntar.
+
+No hace falta dedicacion completa. Con dos horas a la semana se aporta, y hay
+tareas pequenas y bien delimitadas.
+
+COMO ESTAMOS ORGANIZADOS
+La interlocucion con entidades y la parte juridica las lleva un equipo aparte,
+con abogado. Aqui hacemos ingenieria.
+
+El codigo es abierto. Lo que construyamos queda publico y reutilizable: la
+proxima emergencia en otro municipio no deberia empezar desde cero.
+
+REGLAS DEL GRUPO
+1. Aqui NO se publican datos personales de familias afectadas: ni nombres, ni
+   cedulas, ni telefonos, ni fotografias. Son datos sensibles bajo la Ley 1581 de
+   2012 y este no es un canal seguro.
+2. Este grupo no es el canal para reportar familias ni para pedir ayudas. Si le
+   llega un caso, paselo por el canal de la mesa, no por aqui.
+3. No se prometen ayudas, plazos ni cobertura a nombre del equipo.
+4. Aqui no se recauda ni se administra dinero.
+5. Las decisiones tecnicas se escriben en el repositorio, no solo en el chat. Lo
+   que solo vive en un chat se pierde.
+
+Repositorio: https://github.com/anavelezconsultoria/raiz
+
+Gracias por estar. Digan quienes son y en que les gustaria entrar.
+
+
+========================================================
+C. VERSION MUY CORTA (si alguien pide "de que se trata" en un chat aparte)
+========================================================
+
+Raiz es una herramienta libre para caracterizar familias afectadas por desastres
+y hacerle seguimiento a cada caso hasta que la entidad responda. Funciona sin
+internet: se registra en la vereda y se sincroniza despues.
+
+Arrancamos por el sismo en Sevilla, Valle. Ya hay una version funcionando; falta
+autenticacion, tablero, mapa y pruebas en campo. Codigo abierto, costo cero,
+trabajo voluntario.
