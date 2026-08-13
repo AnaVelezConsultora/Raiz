@@ -15,6 +15,9 @@ funciona hoy y que falta.
 Luego **[docs/FRENTES.md](docs/FRENTES.md)**: ocho frentes de trabajo que avanzan en
 paralelo sin pisarse, con lo que toca cada uno y por donde empezar hoy.
 
+Y **[docs/ROLES-Y-ESFUERZO.md](docs/ROLES-Y-ESFUERZO.md)**: quien responde por que,
+cuanto cuesta cada frente y en que orden se hace.
+
 ## Principio de arquitectura
 
 **Una sola base de datos, tres reportes.** No existen BD separadas para rural, urbano y
