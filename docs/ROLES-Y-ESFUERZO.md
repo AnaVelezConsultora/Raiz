@@ -67,7 +67,7 @@ de eso es inventada.
 | F4 Tablero y mapa | 8 | Pendiente | — |
 | F5 Remisiones y seguimiento | 13 | Pendiente | F2 |
 | F6 Calidad y prueba en campo | 5 por ciclo | Continuo | — |
-| F7 Datos y cumplimiento | 5 | Pendiente | — |
+| F7 Datos y cumplimiento | 5 | En curso | — |
 | F8 Multi-municipio | 8 | Pendiente | Hito 1 cerrado |
 | F9 Despliegue e integración continua | 3 | Pendiente | — |
 
@@ -134,7 +134,7 @@ Otro municipio puede usar Raíz sin tocar código.
 | Dueño de F3 | **Sin dueño** — bloquea el Hito 1 |
 | Dueño de F4 | **Sin dueño** |
 | Prueba en campo (F6) | **Sin dueño** — es lo más urgente |
-| Dueño de F7 | **Sin dueño** |
+| Dueño de F7 | Asignado. Borrador de política, autorización, retención y supresión en curso |
 
 Las dos primeras no son técnicas y son las que más rápido se vuelven un problema si
 nadie las toma: sin custodio de datos no hay quien autorice una exportación, y sin
