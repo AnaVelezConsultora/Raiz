@@ -7,6 +7,11 @@ Levantamiento y seguimiento de familias afectadas por el sismo en **Sevilla, Val
 remitir a la entidad competente con numero de radicado y hacer seguimiento hasta la
 reconstruccion.
 
+## Para quien llega a colaborar
+
+Lea primero **[docs/FRENTES.md](docs/FRENTES.md)**: ocho frentes de trabajo que avanzan
+en paralelo sin pisarse, con lo que toca cada uno y por donde empezar hoy.
+
 ## Principio de arquitectura
 
 **Una sola base de datos, tres reportes.** No existen BD separadas para rural, urbano y
