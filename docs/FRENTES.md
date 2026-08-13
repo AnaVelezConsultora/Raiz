@@ -56,20 +56,29 @@ Se mantiene, no se reescribe.
 - **Toca:** `core/domain/`, `core/infra/`, `core/services/`
 - **Perfil:** Angular, IndexedDB
 
-### F2 · Identidad y acceso — BLOQUEA TODO LO DEMÁS
+### F2 · Identidad y acceso — CÓDIGO LISTO, FALTA EL SERVIDOR
 
-Autenticación con cuatro roles: coordinador, validador, digitador y líder. El líder
-solo ve lo que él mismo reportó; el digitador carga pero no exporta. Las políticas de
-acceso a nivel de fila ya están escritas en el esquema; falta el inicio de sesión y
-asignar perfil a cada voluntario.
+Autenticación con cinco roles: coordinador, custodio, validador, digitador y líder.
+El líder solo ve lo que él mismo reportó; el digitador carga pero no exporta.
 
-**Hasta que esto exista, la base central no se conecta.** Una URL pública contra una
-base con datos nominales y sin políticas activas expone el censo completo.
+Ya construido: puerto `AuthPort` y adaptador de Supabase, `SesionService` con estado
+por señales, guardas de ruta, pantalla de acceso, disparador que crea el perfil al dar
+de alta un usuario, y permisos derivados del rol en una función pura.
 
-- **Toca:** `core/auth/` (nuevo), `supabase/schema.sql`
+**La regla que gobierna esta capa:** iniciar sesión requiere conexión, capturar no. Un
+voluntario que entró en el casco urbano y subió a una vereda sigue registrando aunque
+su token haya expirado; lo único que exige sesión vigente es sincronizar. Sin esa
+regla, el primer token que caduca en el monte cuesta una jornada completa de trabajo.
+
+Falta: crear el proyecto en Supabase, correr el esquema, dar de alta a los voluntarios
+y asignarles rol. **Hasta que eso pase la base central no se conecta.** Una URL pública
+contra una base con datos nominales y sin políticas activas expone el censo completo.
+
+- **Toca:** `core/domain/auth.model.ts`, `core/infra/supabase-auth.adapter.ts`,
+  `core/services/sesion.service.ts`, `core/guards/`, `features/auth/`
 - **No toca:** el formulario ni el listado
-- **Perfil:** Angular, Supabase Auth, PostgreSQL
-- **Tamaño:** mediano · 1 persona
+- **Perfil:** Supabase, PostgreSQL, administración de accesos
+- **Tamaño:** lo que queda es operativo · 1 persona
 
 ### F3 · Sincronización y servidor — ABIERTO
 

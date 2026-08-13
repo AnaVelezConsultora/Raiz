@@ -82,6 +82,12 @@ create table familias (
   kobo_id                integer unique,
   kobo_uuid              text unique,
 
+  -- UUID generado por la PWA en el dispositivo. Es la clave de idempotencia del
+  -- envio: si el registro llega al servidor pero la respuesta se pierde por corte
+  -- de senal, el reintento actualiza esta misma fila en lugar de crear un
+  -- duplicado. En un censo un duplicado silencioso es peor que un fallo visible.
+  origen_id              uuid unique,
+
   -- bloque 0: control
   fecha_registro         date not null default current_date,
   registrador_nombre     text not null,
@@ -505,6 +511,35 @@ begin new.actualizado_en := now(); return new; end $$;
 
 create trigger tr_touch_familias before update on familias
   for each row execute function fn_touch();
+
+-- =============================================================================
+-- 10.b PERFIL AUTOMATICO AL CREAR UN USUARIO
+--
+-- Sin esto, un voluntario recien creado inicia sesion, no encuentra perfil y queda
+-- sin rol: entra y no puede hacer nada, sin mensaje que lo explique.
+--
+-- El rol por defecto es el MENOS privilegiado. Ascender a alguien es una accion
+-- deliberada del custodio de datos, nunca un efecto secundario del registro.
+-- =============================================================================
+
+create or replace function fn_crear_perfil() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into perfiles (id, nombre, rol, telefono, activo)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)),
+    'lider',
+    new.raw_user_meta_data->>'telefono',
+    true
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
+
+create trigger tr_crear_perfil
+  after insert on auth.users
+  for each row execute function fn_crear_perfil();
 
 -- =============================================================================
 -- 11. CARGA DESDE KOBO

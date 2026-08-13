@@ -110,6 +110,24 @@ export enum FuenteCoordenada {
   NoDisponible = 'no_disp'
 }
 
+/**
+ * Rol del usuario. Define que puede ver y hacer.
+ * Los mismos valores que el tipo `rol_t` de PostgreSQL, donde las politicas de
+ * acceso por fila los aplican del lado del servidor.
+ */
+export enum Rol {
+  /** Ve todo, firma los oficios, es el unico vocero ante las entidades. */
+  Coordinador = 'coordinador',
+  /** Administra accesos y responde por la proteccion de datos personales. */
+  Custodio = 'custodio',
+  /** Depura duplicados, verifica casos y marca su estado. */
+  Validador = 'validador',
+  /** Carga reportes que llegan por WhatsApp, llamada o papel. No exporta. */
+  Digitador = 'digitador',
+  /** Enlace territorial. Solo ve los casos que el mismo reporto. */
+  Lider = 'lider'
+}
+
 /** Tipo de fotografia asociada al caso. */
 export enum TipoFoto {
   Fachada = 'fachada',

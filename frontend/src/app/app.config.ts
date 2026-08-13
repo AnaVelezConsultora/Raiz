@@ -3,9 +3,11 @@ import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
+import { AUTH } from './core/domain/auth.model';
 import { CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION } from './core/domain/ports';
 import { DexieCasoStorageService } from './core/infra/dexie-caso-storage.service';
 import { DexieFotoStorageService } from './core/infra/dexie-foto-storage.service';
+import { SupabaseAuthAdapter } from './core/infra/supabase-auth.adapter';
 import { SupabaseSyncAdapter } from './core/infra/supabase-sync.adapter';
 
 /**
@@ -30,6 +32,7 @@ export const appConfig: ApplicationConfig = {
 
     { provide: CASO_STORAGE, useExisting: DexieCasoStorageService },
     { provide: FOTO_STORAGE, useExisting: DexieFotoStorageService },
-    { provide: SINCRONIZACION, useExisting: SupabaseSyncAdapter }
+    { provide: SINCRONIZACION, useExisting: SupabaseSyncAdapter },
+    { provide: AUTH, useExisting: SupabaseAuthAdapter }
   ]
 };

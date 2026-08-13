@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { invitadoGuard, sesionGuard } from './core/guards/sesion.guard';
 
 /**
  * Rutas de Raíz.
@@ -11,14 +12,23 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'casos' },
   {
+    path: 'acceso',
+    title: 'Entrar · Raíz',
+    canActivate: [invitadoGuard],
+    loadComponent: () =>
+      import('./features/auth/acceso.component').then((m) => m.AccesoComponent)
+  },
+  {
     path: 'casos',
     title: 'Casos · Raíz',
+    canActivate: [sesionGuard],
     loadComponent: () =>
       import('./features/casos/lista-casos.component').then((m) => m.ListaCasosComponent)
   },
   {
     path: 'nuevo',
     title: 'Nuevo caso · Raíz',
+    canActivate: [sesionGuard],
     loadComponent: () =>
       import('./features/formulario/formulario-caso.component').then(
         (m) => m.FormularioCasoComponent
@@ -27,6 +37,7 @@ export const routes: Routes = [
   {
     path: 'caso/:id',
     title: 'Caso · Raíz',
+    canActivate: [sesionGuard],
     loadComponent: () =>
       import('./features/formulario/formulario-caso.component').then(
         (m) => m.FormularioCasoComponent
