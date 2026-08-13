@@ -1,0 +1,373 @@
+<title>Frentes de Trabajo de Raíz</title>
+<style>
+  :root {
+    --paper: #edefea; --surface: #f8f9f5; --surface-2: #e4e8df;
+    --ink: #16201d; --ink-soft: #4e5a55; --ink-faint: #78847e; --rule: #d0d6ca;
+    --accent: #0e5c63; --accent-ink: #0a484e; --accent-soft: #dae7e5;
+    --listo: #3b6a46; --listo-bg: #dfebdf;
+    --abierto: #8a5a00; --abierto-bg: #f2e6cc;
+    --bloquea: #a32017; --bloquea-bg: #f4dedb;
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+    --measure: 68ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #111511; --surface: #191e1a; --surface-2: #212722;
+      --ink: #e7ebe3; --ink-soft: #a2ada4; --ink-faint: #7c877e; --rule: #2e352e;
+      --accent: #64c3c7; --accent-ink: #8ad6d9; --accent-soft: #16302f;
+      --listo: #92cb8c; --listo-bg: #1d2c1e;
+      --abierto: #e7b662; --abierto-bg: #332916;
+      --bloquea: #ff9385; --bloquea-bg: #35201c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #111511; --surface: #191e1a; --surface-2: #212722;
+    --ink: #e7ebe3; --ink-soft: #a2ada4; --ink-faint: #7c877e; --rule: #2e352e;
+    --accent: #64c3c7; --accent-ink: #8ad6d9; --accent-soft: #16302f;
+    --listo: #92cb8c; --listo-bg: #1d2c1e;
+    --abierto: #e7b662; --abierto-bg: #332916;
+    --bloquea: #ff9385; --bloquea-bg: #35201c;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16.5px; line-height: 1.62; margin: 0; padding: 0 5vw 7rem;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 60rem; margin: 0 auto; }
+
+  header.top {
+    padding: 4rem 0 2rem; border-bottom: 2px solid var(--ink);
+    display: flex; flex-direction: column; gap: 1.2rem;
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.05;
+    letter-spacing: -0.015em; margin: 0; text-wrap: balance;
+  }
+  .standfirst {
+    font-family: var(--serif); font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+    line-height: 1.5; color: var(--ink-soft); max-width: var(--measure); margin: 0;
+  }
+
+  section { padding-top: 3.2rem; }
+  h2 {
+    font-family: var(--serif); font-size: clamp(1.45rem, 3.2vw, 1.9rem);
+    line-height: 1.2; font-weight: 600; margin: 0 0 0.4rem; text-wrap: balance;
+  }
+  h3 {
+    font-size: 0.84rem; letter-spacing: 0.09em; text-transform: uppercase;
+    font-weight: 700; color: var(--ink-soft); margin: 1.9rem 0 0.6rem;
+  }
+  .kicker {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 0.5rem;
+  }
+  p { max-width: var(--measure); margin: 0 0 0.9rem; }
+  ul, ol { max-width: var(--measure); padding-left: 1.15rem; margin: 0 0 1rem; }
+  li { margin-bottom: 0.35rem; }
+  li::marker { color: var(--ink-faint); }
+  code {
+    font-family: var(--mono); font-size: 0.86em;
+    background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 3px;
+  }
+  pre {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 0.9rem 1rem; overflow-x: auto; font-family: var(--mono);
+    font-size: 0.84rem; line-height: 1.6; margin: 1rem 0;
+  }
+  a { color: var(--accent-ink); text-underline-offset: 0.18em; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .verdict {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent); padding: 1.3rem 1.4rem; margin: 1.3rem 0;
+  }
+  .verdict p:last-child { margin: 0; }
+
+  /* ---- capas ---- */
+  .capas { display: grid; gap: 1px; background: var(--rule);
+           border: 1px solid var(--rule); margin: 1.5rem 0; }
+  .capa { background: var(--surface); padding: 0.9rem 1.1rem;
+          display: grid; grid-template-columns: 11rem 1fr; gap: 0.2rem 1.2rem; }
+  .capa .n { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); }
+  .capa .d { font-size: 0.92rem; color: var(--ink-soft); }
+  @media (max-width: 640px) { .capa { grid-template-columns: 1fr; } }
+
+  /* ---- frentes ---- */
+  .frente {
+    border-top: 1px solid var(--rule); padding: 1.5rem 0;
+    display: grid; grid-template-columns: 3.5rem 1fr; gap: 0 1.2rem;
+  }
+  .frente:last-of-type { border-bottom: 1px solid var(--rule); }
+  .frente .num {
+    font-family: var(--mono); font-size: 0.78rem; color: var(--accent); padding-top: 0.3rem;
+  }
+  .frente h4 {
+    font-size: 1.08rem; font-weight: 650; margin: 0 0 0.15rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  }
+  .estado {
+    font-family: var(--mono); font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.06em; padding: 0.15rem 0.5rem; border-radius: 3px;
+  }
+  .estado.listo { background: var(--listo-bg); color: var(--listo); }
+  .estado.abierto { background: var(--abierto-bg); color: var(--abierto); }
+  .estado.bloquea { background: var(--bloquea-bg); color: var(--bloquea); }
+  .frente p { margin: 0.4rem 0 0.6rem; }
+  .meta {
+    display: grid; grid-template-columns: 6.5rem 1fr; gap: 0.25rem 0.9rem;
+    font-size: 0.87rem; margin-top: 0.7rem;
+  }
+  .meta dt {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--ink-faint); padding-top: 0.18rem;
+  }
+  .meta dd { margin: 0; color: var(--ink-soft); }
+  .meta code { font-size: 0.8rem; }
+  @media (max-width: 640px) {
+    .frente { grid-template-columns: 1fr; }
+    .frente .num { padding: 0 0 0.3rem; }
+    .meta { grid-template-columns: 1fr; }
+    .meta dd { margin-bottom: 0.5rem; }
+  }
+
+  .tablewrap { overflow-x: auto; margin: 1.2rem 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 32rem; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 0.65rem 0.9rem 0.65rem 0;
+           border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 700; border-bottom: 1px solid var(--ink);
+  }
+  tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
+
+  footer {
+    margin-top: 3.5rem; padding-top: 1.4rem; border-top: 2px solid var(--ink);
+    font-size: 0.85rem; color: var(--ink-faint); max-width: var(--measure);
+  }
+  @media (max-width: 640px) { body { padding: 0 1.15rem 4rem; } header.top { padding-top: 2.6rem; } }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">Raíz · Onboarding técnico · Sevilla, Valle del Cauca</div>
+  <h1>Frentes de Trabajo</h1>
+  <p class="standfirst">Ocho frentes que avanzan en paralelo sin pisarse. Cada uno toca carpetas distintas, tiene una entrada clara y se puede tomar sin conocer el resto del sistema. Escoja uno y avise cuál toma.</p>
+</header>
+
+<section>
+  <p class="kicker">Para qué existe esto</p>
+  <h2>El objetivo</h2>
+  <p>Caracterizar a cada familia afectada <strong>una sola vez</strong>, con datos que la entidad competente pueda usar, y acompañar cada caso hasta que alguien responda por él.</p>
+  <ol>
+    <li><strong>Remitir.</strong> Entregar a cada entidad el reporte que le corresponde, con radicado.</li>
+    <li><strong>Hacer seguimiento.</strong> Saber qué pasó con cada familia: si fue verificada, a quién se remitió, qué respondieron y cuántos días lleva sin respuesta.</li>
+    <li><strong>Ser puente.</strong> Dejar la caracterización lista para que la cooperación internacional actúe sin volver a levantar información.</li>
+  </ol>
+
+  <div class="verdict">
+    <p><strong>La restricción que define todo el diseño:</strong> no hay capacidad de ir al terreno y en la zona veredal no hay señal. Quien captura es un líder que ya vive allá, con el celular que ya tiene. Por eso la aplicación funciona sin conexión y sincroniza después. Cualquier decisión técnica que rompa eso está mal, por elegante que sea.</p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Cómo está armado</p>
+  <h2>Cuatro capas</h2>
+  <div class="capas">
+    <div class="capa">
+      <span class="n">DOMINIO</span>
+      <span class="d">Tipos, enums y puertos. No depende de nada. <code>core/domain/</code></span>
+    </div>
+    <div class="capa">
+      <span class="n">INFRAESTRUCTURA</span>
+      <span class="d">Implementa los puertos: IndexedDB con Dexie, transporte a Supabase. <code>core/infra/</code></span>
+    </div>
+    <div class="capa">
+      <span class="n">SERVICIOS</span>
+      <span class="d">Cola de sincronización, GPS, compresión de fotos, construcción de casos. <code>core/services/</code></span>
+    </div>
+    <div class="capa">
+      <span class="n">FUNCIONALIDADES</span>
+      <span class="d">Formulario por pasos y listado de casos. <code>features/</code></span>
+    </div>
+  </div>
+  <p>Las capas se comunican por interfaces (<code>CasoStoragePort</code>, <code>FotoStoragePort</code>, <code>SincronizacionPort</code>) que se enlazan en un solo archivo, <code>app.config.ts</code>. Reemplazar Supabase por un backend propio es cambiar una línea ahí; ningún componente se entera.</p>
+  <p><strong>Regla de convivencia:</strong> cada frente toca carpetas distintas. Si dos frentes necesitan el mismo archivo, avísenlo en el grupo antes de empezar, no después del conflicto.</p>
+</section>
+
+<section>
+  <p class="kicker">Dónde entrar</p>
+  <h2>Los ocho frentes</h2>
+
+  <div class="frente">
+    <div class="num">F1</div>
+    <div>
+      <h4>Captura offline <span class="estado listo">FUNCIONANDO</span></h4>
+      <p>El núcleo: guardar caso, fotos y coordenada en el dispositivo sin conexión, con guardado incremental paso a paso. Está probado en navegador real con la red apagada. Se mantiene, no se reescribe.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd><code>core/domain/</code>, <code>core/infra/</code>, <code>core/services/</code></dd>
+        <dt>Perfil</dt><dd>Angular, IndexedDB</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="frente">
+    <div class="num">F2</div>
+    <div>
+      <h4>Identidad y acceso <span class="estado bloquea">BLOQUEA TODO LO DEMÁS</span></h4>
+      <p>Autenticación con cuatro roles: coordinador, validador, digitador y líder. El líder solo ve lo que él mismo reportó; el digitador carga pero no exporta. Las políticas de acceso a nivel de fila ya están escritas en el esquema; falta el inicio de sesión y asignar perfil a cada voluntario.</p>
+      <p><strong>Hasta que esto exista, la base central no se conecta.</strong> Una URL pública contra una base con datos nominales y sin políticas activas expone el censo completo.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd><code>core/auth/</code> (nuevo), <code>supabase/schema.sql</code></dd>
+        <dt>No toca</dt><dd>El formulario ni el listado</dd>
+        <dt>Perfil</dt><dd>Angular, Supabase Auth, PostgreSQL</dd>
+        <dt>Tamaño</dt><dd>Mediano · 1 persona</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="frente">
+    <div class="num">F3</div>
+    <div>
+      <h4>Sincronización y servidor <span class="estado abierto">ABIERTO</span></h4>
+      <p>Levantar el proyecto en Supabase, correr el esquema, y terminar el adaptador de transporte: subida de fotos a almacenamiento y carga idempotente por <code>origen_id</code>. La lógica de la cola ya está: envía casos antes que fotos, prioridad de riesgo de vida primero, secuencial, y se detiene si se cae la red.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd><code>core/infra/supabase-sync.adapter.ts</code>, <code>supabase/</code></dd>
+        <dt>Depende de</dt><dd>F2</dd>
+        <dt>Perfil</dt><dd>PostgreSQL, APIs</dd>
+        <dt>Tamaño</dt><dd>Mediano · 1 o 2 personas</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="frente">
+    <div class="num">F4</div>
+    <div>
+      <h4>Tablero y mapa <span class="estado abierto">ABIERTO</span></h4>
+      <p>Contadores, filtros y mapa de afectación sobre la vista pública, que ya está anonimizada y con la coordenada redondeada a tres decimales. Es la pieza que se le muestra a una entidad para sustentar una petición.</p>
+      <p>No toca la aplicación de captura en absoluto: se puede construir en paralelo desde el primer día, incluso con datos de prueba.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd><code>features/tablero/</code> (nuevo)</dd>
+        <dt>No toca</dt><dd>Nada de <code>core/</code></dd>
+        <dt>Perfil</dt><dd>Angular, Leaflet, visualización de datos</dd>
+        <dt>Tamaño</dt><dd>Mediano · 1 o 2 personas</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="frente">
+    <div class="num">F5</div>
+    <div>
+      <h4>Remisiones y seguimiento <span class="estado abierto">ABIERTO</span></h4>
+      <p>El diferenciador del proyecto. Registrar a qué entidad se remitió cada familia, con qué número de radicado, qué respondieron y cuántos días llevan sin responder. Las tablas y las vistas ya están en el esquema; falta la interfaz de la mesa.</p>
+      <p>Sin este frente, Raíz es una base de datos más. Con él, es un instrumento de exigibilidad.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd><code>features/remisiones/</code> (nuevo)</dd>
+        <dt>Depende de</dt><dd>F2</dd>
+        <dt>Perfil</dt><dd>Angular, modelado de procesos</dd>
+        <dt>Tamaño</dt><dd>Grande · 2 personas</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="frente">
+    <div class="num">F6</div>
+    <div>
+      <h4>Calidad y prueba en campo <span class="estado abierto">EMPIEZA HOY</span></h4>
+      <p>Instalar Raíz en celulares reales, de gama baja y con poca memoria, ponerlos en modo avión y registrar casos de prueba. Reportar todo lo que incomode: un botón que no se alcanza con el pulgar, un texto ilegible bajo el sol, una pantalla que pide un dato que la familia no sabe.</p>
+      <p><strong>Esta es la tarea de mayor impacto y no requiere escribir código.</strong> Un formulario que el voluntario abandona a mitad no produce datos, y eso no lo detecta ninguna prueba automática.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd>Reportes en el repositorio</dd>
+        <dt>Perfil</dt><dd>Cualquiera con un celular Android</dd>
+        <dt>Tamaño</dt><dd>Pequeño y continuo · varias personas</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="frente">
+    <div class="num">F7</div>
+    <div>
+      <h4>Datos y cumplimiento <span class="estado abierto">ABIERTO</span></h4>
+      <p>Política de tratamiento de datos, texto de autorización, tiempos de retención, procedimiento de eliminación a solicitud de la familia, y la separación entre la versión nominal que va a la entidad y la versión agregada que va a prensa y presentaciones.</p>
+      <p>Son datos sensibles de población vulnerable bajo la Ley 1581 de 2012. Este frente no es papeleo: es lo que permite que el listado sea admisible y que nadie quede expuesto.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd><code>docs/</code>, revisión de <code>supabase/schema.sql</code></dd>
+        <dt>Perfil</dt><dd>Protección de datos. Se coordina con el equipo jurídico</dd>
+        <dt>Tamaño</dt><dd>Mediano · 1 persona</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="frente">
+    <div class="num">F8</div>
+    <div>
+      <h4>Multi-municipio <span class="estado abierto">ABIERTO</span></h4>
+      <p>El modelo ya lo soporta: municipio y departamento son campos, no constantes, y las tres bases nunca se separaron. Lo único atado a Sevilla hoy son los valores por defecto. Falta el listado oficial de veredas por municipio, la normalización de nombres y el despliegue por territorio.</p>
+      <p>Es lo que convierte esto en una herramienta reutilizable en vez de un proyecto de una sola emergencia.</p>
+      <dl class="meta">
+        <dt>Toca</dt><dd><code>environments/</code>, catálogos, despliegue</dd>
+        <dt>Perfil</dt><dd>Datos geográficos, despliegue</dd>
+        <dt>Tamaño</dt><dd>Mediano · 1 persona</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Orden sugerido</p>
+  <h2>Qué primero</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Momento</th><th>Frentes</th><th>Por qué</th></tr></thead>
+      <tbody>
+        <tr><td>Ahora</td><td>F6 y F2</td><td>F6 no depende de nada y da información inmediata. F2 desbloquea el resto.</td></tr>
+        <tr><td>En paralelo</td><td>F4 y F7</td><td>No tocan el núcleo. Se pueden hacer con datos de prueba.</td></tr>
+        <tr><td>Cuando F2 esté</td><td>F3 y F5</td><td>Necesitan identidad y roles para tener sentido.</td></tr>
+        <tr><td>Después</td><td>F8</td><td>Cuando la herramienta esté probada en un municipio.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Arrancar</p>
+  <h2>Poner el proyecto a andar</h2>
+  <pre>git clone https://github.com/anavelezconsultoria/raiz.git
+cd raiz/frontend
+npm install
+npm start</pre>
+  <p>Requiere Node 20.19 o 22.12 en adelante. Angular 21. Para probar el modo sin conexión hay que compilar (<code>npm run build</code>) y servir el resultado, porque el service worker no se activa en desarrollo.</p>
+  <h3>Convenciones que se respetan</h3>
+  <ul>
+    <li>Nunca el tipo <code>any</code>. Interfaces explícitas.</li>
+    <li>Montos en enteros de centavos, jamás en punto flotante.</li>
+    <li>Métodos pequeños, una responsabilidad cada uno.</li>
+    <li>Las decisiones técnicas se documentan en el repositorio, no solo en el chat.</li>
+  </ul>
+</section>
+
+<section>
+  <p class="kicker">Innegociable</p>
+  <h2>Datos de familias</h2>
+  <ul>
+    <li>En el grupo de chat <strong>no</strong> se publican nombres, cédulas, teléfonos ni fotografías de familias afectadas.</li>
+    <li>Para desarrollar y probar se usan datos inventados. Nunca datos reales en un entorno de pruebas.</li>
+    <li>La regla de consentimiento se aplica en el borde de salida hacia el servidor, no en la interfaz: sin autorización de la familia, la identidad no viaja, y ninguna ruta de la aplicación puede saltarse esa validación.</li>
+    <li>Toda vista pública es agregada y con la coordenada degradada. Ubica la afectación, no la vivienda.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Documento técnico de incorporación. No contiene datos personales. El trabajo es voluntario y el código es abierto: lo que se construya aquí debe servirle a la próxima emergencia en otro municipio.</p>
+</footer>
+
+</div>

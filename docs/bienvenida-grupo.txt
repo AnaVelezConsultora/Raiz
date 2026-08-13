@@ -31,14 +31,58 @@ cuadernos. Asi no se puede pedir nada. Una entidad no responde a un audio, y la
 cooperacion internacional no gestiona recursos sobre una lista de nombres en una
 libreta.
 
-EL OBJETIVO
-Que cada familia afectada quede caracterizada una sola vez, con datos que la
-entidad competente pueda usar, y que quede registro de que se le remitio, a
-quien, con que numero de radicado y que respondieron.
+EL OBJETIVO PRINCIPAL
+Caracterizar a cada familia afectada UNA SOLA VEZ, con datos que la entidad
+competente pueda usar, y acompanar cada caso hasta que alguien responda por el.
 
-No es un censo para tener una cifra. Es un instrumento de seguimiento: sirve para
-decir "estas 137 familias fueron caracterizadas, estas 83 fueron remitidas, estas
-41 siguen sin respuesta despues de 20 dias".
+Dicho completo: construir y sostener un registro unico de familias afectadas que
+sirva para tres cosas al mismo tiempo.
+
+  1. REMITIR. Entregar a cada entidad el reporte que le corresponde, en su
+     formato, con radicado.
+  2. HACER SEGUIMIENTO. Saber en todo momento que paso con cada familia: si fue
+     verificada, a quien se remitio, que respondieron y cuantos dias lleva sin
+     respuesta.
+  3. SER PUENTE. Dejar la caracterizacion lista para que la cooperacion
+     internacional y las organizaciones de reconstruccion puedan actuar sin
+     tener que volver a levantar la informacion desde cero.
+
+No es un censo para tener una cifra. Es un instrumento de seguimiento y de
+representacion de las familias: sirve para decir "estas 137 familias fueron
+caracterizadas, estas 83 fueron remitidas, estas 41 siguen sin respuesta despues
+de 20 dias".
+
+A QUIEN LE ENTREGAMOS
+El destinatario cambia segun el tipo de afectacion. Por eso el registro es UNO
+SOLO y los reportes son filtros sobre el mismo dato.
+
+  Vivienda y emergencia, urbano y rural
+    - Consejo Municipal de Gestion del Riesgo de Sevilla (CMGRD)
+    - Alcaldia de Sevilla
+    - Consejo Departamental de Gestion del Riesgo del Valle (CDGRD)
+    - Gobernacion del Valle del Cauca
+
+  Vivienda rural, cultivos y produccion
+    - Secretaria de Agricultura y Pesca del Valle del Cauca
+    - Comites de reforma agraria del departamento
+    - Asociaciones campesinas
+
+  Convenio de cooperacion
+    - Federacion (convenio Monica Gonzalez y cooperacion catalana)
+
+  Nivel nacional y cooperacion
+    - UNGRD
+    - Organismos de cooperacion internacional
+
+PENDIENTE DE CONFIRMAR antes de radicar el primer reporte:
+  - Nombre exacto de la dependencia responsable de vivienda urbana.
+  - Listado que aporto Miguel: agregar aqui las entidades y contactos que
+    identifico, con nombre exacto de la dependencia.
+  - Sigla y nombre completo de la organizacion internacional bajo la cual se
+    hace la representacion.
+
+Un oficio dirigido a una dependencia que no existe se devuelve. Confirmar el
+nombre exacto es trabajo de diez minutos que evita perder una semana.
 
 QUE YA FUNCIONA
 La herramienta se llama Raiz. Hoy, probada y andando:
