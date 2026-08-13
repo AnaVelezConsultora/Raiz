@@ -43,7 +43,7 @@ export interface FotoStoragePort {
 /** Resultado del envio de un caso al servidor. */
 export interface ResultadoEnvioCaso {
   exito: boolean;
-  /** Consecutivo institucional SIRCA-NNNNNN asignado por el servidor. */
+  /** Consecutivo institucional RZ-AAAA-NNNNNN asignado por el servidor. */
   codigoAsignado?: string;
   error?: string;
   /** True cuando el error es transitorio (red, 5xx) y conviene reintentar. */

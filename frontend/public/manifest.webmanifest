@@ -1,9 +1,28 @@
 {
-  "name": "frontend",
-  "short_name": "frontend",
+  "name": "Raíz",
+  "short_name": "Raíz",
+  "description": "Caracterización y seguimiento de familias afectadas por el sismo",
+  "lang": "es-CO",
+  "dir": "ltr",
   "display": "standalone",
+  "orientation": "portrait",
   "scope": "./",
   "start_url": "./",
+  "background_color": "#edefea",
+  "theme_color": "#0e5c63",
+  "categories": ["utilities", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Nuevo caso rural",
+      "short_name": "Rural",
+      "url": "./nuevo?zona=rural"
+    },
+    {
+      "name": "Nuevo caso urbano",
+      "short_name": "Urbano",
+      "url": "./nuevo?zona=urbana"
+    }
+  ],
   "icons": [
     {
       "src": "icons/icon-72x72.png",

@@ -1,0 +1,100 @@
+========================================================
+A. MENSAJE DE INVITACION (enviar a cada ingeniero, reenviable)
+========================================================
+
+Ingenieros e ingenieras de sistemas:
+
+En Sevilla, Valle del Cauca, el sismo dejo familias afectadas en zona urbana y
+rural. Hoy la informacion llega por WhatsApp, en listas sueltas y en cuadernos.
+Sin datos organizados las entidades no pueden responder, y la cooperacion
+internacional no tiene con que trabajar.
+
+Estamos armando un equipo tecnico voluntario para resolver eso. No es una idea:
+ya hay codigo funcionando.
+
+QUE YA EXISTE
+- Formulario de caracterizacion de familias, alineado con lo que exigen las
+  entidades: hogar desagregado por sexo y edad, tenencia de vivienda, nivel de
+  dano, cultivos y animales en zona rural.
+- Aplicacion web que funciona SIN INTERNET. El voluntario registra en la vereda,
+  toma fotos y captura coordenada GPS por satelite; todo queda en el celular y se
+  sincroniza cuando vuelve a haber senal.
+- Base de datos con trazabilidad institucional: a que entidad se remitio cada
+  familia, con que numero de radicado, que respondieron y cuantos dias llevan sin
+  responder.
+- Costo de infraestructura: cero.
+
+QUE FALTA
+- Autenticacion y control de acceso por rol.
+- Tablero de cifras y mapa de afectacion.
+- Pruebas reales en campo con lideres de vereda.
+- Convertirlo en algo que sirva para cualquier municipio, no solo para Sevilla.
+
+QUE BUSCAMOS
+Frontend (Angular), backend y modelo de datos (PostgreSQL), QA y pruebas,
+despliegue. Tambien sirve quien solo pueda dar dos horas a la semana: hay tareas
+acotadas y bien definidas.
+
+COMO ESTA ORGANIZADO
+La interlocucion con entidades y la parte juridica las lleva un equipo aparte,
+con abogado. Nosotros ponemos la ingenieria.
+
+El codigo es abierto. Lo que construyamos queda publico y reutilizable: la
+proxima emergencia en otro municipio no deberia empezar desde cero.
+
+Si le interesa, escriba en el grupo y le digo en que puede entrar hoy mismo.
+
+
+========================================================
+B. VERSION CORTA (para grupos grandes, donde nadie lee parrafos)
+========================================================
+
+Ingenieros de sistemas: estamos armando un equipo voluntario para sistematizar
+la caracterizacion de familias afectadas por el sismo en Sevilla, Valle.
+
+Ya hay una aplicacion funcionando que captura datos, fotos y GPS SIN INTERNET y
+sincroniza despues. Falta autenticacion, tablero, mapa y pruebas en campo.
+
+La idea es que sirva para otros municipios, no solo para Sevilla. Codigo abierto,
+costo cero.
+
+Se necesita Angular, PostgreSQL, QA y despliegue. Con dos horas a la semana ya se
+aporta. Quien quiera sumarse, escriba aqui.
+
+
+========================================================
+C. DESCRIPCION DEL GRUPO (mensaje fijado)
+========================================================
+
+Equipo tecnico voluntario para la caracterizacion de familias afectadas por el
+sismo. Empezamos en Sevilla, Valle del Cauca, con vocacion de servir a cualquier
+municipio.
+
+Que hacemos: una herramienta que permite registrar familias afectadas en zona
+rural sin conexion a internet, y hacer seguimiento a cada caso hasta que la
+entidad competente responda.
+
+Reglas del grupo:
+1. Aqui NO se publican datos personales de familias afectadas. Ni nombres, ni
+   cedulas, ni telefonos, ni fotos. Son datos sensibles bajo la Ley 1581 de 2012.
+2. No se prometen ayudas ni plazos a nombre del equipo.
+3. Las decisiones tecnicas se documentan en el repositorio, no solo en el chat.
+4. Toda contribucion es voluntaria. Nadie recauda ni administra dinero aqui.
+
+Repositorio: https://github.com/anavelezconsultoria/raiz
+
+
+========================================================
+NOTAS PARA QUIEN CONVOCA
+========================================================
+
+- No prometa fechas de entrega ni cobertura. El mensaje habla de lo que ya
+  existe y de lo que falta; esa honestidad es lo que atrae a gente seria.
+- No pida dinero. En emergencias, un grupo tecnico que recauda pierde
+  credibilidad de inmediato.
+- Diga siempre que la parte juridica e institucional la lleva otro equipo. Los
+  ingenieros suelen alejarse cuando huelen que van a terminar respondiendo por
+  algo que no es tecnico.
+- Tenga listas dos o tres tareas concretas y pequenas para asignar el mismo dia
+  en que alguien diga que si. Un voluntario que espera tres dias por una tarea
+  no vuelve.

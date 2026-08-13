@@ -19,10 +19,10 @@ export interface PerfilRegistrador {
 /**
  * Construccion de casos nuevos e identidad del dispositivo.
  *
- * SOBRE EL CODIGO DEL CASO: el consecutivo institucional SIRCA-NNNNNN lo asigna el
+ * SOBRE EL CODIGO DEL CASO: el consecutivo institucional RZ-AAAA-NNNNNN lo asigna el
  * SERVIDOR. Generarlo en el celular produciria colisiones, porque dos voluntarios
  * sin senal en dos veredas distintas generarian el mismo numero y al sincronizar
- * habria dos casos SIRCA-000042.
+ * habria dos casos RZ-2026-000042.
  *
  * Mientras tanto el dispositivo muestra un codigo local con el prefijo del
  * dispositivo, por ejemplo `L-7F3A-004`, que sirve para que el voluntario nombre el
@@ -33,9 +33,9 @@ export interface PerfilRegistrador {
  */
 @Injectable({ providedIn: 'root' })
 export class CasoFactoryService {
-  private static readonly CLAVE_DISPOSITIVO = 'sirca.dispositivo';
-  private static readonly CLAVE_CONSECUTIVO = 'sirca.consecutivo';
-  private static readonly CLAVE_PERFIL = 'sirca.registrador';
+  private static readonly CLAVE_DISPOSITIVO = 'raiz.dispositivo';
+  private static readonly CLAVE_CONSECUTIVO = 'raiz.consecutivo';
+  private static readonly CLAVE_PERFIL = 'raiz.registrador';
 
   /** Identificador estable del dispositivo. Se genera una vez y persiste. */
   obtenerDispositivoId(): string {

@@ -15,7 +15,7 @@ import { Caso, FotoLocal } from '../domain/caso.model';
  *
  * @version 0.1.0
  */
-export class SircaDb extends Dexie {
+export class RaizDb extends Dexie {
   /** Casos capturados en el dispositivo. Clave primaria: UUID local. */
   casos!: Table<Caso, string>;
 
@@ -23,7 +23,7 @@ export class SircaDb extends Dexie {
   fotos!: Table<FotoLocal, string>;
 
   constructor() {
-    super('sirca');
+    super('raiz');
 
     // Indices elegidos por las consultas reales de la aplicacion:
     //   - meta.estadoSync  -> cola de sincronizacion y contador de pendientes
@@ -41,4 +41,4 @@ export class SircaDb extends Dexie {
  * exportar la instancia evita abrir conexiones duplicadas cuando Angular recrea
  * servicios durante el desarrollo con recarga en caliente.
  */
-export const db = new SircaDb();
+export const db = new RaizDb();

@@ -1,5 +1,5 @@
 -- =============================================================================
--- SICRA - Sistema de Informacion para la Caracterizacion y Reconstruccion
+-- RAIZ - Caracterizacion y seguimiento de familias afectadas
 -- Esquema PostgreSQL para Supabase (plan gratuito) / portable a RDS o Aurora
 --
 -- Ejecutar en: Supabase > SQL Editor > New query > Run
@@ -75,7 +75,7 @@ create sequence seq_caso start 1;
 create table familias (
   id                     bigserial primary key,
   codigo                 text not null unique
-                           default ('SV-' || to_char(now(), 'YYYY') || '-' ||
+                           default ('RZ-' || to_char(now(), 'YYYY') || '-' ||
                                     lpad(nextval('seq_caso')::text, 6, '0')),
 
   -- trazabilidad con Kobo: _id y _uuid del submission. Hacen la carga idempotente.

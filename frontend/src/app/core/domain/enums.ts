@@ -1,5 +1,5 @@
 /**
- * Enumeraciones del dominio SIRCA.
+ * Enumeraciones del dominio de Raíz.
  *
  * Los valores literales replican EXACTAMENTE los codigos del XLSForm de KoboToolbox
  * y de los tipos enumerados de PostgreSQL (supabase/schema.sql). Ese contrato es lo

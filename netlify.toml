@@ -1,4 +1,4 @@
-# Despliegue de SIRCA en Netlify. Plan gratuito.
+# Despliegue de Raiz en Netlify. Plan gratuito.
 # Conectar el repositorio una sola vez; a partir de ahi cada push a main publica.
 
 [build]

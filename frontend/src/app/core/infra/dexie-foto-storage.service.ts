@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { FotoLocal } from '../domain/caso.model';
 import { EstadoSync } from '../domain/enums';
 import { FotoStoragePort } from '../domain/ports';
-import { db } from './sirca.db';
+import { db } from './raiz.db';
 
 /**
  * Implementacion de {@link FotoStoragePort} sobre IndexedDB via Dexie.

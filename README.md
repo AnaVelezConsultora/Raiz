@@ -1,6 +1,6 @@
-# RAIZ / SIRCA
+# Raíz
 
-Sistema de Informacion para la Caracterizacion y Reconstruccion de Afectados.
+Caracterizacion y seguimiento de familias afectadas por desastres.
 
 Levantamiento y seguimiento de familias afectadas por el sismo en **Sevilla, Valle del Cauca**
 (casco urbano y zona veredal). El objetivo no es solo contar damnificados: es caracterizar,

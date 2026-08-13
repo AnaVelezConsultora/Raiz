@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 /**
- * Rutas de SIRCA.
+ * Rutas de Raíz.
  *
  * Todas con carga diferida: el primer arranque en campo descarga solo lo necesario
  * para ver la lista, y el formulario se descarga al abrirlo. Con el service worker
@@ -12,13 +12,13 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'casos' },
   {
     path: 'casos',
-    title: 'Casos · SIRCA',
+    title: 'Casos · Raíz',
     loadComponent: () =>
       import('./features/casos/lista-casos.component').then((m) => m.ListaCasosComponent)
   },
   {
     path: 'nuevo',
-    title: 'Nuevo caso · SIRCA',
+    title: 'Nuevo caso · Raíz',
     loadComponent: () =>
       import('./features/formulario/formulario-caso.component').then(
         (m) => m.FormularioCasoComponent
@@ -26,7 +26,7 @@ export const routes: Routes = [
   },
   {
     path: 'caso/:id',
-    title: 'Caso · SIRCA',
+    title: 'Caso · Raíz',
     loadComponent: () =>
       import('./features/formulario/formulario-caso.component').then(
         (m) => m.FormularioCasoComponent

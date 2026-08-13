@@ -16,7 +16,7 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
   template: `
     <header style="background:var(--accent);color:#fff;padding:.55rem 1rem">
       <div class="contenedor fila" style="justify-content:space-between;padding:0">
-        <strong style="font-family:var(--serif);font-size:1.05rem">SIRCA Sevilla</strong>
+        <strong style="font-family:var(--serif);font-size:1.05rem">Raíz · Sevilla</strong>
         <span class="mono" style="font-size:.75rem;opacity:.92">
           {{ sync.enLinea() ? 'EN LINEA' : 'SIN CONEXION' }}
           @if (sync.totalPendientes() > 0) {

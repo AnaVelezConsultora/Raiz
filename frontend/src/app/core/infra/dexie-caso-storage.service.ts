@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Caso, FiltroCasos, ResumenCaso } from '../domain/caso.model';
 import { EstadoSync } from '../domain/enums';
 import { CasoStoragePort, MarcarSyncParams } from '../domain/ports';
-import { db } from './sirca.db';
+import { db } from './raiz.db';
 
 /**
  * Implementacion de {@link CasoStoragePort} sobre IndexedDB via Dexie.

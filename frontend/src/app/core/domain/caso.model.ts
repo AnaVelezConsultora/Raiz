@@ -12,7 +12,7 @@ import {
 } from './enums';
 
 /**
- * Modelo de dominio del caso SIRCA.
+ * Modelo de dominio del caso de Raíz.
  *
  * La unidad de registro es el HOGAR, no la vivienda: un mismo inmueble puede alojar
  * varias familias y cada una genera un caso independiente.
@@ -203,7 +203,7 @@ export interface FotoLocal {
  * Caso completo tal como vive en el dispositivo.
  *
  * `id` es un UUID generado localmente y es la clave con la que trabajan la PWA y la
- * cola de sincronizacion. `codigo` es el consecutivo institucional SIRCA-NNNNNN y lo
+ * cola de sincronizacion. `codigo` es el consecutivo institucional RZ-AAAA-NNNNNN y lo
  * asigna el SERVIDOR: dos voluntarios sin senal generarian el mismo numero, de modo
  * que en el dispositivo se muestra `codigoLocal` hasta que el servidor confirme.
  */
