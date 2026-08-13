@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "corte": "2026-08-13",
+  "sin_coordenada": 2,
+  "nota": "Vista publica agregada. Sin nombres, documentos, telefonos ni fotografias. Coordenadas redondeadas a 3 decimales.",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-75.903, 4.328] },
+      "properties": {
+        "codigo": "SV-2026-000001",
+        "zona": "rural",
+        "municipio": "Sevilla",
+        "lugar": "El Venado - La Mirandita",
+        "prioridad": "p2",
+        "personas_total": 5,
+        "menores": null,
+        "adultos_mayores": null,
+        "afectacion": "severo",
+        "habitable": null,
+        "fecha_registro": "2026-08-12"
+      }
+    }
+  ]
+}

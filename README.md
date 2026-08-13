@@ -9,8 +9,11 @@ reconstruccion.
 
 ## Para quien llega a colaborar
 
-Lea primero **[docs/FRENTES.md](docs/FRENTES.md)**: ocho frentes de trabajo que avanzan
-en paralelo sin pisarse, con lo que toca cada uno y por donde empezar hoy.
+Lea primero **[docs/ESTADO.md](docs/ESTADO.md)**: objetivo, decisiones tomadas, que
+funciona hoy y que falta.
+
+Luego **[docs/FRENTES.md](docs/FRENTES.md)**: ocho frentes de trabajo que avanzan en
+paralelo sin pisarse, con lo que toca cada uno y por donde empezar hoy.
 
 ## Principio de arquitectura
 

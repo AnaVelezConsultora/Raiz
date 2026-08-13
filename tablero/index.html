@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SICRA · Mapa de afectación</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root{
+    --paper:#EDEFEA; --surface:#F8F9F5; --surface-2:#E4E8DF;
+    --ink:#16201D; --ink-soft:#4E5A55; --ink-faint:#78847E; --rule:#D0D6CA;
+    --accent:#0E5C63;
+    --p0:#A32017; --p1:#8A5A00; --p2:#3B6A46; --p3:#5A655F;
+    --p0-bg:#F4DEDB; --p1-bg:#F2E6CC; --p2-bg:#DFEBDF; --p3-bg:#E4E8E3;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+    --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Georgia,serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#111511; --surface:#191E1A; --surface-2:#212722;
+      --ink:#E7EBE3; --ink-soft:#A2ADA4; --ink-faint:#7C877E; --rule:#2E352E;
+      --accent:#64C3C7;
+      --p0:#FF9385; --p1:#E7B662; --p2:#92CB8C; --p3:#9AA69C;
+      --p0-bg:#35201C; --p1-bg:#332916; --p2-bg:#1D2C1E; --p3-bg:#232924;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--sans);
+    display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;
+  }
+  header{
+    padding:1.1rem 1.4rem .9rem;border-bottom:2px solid var(--ink);
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem 1.2rem;
+  }
+  header h1{
+    font-family:var(--serif);font-size:1.4rem;font-weight:600;margin:0;letter-spacing:-.01em;
+  }
+  header .sub{font-size:.82rem;color:var(--ink-faint)}
+  header .corte{
+    margin-left:auto;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+  }
+
+  .kpis{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));
+    gap:1px;background:var(--rule);border-bottom:1px solid var(--rule);
+  }
+  .kpi{background:var(--surface);padding:.85rem 1.1rem}
+  .kpi .n{
+    font-family:var(--serif);font-size:1.85rem;line-height:1.05;
+    font-variant-numeric:tabular-nums;display:block;
+  }
+  .kpi .l{
+    font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);margin-top:.25rem;display:block;
+  }
+  .kpi.urgente .n{color:var(--p0)}
+
+  .bar{
+    display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;
+    padding:.7rem 1.4rem;border-bottom:1px solid var(--rule);
+  }
+  .bar label{
+    font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);margin-right:.15rem;
+  }
+  select{
+    font-family:var(--sans);font-size:.85rem;padding:.35rem .5rem;
+    background:var(--surface);color:var(--ink);
+    border:1px solid var(--rule);border-radius:2px;
+  }
+  select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .legend{display:flex;gap:.75rem;margin-left:auto;flex-wrap:wrap}
+  .legend span{
+    font-family:var(--mono);font-size:.7rem;display:flex;align-items:center;gap:.35rem;
+    color:var(--ink-soft);
+  }
+  .dot{width:.7rem;height:.7rem;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+
+  #mapa{flex:1;min-height:22rem;background:var(--surface-2)}
+  .leaflet-popup-content{font-family:var(--sans);font-size:.85rem;margin:.7rem .9rem}
+  .leaflet-popup-content .cod{
+    font-family:var(--mono);font-size:.75rem;color:var(--accent);letter-spacing:.05em;
+  }
+  .leaflet-popup-content dl{display:grid;grid-template-columns:auto 1fr;gap:.15rem .7rem;margin:.5rem 0 0}
+  .leaflet-popup-content dt{color:var(--ink-faint);font-size:.78rem}
+  .leaflet-popup-content dd{margin:0;font-size:.78rem}
+
+  footer{
+    padding:.7rem 1.4rem;border-top:1px solid var(--rule);
+    font-size:.75rem;color:var(--ink-faint);
+  }
+  .aviso{color:var(--p1)}
+  @media (max-width:640px){
+    header{padding:.9rem 1rem .7rem}
+    .bar{padding:.6rem 1rem}
+    .legend{margin-left:0;width:100%}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sevilla, Valle del Cauca</h1>
+  <span class="sub">SICRA · Caracterización de familias afectadas — datos agregados</span>
+  <span class="corte" id="corte">Corte: —</span>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="bar">
+  <label for="fZona">Zona</label>
+  <select id="fZona"><option value="">Todas</option><option value="rural">Rural</option><option value="urbana">Urbana</option></select>
+  <label for="fPrio">Prioridad</label>
+  <select id="fPrio"><option value="">Todas</option><option value="p0">P0 urgente</option><option value="p1">P1 sin techo</option><option value="p2">P2 daño severo</option><option value="p3">P3 leve</option></select>
+  <label for="fLugar">Vereda o barrio</label>
+  <select id="fLugar"><option value="">Todos</option></select>
+  <div class="legend">
+    <span><i class="dot" style="background:#A32017"></i>P0</span>
+    <span><i class="dot" style="background:#C9832A"></i>P1</span>
+    <span><i class="dot" style="background:#3B6A46"></i>P2</span>
+    <span><i class="dot" style="background:#7A857F"></i>P3</span>
+  </div>
+</div>
+
+<div id="mapa"></div>
+
+<footer>
+  Las coordenadas se muestran redondeadas a tres decimales (aprox. 110 m): ubican la
+  afectación sin señalar la vivienda de una familia. Esta vista no contiene nombres,
+  documentos, teléfonos ni fotografías.
+  <span class="aviso" id="aviso"></span>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+/* ---------------------------------------------------------------------------
+   FUENTE DE DATOS
+   Fase 1 (hoy): archivo datos.geojson exportado de KoboToolbox y subido junto
+                 a este index.html.
+   Fase 2:       reemplazar cargarDatos() por un fetch a la vista publica de
+                 Supabase. Es la unica funcion que cambia:
+
+     const r = await fetch(SUPABASE_URL + '/rest/v1/v_mapa_publico?select=*', {
+       headers: { apikey: SUPABASE_ANON_KEY }
+     });
+     return aGeoJSON(await r.json());
+--------------------------------------------------------------------------- */
+
+const COLOR = { p0:'#A32017', p1:'#C9832A', p2:'#3B6A46', p3:'#7A857F' };
+const ETIQUETA_PRIO = {
+  p0:'P0 · riesgo de vida', p1:'P1 · sin techo',
+  p2:'P2 · daño severo',    p3:'P3 · daño leve'
+};
+const ETIQUETA_AFECT = {
+  sin_dano:'Sin daño', leve:'Daño leve', moderado:'Daño moderado',
+  severo:'Daño severo', destruida:'Destruida', riesgo:'Riesgo de colapso'
+};
+
+let TODO = [];
+let capa = null;
+
+// Sevilla, Valle del Cauca. Encuadre que cubre casco urbano y zona veredal.
+const CENTRO_SEVILLA = [4.290, -75.925];
+const mapa = L.map('mapa', { scrollWheelZoom:true }).setView(CENTRO_SEVILLA, 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '&copy; colaboradores de OpenStreetMap'
+}).addTo(mapa);
+L.control.scale({ imperial: false }).addTo(mapa);
+
+async function cargarDatos() {
+  const r = await fetch('datos.geojson', { cache: 'no-store' });
+  if (!r.ok) throw new Error('No se pudo leer datos.geojson');
+  return r.json();
+}
+
+function filtrados() {
+  const z = document.getElementById('fZona').value;
+  const p = document.getElementById('fPrio').value;
+  const l = document.getElementById('fLugar').value;
+  return TODO.filter(f =>
+    (!z || f.properties.zona === z) &&
+    (!p || f.properties.prioridad === p) &&
+    (!l || f.properties.lugar === l)
+  );
+}
+
+function pintarKpis(lista) {
+  const suma = (k) => lista.reduce((a, f) => a + (Number(f.properties[k]) || 0), 0);
+  const kpis = [
+    { n: lista.length,                                                   l: 'Familias',        c:'' },
+    { n: suma('personas_total'),                                         l: 'Personas',        c:'' },
+    { n: suma('menores'),                                                l: 'Menores de edad', c:'' },
+    { n: suma('adultos_mayores'),                                        l: 'Adultos mayores', c:'' },
+    { n: lista.filter(f => f.properties.zona === 'rural').length,        l: 'Rurales',         c:'' },
+    { n: lista.filter(f => f.properties.zona === 'urbana').length,       l: 'Urbanas',         c:'' },
+    { n: lista.filter(f => ['severo','destruida','riesgo']
+                             .includes(f.properties.afectacion)).length, l: 'Daño severo o mayor', c:'' },
+    { n: lista.filter(f => f.properties.prioridad === 'p0').length,      l: 'Casos urgentes',  c:'urgente' },
+    { n: new Set(lista.map(f => f.properties.lugar)).size,               l: 'Veredas y barrios', c:'' }
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k =>
+    `<div class="kpi ${k.c}"><span class="n">${k.n.toLocaleString('es-CO')}</span>
+     <span class="l">${k.l}</span></div>`).join('');
+}
+
+function popup(p) {
+  return `<div><span class="cod">${p.codigo}</span>
+    <dl>
+      <dt>Lugar</dt><dd>${p.lugar || '—'}, ${p.municipio || '—'}</dd>
+      <dt>Zona</dt><dd>${p.zona === 'rural' ? 'Rural' : 'Urbana'}</dd>
+      <dt>Personas</dt><dd>${p.personas_total ?? '—'}${p.menores ? ` (${p.menores} menores)` : ''}</dd>
+      <dt>Vivienda</dt><dd>${ETIQUETA_AFECT[p.afectacion] || 'Por verificar'}</dd>
+      <dt>Prioridad</dt><dd>${ETIQUETA_PRIO[p.prioridad] || '—'}</dd>
+    </dl></div>`;
+}
+
+function pintarMapa(lista) {
+  if (capa) mapa.removeLayer(capa);
+  capa = L.geoJSON({ type:'FeatureCollection', features: lista }, {
+    pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+      radius: 7,
+      fillColor: COLOR[f.properties.prioridad] || COLOR.p3,
+      color: '#ffffff', weight: 1.5, opacity: 1, fillOpacity: .85
+    }),
+    onEachFeature: (f, l) => l.bindPopup(popup(f.properties))
+  }).addTo(mapa);
+  if (lista.length) mapa.fitBounds(capa.getBounds(), { padding: [40, 40], maxZoom: 14 });
+}
+
+function refrescar() {
+  const lista = filtrados();
+  pintarKpis(lista);
+  pintarMapa(lista);
+}
+
+(async function init() {
+  try {
+    const gj = await cargarDatos();
+    TODO = gj.features || [];
+
+    const lugares = [...new Set(TODO.map(f => f.properties.lugar).filter(Boolean))].sort();
+    document.getElementById('fLugar').insertAdjacentHTML('beforeend',
+      lugares.map(l => `<option value="${l}">${l}</option>`).join(''));
+
+    if (gj.corte) document.getElementById('corte').textContent = 'Corte: ' + gj.corte;
+    if (gj.sin_coordenada) {
+      document.getElementById('aviso').textContent =
+        ` · ${gj.sin_coordenada} caso(s) registrados sin coordenada, no aparecen en el mapa.`;
+    }
+
+    ['fZona','fPrio','fLugar'].forEach(id =>
+      document.getElementById(id).addEventListener('change', refrescar));
+    refrescar();
+  } catch (e) {
+    document.getElementById('aviso').textContent =
+      ' · ' + e.message + '. Exporte de KoboToolbox en formato GeoJSON y guarde el archivo como datos.geojson junto a esta página.';
+  }
+})();
+</script>
+</body>
+</html>
