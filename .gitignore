@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Compilados
+dist/
+.angular/
+*.tsbuildinfo
+
+# Ambiente y secretos
+.env
+.env.*
+!.env.example
+src/environments/environment.local.ts
+
+# Datos con informacion personal de familias.
+# NUNCA se versionan: son datos sensibles bajo Ley 1581 de 2012.
+datos/
+*.nominal.csv
+*.nominal.xlsx
+exportes/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+*.log

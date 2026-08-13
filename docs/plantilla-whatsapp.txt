@@ -1,0 +1,58 @@
+========================================================
+PLANTILLA UNICA DE REPORTE POR WHATSAPP
+Copie, pegue y llene. Un mensaje por FAMILIA.
+========================================================
+
+REPORTE SISMO
+1. Municipio:
+2. Zona (rural/urbana):
+3. Vereda o barrio:
+4. Punto de referencia:
+5. Nombre del responsable del hogar:
+6. Cedula:
+7. Celular:
+8. Cuantas personas viven ahi (total):
+9. De esos, cuantos menores de 18:
+10. Cuantos mayores de 60:
+11. Hay embarazadas, personas con discapacidad o enfermos: (si/no, cuantos)
+12. La casa es: propia / arrendada / de un familiar / otra
+13. Estado de la casa: sin dano / leve / grave / inhabitable / se cayo / esta por caerse
+14. Donde estan durmiendo hoy:
+15. Que necesitan YA (48 horas):
+16. (Rural) Cultivos o animales perdidos:
+17. Pertenece a alguna asociacion o comite: (si/no, cual)
+
+Y ENVIE ADEMAS, EN MENSAJES SEPARADOS:
+- La UBICACION EN TIEMPO REAL desde el sitio
+  (clip > Ubicacion > Enviar ubicacion actual)
+- 2 o 3 FOTOS: fachada de la casa y el dano principal.
+  NO fotos de rostros de menores de edad.
+
+========================================================
+LEA ESTO ANTES DE TOMAR LOS DATOS (autorizacion)
+========================================================
+
+"Estamos levantando un censo de familias afectadas por el sismo
+para presentarlo ante las entidades del Estado y ante organismos
+de cooperacion internacional, con el fin de gestionar ayuda.
+Sus datos personales solo se usaran para eso. Usted puede pedir
+en cualquier momento que los corrijamos o los eliminemos.
+Nos autoriza a registrar sus datos?"
+
+Si la familia dice NO: registre solo ubicacion, numero de personas
+y estado de la vivienda. SIN nombres, SIN cedula, SIN fotos.
+
+========================================================
+REGLAS QUE NO SE NEGOCIAN
+========================================================
+
+1. UNA FAMILIA = UN REPORTE. Si en una misma casa viven tres
+   familias, son TRES reportes.
+2. Los ARRENDATARIOS e INQUILINOS SE REGISTRAN. No son dueños
+   pero perdieron su techo y aplican a subsidio de arriendo.
+3. Las familias NO AFILIADAS a ninguna asociacion SE REGISTRAN.
+4. NO prometa ayuda, plazos, mercados ni subsidios. Diga:
+   "esto es un registro para gestionar; no garantiza entrega".
+5. Si ve riesgo de que algo se caiga sobre alguien, escriba
+   URGENTE al inicio del mensaje y llame al coordinador.
+6. No borre los mensajes. El chat es el respaldo del reporte.

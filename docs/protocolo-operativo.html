@@ -1,0 +1,679 @@
+<title>Censo Sísmico Comunitario</title>
+<style>
+  :root {
+    --paper: #EDEFEA;
+    --surface: #F8F9F5;
+    --surface-2: #E4E8DF;
+    --ink: #16201D;
+    --ink-soft: #4E5A55;
+    --ink-faint: #78847E;
+    --rule: #D0D6CA;
+    --accent: #0E5C63;
+    --accent-ink: #0A484E;
+    --accent-soft: #DAE7E5;
+    --p0: #A32017;
+    --p1: #8A5A00;
+    --p2: #3B6A46;
+    --p3: #5A655F;
+    --p0-bg: #F4DEDB;
+    --p1-bg: #F2E6CC;
+    --p2-bg: #DFEBDF;
+    --p3-bg: #E4E8E3;
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+    --measure: 68ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #111511;
+      --surface: #191E1A;
+      --surface-2: #212722;
+      --ink: #E7EBE3;
+      --ink-soft: #A2ADA4;
+      --ink-faint: #7C877E;
+      --rule: #2E352E;
+      --accent: #64C3C7;
+      --accent-ink: #8AD6D9;
+      --accent-soft: #16302F;
+      --p0: #FF9385;
+      --p1: #E7B662;
+      --p2: #92CB8C;
+      --p3: #9AA69C;
+      --p0-bg: #35201C;
+      --p1-bg: #332916;
+      --p2-bg: #1D2C1E;
+      --p3-bg: #232924;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #111511;
+    --surface: #191E1A;
+    --surface-2: #212722;
+    --ink: #E7EBE3;
+    --ink-soft: #A2ADA4;
+    --ink-faint: #7C877E;
+    --rule: #2E352E;
+    --accent: #64C3C7;
+    --accent-ink: #8AD6D9;
+    --accent-soft: #16302F;
+    --p0: #FF9385;
+    --p1: #E7B662;
+    --p2: #92CB8C;
+    --p3: #9AA69C;
+    --p0-bg: #35201C;
+    --p1-bg: #332916;
+    --p2-bg: #1D2C1E;
+    --p3-bg: #232924;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16.5px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 5vw 8rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 60rem; margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+  header.masthead {
+    padding: 4.5rem 0 2.25rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2.3rem, 6vw, 3.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-family: var(--serif);
+    font-size: clamp(1.05rem, 2.2vw, 1.28rem);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    margin: 0;
+  }
+  .constraints { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .constraint {
+    font-family: var(--mono);
+    font-size: 0.73rem;
+    letter-spacing: 0.04em;
+    padding: 0.34rem 0.7rem;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink-soft);
+    border-radius: 2px;
+  }
+  .constraint b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- sections ---------- */
+  section { padding-top: 3.4rem; }
+  h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.5rem, 3.2vw, 1.95rem);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-size: 0.86rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin: 2rem 0 0.6rem;
+  }
+  .kicker {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.55rem;
+  }
+  p { max-width: var(--measure); margin: 0 0 0.95rem; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 650; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--surface-2);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+  a { color: var(--accent-ink); text-underline-offset: 0.18em; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  ul, ol { max-width: var(--measure); padding-left: 1.15rem; margin: 0 0 1rem; }
+  li { margin-bottom: 0.4rem; }
+  li::marker { color: var(--ink-faint); }
+
+  /* ---------- verdict block ---------- */
+  .verdict {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent);
+    padding: 1.4rem 1.5rem;
+    margin: 1.4rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .verdict p { margin: 0; }
+  .verdict .lead {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    line-height: 1.4;
+  }
+
+  .warn {
+    background: var(--p0-bg);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--p0);
+    padding: 1.2rem 1.4rem;
+    margin: 1.4rem 0;
+  }
+  .warn p { margin: 0 0 0.6rem; }
+  .warn p:last-child { margin: 0; }
+  .warn .tag {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--p0);
+    display: block;
+    margin-bottom: 0.45rem;
+  }
+
+  /* ---------- diagram ---------- */
+  .diagram {
+    margin: 1.8rem 0 0.6rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  .diagram svg { display: block; min-width: 520px; width: 100%; height: auto; }
+  /* CSS wins over the SVG presentation attributes, so tokens resolve in both themes */
+  .diagram .d-box { fill: var(--surface); stroke: var(--rule); }
+  .diagram .d-core { fill: var(--accent-soft); stroke: var(--accent); }
+  .diagram .d-line { fill: none; stroke: var(--ink-faint); }
+  .diagram .d-arrow { fill: var(--ink-faint); }
+  .diagram .d-lab { fill: var(--ink); font-family: var(--sans); font-size: 13px; }
+  .diagram .d-title { fill: var(--ink); font-family: var(--serif); font-size: 16px; }
+  .diagram .d-key { fill: var(--ink-soft); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em; }
+  .diagram .d-meta { fill: var(--ink-faint); font-family: var(--mono); letter-spacing: 0.1em; }
+  .caption {
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    max-width: var(--measure);
+    margin-top: 0.4rem;
+  }
+
+  /* ---------- steps ---------- */
+  .steps {
+    list-style: none;
+    padding: 0;
+    margin: 1.6rem 0 0;
+    display: grid;
+    gap: 0;
+    max-width: 100%;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 3.3rem 1fr;
+    gap: 0 1.2rem;
+    padding: 1.35rem 0;
+    border-top: 1px solid var(--rule);
+    margin: 0;
+  }
+  .step:last-child { border-bottom: 1px solid var(--rule); }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    padding-top: 0.28rem;
+  }
+  .step h4 {
+    font-family: var(--sans);
+    font-size: 1.02rem;
+    font-weight: 650;
+    margin: 0 0 0.35rem;
+  }
+  .step p { margin: 0 0 0.5rem; }
+  .step .tool {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.03em;
+  }
+
+  /* ---------- tables ---------- */
+  .tablewrap { overflow-x: auto; margin: 1.3rem 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 34rem;
+    font-size: 0.92rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.68rem 0.9rem 0.68rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-family: var(--sans);
+    font-size: 0.74rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 700;
+    border-bottom: 1px solid var(--ink);
+  }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
+
+  /* ---------- priority chips ---------- */
+  .chip {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 0.16rem 0.5rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .chip.p0 { background: var(--p0-bg); color: var(--p0); }
+  .chip.p1 { background: var(--p1-bg); color: var(--p1); }
+  .chip.p2 { background: var(--p2-bg); color: var(--p2); }
+  .chip.p3 { background: var(--p3-bg); color: var(--p3); }
+
+  /* ---------- blocks grid ---------- */
+  .blocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+  }
+  .block { background: var(--surface); padding: 1.1rem 1.2rem; }
+  .block .n {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .block h4 { font-size: 0.98rem; font-weight: 650; margin: 0.3rem 0 0.35rem; }
+  .block p { font-size: 0.88rem; color: var(--ink-soft); margin: 0; }
+
+  /* ---------- rules list ---------- */
+  .rules { counter-reset: r; list-style: none; padding: 0; margin: 1.4rem 0 0; }
+  .rules li {
+    counter-increment: r;
+    position: relative;
+    padding-left: 2.3rem;
+    margin-bottom: 0.9rem;
+    max-width: var(--measure);
+  }
+  .rules li::before {
+    content: counter(r, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0.12rem;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+  }
+
+  details {
+    border-top: 1px solid var(--rule);
+    padding: 0.9rem 0;
+  }
+  details:last-of-type { border-bottom: 1px solid var(--rule); }
+  summary {
+    cursor: pointer;
+    font-weight: 650;
+    font-size: 0.98rem;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "+";
+    font-family: var(--mono);
+    color: var(--accent);
+    margin-right: 0.7rem;
+  }
+  details[open] summary::before { content: "−"; }
+  details > *:not(summary) { margin-top: 0.75rem; }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--ink);
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    max-width: var(--measure);
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 0 1.15rem 5rem; font-size: 16px; }
+    header.masthead { padding-top: 3rem; }
+    .step { grid-template-columns: 2.4rem 1fr; gap: 0 0.8rem; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">Sevilla, Valle del Cauca · Protocolo operativo</div>
+  <h1>Censo Sísmico Comunitario</h1>
+  <p class="standfirst">Cómo caracterizar familias afectadas en zona rural y urbana, sin ir al terreno, sin internet y sin comprar un solo computador — y quedar con la copia que sirve de instrumento de presión frente a las entidades y la cooperación internacional.</p>
+  <div class="constraints">
+    <span class="constraint"><b>Costo</b> 0 COP</span>
+    <span class="constraint"><b>Captura</b> 100% offline</span>
+    <span class="constraint"><b>Equipo</b> celulares que ya existen</span>
+    <span class="constraint"><b>Entregables</b> 3 reportes</span>
+    <span class="constraint"><b>Arranque</b> 24 horas</span>
+  </div>
+</header>
+
+<section>
+  <p class="kicker">La decisión que define todo lo demás</p>
+  <h2>Una sola base de datos, tres reportes</h2>
+  <p>La petición llega como “tres bases de datos”: vivienda rural, vivienda urbana y el convenio de la federación. Construirlas separadas es el error caro, y hay que decirlo antes de que alguien empiece a llenar planillas.</p>
+
+  <div class="warn">
+    <span class="tag">Riesgo si se hacen tres bases</span>
+    <p>Una misma familia rural afiliada a la federación entra en dos listados. Cuando la Secretaría de Agricultura, la secretaría de vivienda urbana y el convenio comparen cifras, los totales no van a cuadrar. En una negociación de ayuda, un total que no cuadra destruye la credibilidad del censo completo — y el total es exactamente la palanca de presión.</p>
+  </div>
+
+  <div class="verdict">
+    <p class="lead">Se levanta <strong>un registro único de hogares</strong>. Cada registro lleva marcadores: zona (rural / urbana), afiliación y postulación al convenio. Los tres entregables son <strong>filtros</strong> sobre esa base, no bases distintas.</p>
+    <p>Beneficio operativo inmediato: si mañana aparece una cuarta entidad — Gestión del Riesgo, una alcaldía, una ONG internacional — se genera un cuarto reporte en diez minutos, sin volver a levantar información en campo.</p>
+  </div>
+
+  <div class="diagram" role="img" aria-label="Diagrama: la captura única en campo alimenta un registro único de hogares, del cual se derivan por filtro tres reportes: rural con cultivos, urbano y convenio de la federación.">
+    <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+          <path class="d-arrow" d="M0,0 L7.5,3.2 L0,6.4 z"/>
+        </marker>
+      </defs>
+      <g class="d-meta" font-size="11.5">
+        <text x="8" y="20">CAPTURA</text>
+        <text x="252" y="20">BASE ÚNICA</text>
+        <text x="524" y="20">ENTREGABLES</text>
+      </g>
+
+      <g class="d-box">
+        <rect x="8" y="52" width="180" height="46" rx="2"/>
+        <rect x="8" y="112" width="180" height="46" rx="2"/>
+        <rect x="8" y="172" width="180" height="46" rx="2"/>
+        <rect x="8" y="232" width="180" height="46" rx="2"/>
+      </g>
+      <g class="d-lab">
+        <text x="24" y="80">Líder con celular</text>
+        <text x="24" y="140">Reporte por WhatsApp</text>
+        <text x="24" y="200">Llamada telefónica</text>
+        <text x="24" y="260">Formulario en papel</text>
+      </g>
+
+      <g class="d-line" marker-end="url(#ar)">
+        <path d="M188 75 C 228 75, 228 150, 262 150"/>
+        <path d="M188 135 C 228 135, 228 150, 262 150"/>
+        <path d="M188 195 C 228 195, 228 155, 262 152"/>
+        <path d="M188 255 C 228 255, 228 158, 262 154"/>
+      </g>
+
+      <rect class="d-core" x="272" y="94" width="188" height="112" rx="2" stroke-width="1.5"/>
+      <g class="d-title" text-anchor="middle">
+        <text x="366" y="134">Registro único</text>
+        <text x="366" y="156">de hogares</text>
+      </g>
+      <text class="d-key" x="366" y="182" text-anchor="middle">CLAVE: DOCUMENTO + CELULAR</text>
+
+      <g class="d-line" marker-end="url(#ar)">
+        <path d="M460 130 C 496 130, 496 78, 524 78"/>
+        <path d="M460 150 L 524 150"/>
+        <path d="M460 170 C 496 170, 496 222, 524 222"/>
+      </g>
+
+      <g class="d-box">
+        <rect x="534" y="55" width="218" height="46" rx="2"/>
+        <rect x="534" y="127" width="218" height="46" rx="2"/>
+        <rect x="534" y="199" width="218" height="46" rx="2"/>
+      </g>
+      <g class="d-lab">
+        <text x="550" y="76">Rural + cultivos</text>
+        <text x="550" y="148">Urbano</text>
+        <text x="550" y="220">Convenio federación</text>
+      </g>
+      <g class="d-meta" font-size="10">
+        <text x="550" y="92">FILTRO zona = rural</text>
+        <text x="550" y="164">FILTRO zona = urbana</text>
+        <text x="550" y="236">FILTRO postula = sí</text>
+      </g>
+    </svg>
+  </div>
+  <p class="caption">Los tres entregables salen del mismo dato. Ninguna familia se cuenta dos veces, y el total consolidado es defendible ante cualquier entidad.</p>
+</section>
+
+<section>
+  <p class="kicker">Ruta operativa</p>
+  <h2>Del reporte del líder al oficio radicado</h2>
+  <p>Cuatro pasos en secuencia. Cada uno tiene una herramienta gratuita ya definida y un responsable único.</p>
+
+  <ol class="steps">
+    <li class="step">
+      <div class="step-num">PASO 01</div>
+      <div>
+        <h4>Capturar en terreno, sin señal</h4>
+        <p>El líder o voluntario llena el formulario en el celular con la aplicación instalada. Funciona con el avión puesto: guarda encuesta, fotos y coordenada GPS en el teléfono. El GPS del celular <strong>no necesita internet</strong> — usa satélite. Cuando el líder baja al casco urbano y toma wifi, sincroniza todo con un botón.</p>
+        <p>Quien no tenga teléfono con espacio: reporta por WhatsApp con la plantilla fija, o llena la hoja impresa que se digitaliza después. Ningún canal se descarta, todos entran a la misma base.</p>
+        <p class="tool">Herramienta · KoboToolbox + app KoboCollect (Android) · gratuita para uso humanitario</p>
+      </div>
+    </li>
+    <li class="step">
+      <div class="step-num">PASO 02</div>
+      <div>
+        <h4>Consolidar y depurar</h4>
+        <p>La mesa de sistematización revisa lo que entra: descarta duplicados por documento y celular, completa los campos que el reporte de WhatsApp dejó vacíos devolviendo llamada a la familia, y marca cada caso como reportado, contactado o verificado. <strong>Nada se borra</strong>: el duplicado se marca como duplicado y se conserva la trazabilidad.</p>
+        <p class="tool">Herramienta · Hoja de cálculo compartida en la nube · gratuita</p>
+      </div>
+    </li>
+    <li class="step">
+      <div class="step-num">PASO 03</div>
+      <div>
+        <h4>Generar los tres reportes</h4>
+        <p>Se filtra la base y se exporta: rural con anexo de cultivos y animales, urbano, y postulados al convenio. Cada reporte sale con fecha de corte, número de hogares, número de personas desagregadas por sexo y edad, y el listado nominal.</p>
+        <p class="tool">Herramienta · Exportación de la misma hoja · gratuita</p>
+      </div>
+    </li>
+    <li class="step">
+      <div class="step-num">PASO 04</div>
+      <div>
+        <h4>Radicar y quedar con copia</h4>
+        <p>Cada reporte se entrega por escrito con oficio remisorio y se exige <strong>número de radicado</strong>. Ese radicado se anota en la base. Es lo que convierte un listado en un antecedente exigible: permite decir con fecha y número qué se entregó, a quién, cuántas familias contenía y qué respondió la entidad.</p>
+        <p>Destinatarios para Sevilla: consejo municipal de gestión del riesgo y alcaldía en lo urbano y en la emergencia; Secretaría de Agricultura y Pesca del Valle del Cauca en lo productivo rural; consejo departamental de gestión del riesgo y gobernación como segunda instancia. Confirmar el nombre exacto de cada dependencia antes de radicar.</p>
+        <p class="tool">Registro · Bitácora de radicados en la misma hoja</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <p class="kicker">Herramientas</p>
+  <h2>Qué se usa y cuánto cuesta</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Función</th><th>Herramienta</th><th>Offline</th><th>Costo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Formulario de campo con foto y GPS</td><td>KoboToolbox / KoboCollect</td><td>Sí, total</td><td class="num">0</td></tr>
+        <tr><td>Reporte informal de líderes</td><td>WhatsApp con plantilla fija</td><td>Requiere señal</td><td class="num">0</td></tr>
+        <tr><td>Respaldo sin teléfono</td><td>Formulario impreso</td><td>Sí</td><td class="num">Fotocopias</td></tr>
+        <tr><td>Consolidación y depuración</td><td>Hoja de cálculo en la nube</td><td>No</td><td class="num">0</td></tr>
+        <tr><td>Mapa y tablero de cifras</td><td>Tablero gratuito conectado a la hoja</td><td>No</td><td class="num">0</td></tr>
+        <tr><td>Almacenamiento de fotos</td><td>Servidor de KoboToolbox</td><td>Sube al sincronizar</td><td class="num">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>La única inversión real es tiempo de personas y datos móviles para sincronizar. Los equipos son los celulares que los líderes ya cargan en el bolsillo.</p>
+</section>
+
+<section>
+  <p class="kicker">Instrumento</p>
+  <h2>Ocho bloques, un solo formulario</h2>
+  <p>Un solo formulario con bloques que aparecen y desaparecen según las respuestas. Si la zona es rural, se abre el anexo de cultivos y animales; si es urbana, se abre el anexo urbano. El voluntario nunca ve preguntas que no le corresponden.</p>
+
+  <div class="blocks">
+    <div class="block"><span class="n">BLOQUE 0</span><h4>Control</h4><p>Quién registra, por qué canal llegó el dato y autorización de la familia.</p></div>
+    <div class="block"><span class="n">BLOQUE 1</span><h4>Ubicación</h4><p>Municipio, vereda o barrio, punto de referencia, coordenada GPS y hasta tres fotos.</p></div>
+    <div class="block"><span class="n">BLOQUE 2</span><h4>Hogar y personas</h4><p>Responsable, documento, total de personas y desagregado por sexo y edad. Gestantes, discapacidad, adultos mayores, pertenencia étnica, afiliación.</p></div>
+    <div class="block"><span class="n">BLOQUE 3</span><h4>Vivienda y daño</h4><p>Tenencia, materiales, nivel de afectación, habitabilidad, riesgo de colapso, dónde duermen hoy y qué requiere la vivienda.</p></div>
+    <div class="block"><span class="n">BLOQUE 4</span><h4>Anexo rural</h4><p>Predio, título, estado de la vía, cultivos y área afectada, animales perdidos, infraestructura productiva.</p></div>
+    <div class="block"><span class="n">BLOQUE 5</span><h4>Anexo urbano</h4><p>Estrato, tipo de unidad, pérdida del medio de vida o del negocio.</p></div>
+    <div class="block"><span class="n">BLOQUE 6</span><h4>Anexo convenio</h4><p>Afiliación a la federación, postulación al convenio y línea a la que aplica.</p></div>
+    <div class="block"><span class="n">BLOQUE 7</span><h4>Prioridad y necesidad</h4><p>Clasificación P0 a P3, necesidades de las próximas 72 horas y ayuda ya recibida.</p></div>
+    <div class="block"><span class="n">BLOQUE 8</span><h4>Verificación</h4><p>Estado del caso, quién lo verificó y en qué fecha.</p></div>
+  </div>
+
+  <h3>Tres campos que casi siempre se olvidan y aquí son obligatorios</h3>
+  <ul>
+    <li><strong>Tenencia de la vivienda.</strong> Los arrendatarios e inquilinos perdieron el techo aunque no sean dueños. Si no quedan registrados, quedan por fuera de subsidio de arriendo y alojamiento temporal.</li>
+    <li><strong>Cuántos hogares vivían en la misma estructura.</strong> Una casa dañada puede ser tres familias damnificadas. Contar viviendas en lugar de hogares subestima la emergencia.</li>
+    <li><strong>Afiliación, incluida la opción “no afiliada”.</strong> El censo se levanta por los comités y asociaciones, pero la familia que no pertenece a ninguno es la que más riesgo tiene de quedar invisible.</li>
+  </ul>
+</section>
+
+<section>
+  <p class="kicker">Triaje</p>
+  <h2>Cuatro niveles de prioridad</h2>
+  <p>La clasificación se asigna en el momento del registro y determina el orden de verificación y de entrega de ayuda.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Nivel</th><th>Criterio</th><th>Acción</th><th>Plazo</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip p0">P0</span></td><td>Riesgo de vida o estructura a punto de caer sobre personas</td><td>Llamada inmediata al coordinador y reporte al organismo de socorro</td><td class="num">Mismo día</td></tr>
+        <tr><td><span class="chip p1">P1</span></td><td>Sin techo: durmiendo a la intemperie, en carpa o en casa ajena</td><td>Alojamiento temporal, kit de dormir y alimentos</td><td class="num">48 horas</td></tr>
+        <tr><td><span class="chip p2">P2</span></td><td>Vivienda severamente dañada pero la familia tiene dónde estar</td><td>Evaluación estructural y ruta de materiales</td><td class="num">1 semana</td></tr>
+        <tr><td><span class="chip p3">P3</span></td><td>Daño leve o moderado, vivienda habitable</td><td>Registro y seguimiento</td><td class="num">Según capacidad</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Equipo</p>
+  <h2>La mesa de sistematización</h2>
+  <p>Cinco funciones. Una persona puede cubrir dos, pero ninguna función puede quedar sin dueño.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Función</th><th>Responsabilidad</th><th>Personas</th></tr></thead>
+      <tbody>
+        <tr><td>Coordinación</td><td>Decide prioridades, firma los oficios, es el único vocero ante las entidades</td><td class="num">1</td></tr>
+        <tr><td>Custodia de datos</td><td>Administra accesos, responde por la protección de datos personales, autoriza cualquier salida de información</td><td class="num">1</td></tr>
+        <tr><td>Digitación</td><td>Pasa a la base los reportes que llegan por WhatsApp, llamada o papel</td><td class="num">2 a 3</td></tr>
+        <tr><td>Calidad y verificación</td><td>Depura duplicados, devuelve llamada para completar campos, marca el estado del caso</td><td class="num">1</td></tr>
+        <tr><td>Enlace territorial</td><td>Un líder por vereda o barrio, con la plantilla y la app instaladas</td><td class="num">Los que se sumen</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Los enlaces territoriales resuelven la restricción de fondo: no hay capacidad de ir al terreno. La información la levanta quien ya vive allá.</p>
+</section>
+
+<section>
+  <p class="kicker">Marco legal y ético</p>
+  <h2>Protección de datos, sin excepciones</h2>
+  <p>Se están recogiendo datos personales y datos sensibles — salud, discapacidad, pertenencia étnica, condición de víctima — de personas en situación de vulnerabilidad. En Colombia esto se rige por la Ley 1581 de 2012.</p>
+  <ol class="rules">
+    <li><strong>Autorización previa.</strong> Antes de tomar el dato se lee en voz alta la finalidad y se registra si la familia autoriza. Sin autorización se registra el caso agregado — ubicación, número de personas, daño — sin nombres, sin documento y sin fotos.</li>
+    <li><strong>Finalidad limitada.</strong> Los datos se usan para gestionar ayuda ante entidades y cooperación. Para nada más. Ni listas electorales, ni bases de terceros, ni difusión pública.</li>
+    <li><strong>Dos versiones de la base.</strong> La versión nominal se comparte solo con la entidad destinataria, por canal formal y con radicado. Para prensa, video, redes y presentaciones se usa la versión agregada: cifras y mapas, sin nombres ni cédulas.</li>
+    <li><strong>Fotos.</strong> Se fotografía la vivienda y el daño, no las caras. Nunca rostros identificables de menores de edad.</li>
+    <li><strong>Acceso restringido.</strong> La base completa la ven la coordinación, la custodia de datos y calidad. Los digitadores cargan, no exportan. Los enlaces territoriales ven únicamente lo que ellos mismos reportaron.</li>
+    <li><strong>Nada se promete.</strong> Quien registra dice de forma explícita que el censo gestiona pero no garantiza ayuda. Una promesa incumplida en emergencia quiebra la confianza de la comunidad y con ella el censo.</li>
+  </ol>
+</section>
+
+<section>
+  <p class="kicker">Arranque</p>
+  <h2>Las primeras 72 horas</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Momento</th><th>Acción</th><th>Responsable</th></tr></thead>
+      <tbody>
+        <tr><td class="num">Día 0 · tarde</td><td>Crear la cuenta gratuita, cargar el formulario y probarlo con un caso real</td><td>Coordinación</td></tr>
+        <tr><td class="num">Día 0 · noche</td><td>Cargar los casos ya reportados por WhatsApp como registros semilla</td><td>Digitación</td></tr>
+        <tr><td class="num">Día 1 · mañana</td><td>Confirmar con la alcaldía y el consejo de gestión del riesgo el formato oficial de censo vigente, para que el reporte sea recibido sin devoluciones</td><td>Coordinación</td></tr>
+        <tr><td class="num">Día 1 · mañana</td><td>Difundir la plantilla de WhatsApp por todos los grupos de líderes</td><td>Enlace territorial</td></tr>
+        <tr><td class="num">Día 1 · tarde</td><td>Capacitación de 30 minutos por videollamada: instalar la app, llenar un caso de prueba, sincronizar</td><td>Custodia de datos</td></tr>
+        <tr><td class="num">Día 2</td><td>Primer corte de cifras y verificación telefónica de todos los casos P0 y P1</td><td>Calidad</td></tr>
+        <tr><td class="num">Día 3</td><td>Primer reporte radicado ante las entidades, con copia archivada</td><td>Coordinación</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Antes de escalar</p>
+  <h2>Decisiones pendientes</h2>
+  <p>Cinco definiciones que hay que cerrar en las próximas horas. Ninguna bloquea empezar a capturar, todas bloquean la entrega formal.</p>
+
+  <details>
+    <summary>Listado oficial de veredas y corregimientos</summary>
+    <p>El alcance es Sevilla, Valle del Cauca: casco urbano y zona veredal. Falta el listado oficial de veredas y corregimientos del municipio, que se pide a la alcaldía o se toma del esquema de ordenamiento territorial. Mientras llega, el voluntario escribe el nombre como lo dice la comunidad y la mesa lo normaliza al consolidar. Sin listado normalizado, la misma vereda aparece escrita de cuatro formas distintas y las cifras por vereda no se pueden defender.</p>
+  </details>
+  <details>
+    <summary>Formato oficial de censo de damnificados</summary>
+    <p>El municipio tiene un instrumento oficial de evaluación de daños. El formulario propuesto es más amplio, pero debe poder exportarse hacia ese formato o la entidad devolverá el reporte. Es una conversación de una llamada, y se debe hacer antes del primer corte.</p>
+  </details>
+  <details>
+    <summary>Alcance exacto del convenio de la federación</summary>
+    <p>Quién es elegible, qué líneas cubre y si admite familias no afiliadas. Sin ese criterio, la postulación al convenio se llena con juicio de cada voluntario y el listado queda inconsistente.</p>
+  </details>
+  <details>
+    <summary>Titular de los datos</summary>
+    <p>Debe quedar por escrito qué organización es la responsable del tratamiento de los datos personales y firma los oficios. Es un requisito legal y es lo que da respaldo institucional al listado.</p>
+  </details>
+  <details>
+    <summary>Canal de recepción único</summary>
+    <p>Un solo número de WhatsApp para reportes, operado por la mesa. Si los reportes llegan a chats personales dispersos, se pierden y no hay trazabilidad de qué se recibió y cuándo.</p>
+  </details>
+</section>
+
+<footer>
+  <p>Documento operativo interno. No contiene datos personales de familias afectadas: el listado nominal se maneja únicamente en la base restringida y se comparte con las entidades destinatarias por canal formal con número de radicado.</p>
+</footer>
+
+</div>
