@@ -18,6 +18,9 @@ paralelo sin pisarse, con lo que toca cada uno y por donde empezar hoy.
 Y **[docs/ROLES-Y-ESFUERZO.md](docs/ROLES-Y-ESFUERZO.md)**: quien responde por que,
 cuanto cuesta cada frente y en que orden se hace.
 
+Las decisiones de arquitectura ya tomadas viven en **[docs/adr/](docs/adr/)**. Antes de
+reabrir una, lea el registro correspondiente.
+
 ## Principio de arquitectura
 
 **Una sola base de datos, tres reportes.** No existen BD separadas para rural, urbano y
