@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
+import { AlmacenamientoService } from './core/services/almacenamiento.service';
 import { SesionService } from './core/services/sesion.service';
 import { SincronizacionService } from './core/services/sincronizacion.service';
 
@@ -63,10 +64,16 @@ export class App implements OnInit {
 
   readonly sync = inject(SincronizacionService);
   readonly sesion = inject(SesionService);
+  private readonly almacenamiento = inject(AlmacenamientoService);
 
   ngOnInit(): void {
     // Revalidar no bloquea el arranque: si no hay red, la sesion local se conserva.
     void this.sesion.revalidar();
+
+    // Sin esto, el navegador puede desalojar los casos sin sincronizar cuando el
+    // dispositivo se queda sin espacio, en silencio y sin pedir permiso.
+    void this.almacenamiento.asegurarPersistencia();
+    void this.almacenamiento.medirUso();
   }
 
   async salir(): Promise<void> {
