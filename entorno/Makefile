@@ -1,5 +1,5 @@
 # Atajos del entorno local. Ver README.md.
-.PHONY: arriba abajo limpio pruebas psql logs estado
+.PHONY: arriba abajo limpio pruebas e2e psql logs estado
 
 ## arriba   levanta la base, S3, Cognito y siembra datos de prueba
 arriba:
@@ -12,6 +12,10 @@ arriba:
 ## pruebas  corre las verificaciones de control de acceso de SEGURIDAD.md
 pruebas:
 	docker compose exec -T db psql -U postgres -d raiz -f /pruebas/seguridad.sql
+
+## e2e      flujo operativo completo: capturar, sincronizar, remitir, seguir
+e2e:
+	./pruebas/flujo-completo.sh
 
 ## psql     consola contra la base
 psql:
