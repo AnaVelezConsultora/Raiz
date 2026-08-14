@@ -1,0 +1,370 @@
+<title>Raíz ante las Entidades</title>
+<style>
+  :root {
+    --paper: #edefea; --surface: #f8f9f5; --surface-2: #e2e7dd;
+    --ink: #131b19; --ink-soft: #4a5651; --ink-faint: #737f79; --rule: #cdd4c7;
+    --accent: #0e5c63; --accent-ink: #0a484e; --accent-soft: #d7e6e4;
+    --alerta: #a32017; --alerta-bg: #f4dedb;
+    --ok: #35603f; --ok-bg: #dfebdf;
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0f1310; --surface: #171c18; --surface-2: #1f2620;
+      --ink: #e8ece4; --ink-soft: #a4afa6; --ink-faint: #7d887f; --rule: #2c332c;
+      --accent: #64c3c7; --accent-ink: #8ad6d9; --accent-soft: #15302f;
+      --alerta: #ff9385; --alerta-bg: #341f1b;
+      --ok: #92cb8c; --ok-bg: #1c2b1d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0f1310; --surface: #171c18; --surface-2: #1f2620;
+    --ink: #e8ece4; --ink-soft: #a4afa6; --ink-faint: #7d887f; --rule: #2c332c;
+    --accent: #64c3c7; --accent-ink: #8ad6d9; --accent-soft: #15302f;
+    --alerta: #ff9385; --alerta-bg: #341f1b;
+    --ok: #92cb8c; --ok-bg: #1c2b1d;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 17px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .lamina {
+    max-width: 58rem; margin: 0 auto; padding: 4.5rem 6vw;
+    border-bottom: 1px solid var(--rule);
+  }
+  .lamina:last-child { border-bottom: 0; }
+
+  .num {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.18em;
+    color: var(--accent); text-transform: uppercase; display: block;
+    margin-bottom: 0.9rem;
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(2.6rem, 7vw, 4.6rem); line-height: 1.02;
+    letter-spacing: -0.02em; margin: 0 0 1rem; text-wrap: balance;
+  }
+  h2 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(1.7rem, 4.2vw, 2.6rem); line-height: 1.12;
+    letter-spacing: -0.015em; margin: 0 0 1rem; text-wrap: balance;
+  }
+  h3 {
+    font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 700; color: var(--ink-soft); margin: 2rem 0 0.7rem;
+  }
+  p { max-width: 44rem; margin: 0 0 1rem; }
+  .grande { font-size: clamp(1.1rem, 2.4vw, 1.35rem); line-height: 1.5; color: var(--ink-soft); }
+  .destacado {
+    font-family: var(--serif); font-size: clamp(1.25rem, 3vw, 1.7rem);
+    line-height: 1.35; color: var(--ink); max-width: 40rem;
+  }
+  strong { font-weight: 650; }
+
+  ul, ol { max-width: 44rem; padding-left: 1.2rem; margin: 0 0 1rem; }
+  li { margin-bottom: 0.5rem; }
+  li::marker { color: var(--ink-faint); }
+
+  .marco {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent); padding: 1.3rem 1.5rem; margin: 1.5rem 0;
+  }
+  .marco.alerta { border-left-color: var(--alerta); background: var(--alerta-bg); }
+  .marco p:last-child { margin: 0; }
+
+  /* flujo */
+  .flujo { display: grid; gap: 1px; background: var(--rule);
+           border: 1px solid var(--rule); margin: 1.8rem 0; }
+  .paso { background: var(--surface); padding: 1.1rem 1.3rem;
+          display: grid; grid-template-columns: 2.6rem 1fr; gap: 0 1.1rem; }
+  .paso .p { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); padding-top: 0.2rem; }
+  .paso h4 { margin: 0 0 0.25rem; font-size: 1.02rem; font-weight: 650; }
+  .paso p { margin: 0; font-size: 0.94rem; color: var(--ink-soft); }
+
+  /* rejillas */
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+             gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin: 1.6rem 0; }
+  .celda { background: var(--surface); padding: 1.1rem 1.2rem; }
+  .celda h4 { margin: 0 0 0.35rem; font-size: 1rem; font-weight: 650; }
+  .celda p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
+
+  /* peticiones */
+  .peticiones { counter-reset: pet; list-style: none; padding: 0; margin: 1.8rem 0 0; }
+  .peticiones li {
+    counter-increment: pet; position: relative; padding-left: 3.2rem;
+    margin-bottom: 1.4rem; max-width: 44rem;
+  }
+  .peticiones li::before {
+    content: counter(pet); position: absolute; left: 0; top: -0.1rem;
+    font-family: var(--serif); font-size: 1.9rem; color: var(--accent);
+    line-height: 1;
+  }
+  .peticiones strong { display: block; font-size: 1.08rem; margin-bottom: 0.2rem; }
+  .peticiones span { color: var(--ink-soft); font-size: 0.95rem; }
+
+  .tablawrap { overflow-x: auto; margin: 1.4rem 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 30rem; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 0.7rem 1rem 0.7rem 0;
+           border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase;
+       color: var(--ink-faint); font-weight: 700; border-bottom: 1px solid var(--ink); }
+  tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
+
+  .pie {
+    font-size: 0.85rem; color: var(--ink-faint); max-width: 44rem;
+    border-top: 1px solid var(--rule); padding-top: 1.2rem; margin-top: 2rem;
+  }
+  .sello {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  @media print {
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .lamina { page-break-after: always; padding: 1.5cm; border: 0; max-width: none; }
+    .marco, .celda, .paso { background: #fff; }
+    h1 { font-size: 28pt; }
+    h2 { font-size: 18pt; }
+  }
+</style>
+
+<section class="lamina">
+  <span class="sello">Sevilla, Valle del Cauca · Agosto de 2026</span>
+  <h1>Raíz</h1>
+  <p class="destacado">Caracterización y seguimiento de las familias afectadas por el sismo, levantada por la comunidad y entregada a las entidades competentes.</p>
+  <p class="grande" style="margin-top:2rem">Presentación ante autoridades municipales y departamentales.</p>
+</section>
+
+<section class="lamina">
+  <span class="num">01 · La situación</span>
+  <h2>Hay familias afectadas que hoy nadie ha contado</h2>
+  <p class="grande">El sismo dejó daños estructurales en vivienda urbana y rural, pérdida de cultivos, de animales y de infraestructura productiva, y familias durmiendo fuera de sus casas.</p>
+  <p>La zona veredal es extensa y de difícil acceso. Parte de las familias afectadas no han sido visitadas por ninguna entidad, y no porque falte voluntad institucional, sino porque el territorio es grande y la capacidad de desplazamiento es limitada.</p>
+  <div class="marco">
+    <p>Mientras tanto los reportes llegan por WhatsApp, en listas sueltas y en cuadernos. Existen, pero no se pueden usar: no están verificados, no están completos, no tienen formato y no se pueden comparar entre sí.</p>
+  </div>
+</section>
+
+<section class="lamina">
+  <span class="num">02 · El problema</span>
+  <h2>El obstáculo no es la ayuda. Es el dato.</h2>
+  <p class="grande">Ninguna entidad puede asignar recursos sobre información que no puede verificar, y ningún organismo de cooperación gestiona apoyo sobre una lista de nombres en una libreta.</p>
+  <h3>Lo que hoy falta para poder actuar</h3>
+  <ul>
+    <li>Un conteo de familias afectadas que sea uno solo y no varios que se contradicen</li>
+    <li>Composición del hogar desagregada por sexo y edad, que es lo que permite dimensionar y focalizar</li>
+    <li>Ubicación georreferenciada del daño</li>
+    <li>Clasificación del nivel de afectación de cada vivienda</li>
+    <li>Registro de las familias arrendatarias, que perdieron su techo sin ser propietarias</li>
+    <li>Trazabilidad de qué caso se remitió, a quién y qué respuesta obtuvo</li>
+  </ul>
+</section>
+
+<section class="lamina">
+  <span class="num">03 · La propuesta</span>
+  <h2>Que la comunidad levante el dato y las entidades reciban el reporte</h2>
+  <p class="grande">Raíz es un instrumento de caracterización que opera donde no hay conexión a internet, construido y sostenido por un equipo técnico voluntario, sin costo para el municipio ni para el departamento.</p>
+
+  <div class="marco">
+    <p><strong>Raíz no sustituye ni reemplaza el censo oficial de damnificados.</strong> Lo alimenta. Llega a veredas donde la institucionalidad no ha podido llegar todavía y entrega la información en el formato que cada entidad requiere.</p>
+  </div>
+
+  <h3>Quién levanta la información</h3>
+  <p>Líderes comunales, juntas de acción comunal, comités de reforma agraria y asociaciones campesinas que ya viven en cada vereda y en cada barrio. No se desplaza un equipo externo: se organiza y se capacita la red que ya está en el territorio.</p>
+</section>
+
+<section class="lamina">
+  <span class="num">04 · Cómo funciona</span>
+  <h2>De la vereda al radicado</h2>
+
+  <div class="flujo">
+    <div class="paso">
+      <span class="p">01</span>
+      <div>
+        <h4>Captura sin conexión</h4>
+        <p>El líder registra a la familia en su propio celular, aunque no haya señal. Toma fotografías del daño y captura la coordenada por satélite, que no requiere internet. Todo queda guardado en el dispositivo.</p>
+      </div>
+    </div>
+    <div class="paso">
+      <span class="p">02</span>
+      <div>
+        <h4>Sincronización</h4>
+        <p>Cuando el líder vuelve a tener señal, la información se envía al registro central con un solo toque.</p>
+      </div>
+    </div>
+    <div class="paso">
+      <span class="p">03</span>
+      <div>
+        <h4>Depuración y verificación</h4>
+        <p>Un equipo de sistematización detecta registros duplicados por documento, teléfono y cercanía geográfica, completa por vía telefónica lo que quedó incompleto y confirma el daño reportado. Cada caso queda marcado como reportado, contactado o verificado.</p>
+      </div>
+    </div>
+    <div class="paso">
+      <span class="p">04</span>
+      <div>
+        <h4>Priorización</h4>
+        <p>Cuatro niveles: riesgo de vida, familia sin techo, daño severo con alojamiento resuelto, y daño leve. Los casos de riesgo de vida se escalan el mismo día a los organismos de socorro, sin esperar al censo.</p>
+      </div>
+    </div>
+    <div class="paso">
+      <span class="p">05</span>
+      <div>
+        <h4>Remisión y seguimiento</h4>
+        <p>Se entrega a cada entidad el reporte que le corresponde, por escrito y con número de radicado. Ese radicado queda registrado, junto con la respuesta recibida y el tiempo transcurrido.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lamina">
+  <span class="num">05 · Qué se caracteriza</span>
+  <h2>Los datos que las entidades necesitan para decidir</h2>
+
+  <div class="rejilla">
+    <div class="celda">
+      <h4>Ubicación</h4>
+      <p>Municipio, vereda o barrio, punto de referencia y coordenada georreferenciada con precisión medida.</p>
+    </div>
+    <div class="celda">
+      <h4>Hogar</h4>
+      <p>Responsable, documento, contacto, y total de personas desagregadas por sexo y rango de edad.</p>
+    </div>
+    <div class="celda">
+      <h4>Vulnerabilidad</h4>
+      <p>Gestantes, personas con discapacidad, adultos mayores, enfermedad crónica, pertenencia étnica y condición de víctima.</p>
+    </div>
+    <div class="celda">
+      <h4>Vivienda</h4>
+      <p>Tenencia, materiales, nivel de afectación, habitabilidad, riesgo de colapso y dónde está durmiendo la familia hoy.</p>
+    </div>
+    <div class="celda">
+      <h4>Producción rural</h4>
+      <p>Predio, cultivos y área afectada, animales perdidos, infraestructura productiva y estado de la vía de acceso.</p>
+    </div>
+    <div class="celda">
+      <h4>Necesidad inmediata</h4>
+      <p>Requerimientos de las próximas 72 horas y ayudas ya recibidas, para evitar duplicidad en la entrega.</p>
+    </div>
+  </div>
+
+  <div class="marco">
+    <p><strong>Tres datos que suelen omitirse y aquí son obligatorios.</strong> La <strong>tenencia</strong>, porque la familia arrendataria perdió su techo aunque no sea propietaria y aplica a subsidio de arriendo. El <strong>número de hogares en la misma estructura</strong>, porque una vivienda dañada puede corresponder a tres familias damnificadas y contar viviendas subestima la emergencia. Y la <strong>ausencia de afiliación</strong> a cualquier organización, porque esa es la familia con mayor riesgo de quedar invisible.</p>
+  </div>
+</section>
+
+<section class="lamina">
+  <span class="num">06 · Entregables</span>
+  <h2>Un solo registro, un reporte por entidad</h2>
+  <p class="grande">No se levantan bases separadas. Existe un registro único de hogares y cada entidad recibe el subconjunto que le compete, en su formato.</p>
+
+  <div class="tablawrap">
+    <table>
+      <thead>
+        <tr><th>Destinatario</th><th>Contenido del reporte</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Consejo Municipal de Gestión del Riesgo y Alcaldía de Sevilla</td>
+          <td>Familias afectadas urbanas y rurales, nivel de daño, habitabilidad, riesgo de colapso y necesidad de alojamiento.</td>
+        </tr>
+        <tr>
+          <td>Secretaría de Agricultura y Pesca del Valle del Cauca</td>
+          <td>Unidades productivas afectadas: cultivos y área, animales, infraestructura productiva y estado de vías.</td>
+        </tr>
+        <tr>
+          <td>Consejo Departamental de Gestión del Riesgo y Gobernación</td>
+          <td>Consolidado municipal con desagregación por vereda y por nivel de afectación.</td>
+        </tr>
+        <tr>
+          <td>Organismos de cooperación</td>
+          <td>Caracterización lista para formulación de proyectos de reconstrucción de vivienda y reactivación productiva.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>La razón de que el registro sea único es práctica: si se levantaran listados separados, una misma familia aparecería en dos y los totales no coincidirían al compararlos entre entidades. Un total que no cuadra invalida el ejercicio completo.</p>
+</section>
+
+<section class="lamina">
+  <span class="num">07 · Garantías</span>
+  <h2>Tratamiento de datos y límites del ejercicio</h2>
+
+  <h3>Protección de datos personales</h3>
+  <ul>
+    <li>Se solicita autorización expresa a la familia antes de tomar cualquier dato, conforme a la Ley 1581 de 2012. Sin autorización se registra únicamente el caso agregado, sin identidad ni fotografías.</li>
+    <li>El listado con identidad se comparte exclusivamente con la entidad destinataria, por canal formal y con radicado.</li>
+    <li>Toda visualización pública es agregada y la coordenada se degrada a aproximadamente cien metros: ubica la afectación, no la vivienda de una familia.</li>
+    <li>El acceso está restringido por rol y auditado. Cada líder ve únicamente lo que él mismo reportó.</li>
+    <li>Las fotografías registran la vivienda y el daño, nunca rostros de menores de edad.</li>
+  </ul>
+
+  <h3>Límites que el ejercicio declara</h3>
+  <ul>
+    <li><strong>No sustituye</strong> el censo oficial de damnificados ni la evaluación técnica de daños. Es un insumo complementario.</li>
+    <li><strong>No sustituye</strong> a los organismos de socorro. Los casos de riesgo de vida se escalan de inmediato.</li>
+    <li><strong>No promete ayuda.</strong> A cada familia se le informa expresamente que el registro gestiona pero no garantiza entrega.</li>
+    <li><strong>No administra recursos.</strong> El equipo no recauda ni distribuye dinero ni bienes.</li>
+  </ul>
+</section>
+
+<section class="lamina">
+  <span class="num">08 · Estado</span>
+  <h2>En qué punto está hoy</h2>
+  <p class="grande">El instrumento está construido y verificado. La aplicación captura sin conexión, con fotografías y coordenada, y sincroniza al recuperar señal. El modelo de datos, el control de acceso y el registro de remisiones están implementados.</p>
+
+  <div class="marco alerta">
+    <p><strong>El levantamiento masivo aún no ha comenzado.</strong> A la fecha hay casos piloto y la red de líderes está en conformación. Lo que se presenta hoy es el método y el instrumento, no un resultado consolidado. Las cifras se reportarán únicamente cuando existan y estén verificadas.</p>
+  </div>
+
+  <h3>Quién lo sostiene</h3>
+  <p>Un equipo técnico voluntario de ingenieros de sistemas, articulado con líderes comunales, juntas de acción comunal, comités de reforma agraria y asociaciones campesinas. El desarrollo es de código abierto y sin costo para las entidades.</p>
+</section>
+
+<section class="lamina">
+  <span class="num">09 · Solicitud</span>
+  <h2>Qué necesitamos de ustedes</h2>
+  <p class="grande">Ninguna de estas solicitudes implica erogación de recursos.</p>
+
+  <ol class="peticiones">
+    <li>
+      <strong>Reconocimiento del ejercicio como fuente complementaria</strong>
+      <span>Que la información levantada por la red comunitaria sea recibida y considerada como insumo del censo oficial, sin que las familias tengan que ser registradas dos veces.</span>
+    </li>
+    <li>
+      <strong>El formato oficial vigente</strong>
+      <span>Entrega del instrumento oficial de censo de damnificados y de evaluación de daños que la entidad utiliza, para alinear los campos y evitar devoluciones por forma.</span>
+    </li>
+    <li>
+      <strong>Un punto de contacto y un canal de radicación</strong>
+      <span>Una persona responsable y el conducto formal por el cual se radican los reportes periódicos.</span>
+    </li>
+    <li>
+      <strong>Devolución de estado</strong>
+      <span>Que se informe el estado de los casos remitidos. Es lo que permite decirle a una familia si su caso avanzó, y evita que la comunidad pierda confianza en el proceso.</span>
+    </li>
+    <li>
+      <strong>El listado oficial de veredas y corregimientos</strong>
+      <span>Necesario para normalizar los nombres. Sin él, una misma vereda se registra escrita de varias formas y las cifras por territorio dejan de ser comparables.</span>
+    </li>
+  </ol>
+</section>
+
+<section class="lamina">
+  <span class="num">10 · Cierre</span>
+  <h2>Que ninguna familia quede por fuera porque nadie llegó a contarla</h2>
+  <p class="grande">La reconstrucción de una vivienda o de un cultivo empieza mucho antes que la obra: empieza cuando esa familia existe en un registro que alguien puede consultar, verificar y atender.</p>
+  <p>Ese es el aporte que la comunidad puede hacer hoy, y es el que ofrecemos poner a disposición de las entidades.</p>
+
+  <div class="pie">
+    <p><strong>Raíz</strong> · Sistema de caracterización y seguimiento de familias afectadas<br>
+    Equipo técnico voluntario · Sevilla, Valle del Cauca<br>
+    Código abierto y auditable: github.com/anavelezconsultoria/raiz</p>
+  </div>
+</section>
