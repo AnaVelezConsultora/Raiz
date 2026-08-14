@@ -1,0 +1,449 @@
+<title>Raíz en Producción</title>
+<style>
+  /* =========================================================================
+     Deck de producto — Raíz
+     Mundo visual único y deliberado: fondo oscuro para proyección en sala.
+     Todos los colores se pintan explícitamente; no hereda el tema del visor.
+     ========================================================================= */
+  :root {
+    --fondo: #0b0f0d;
+    --fondo-2: #121814;
+    --superficie: #171f1b;
+    --linea: #232d27;
+    --tinta: #eaeee7;
+    --tinta-2: #98a49a;
+    --tinta-3: #6a756d;
+    --acento: #57c3c7;
+    --acento-2: #0e5c63;
+    --alerta: #ff8b7a;
+    --ok: #96cf8f;
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0; background: var(--fondo); color: var(--tinta);
+    font-family: var(--sans); font-size: 17px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .slide {
+    min-height: 100svh; scroll-snap-align: start; scroll-snap-stop: always;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 5rem 6vw; position: relative; overflow: hidden;
+  }
+  .slide > .interior { width: 100%; max-width: 68rem; margin: 0 auto; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--acento); margin: 0 0 1.4rem;
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(3rem, 9vw, 7rem); line-height: 0.95;
+    letter-spacing: -0.03em; margin: 0 0 1.5rem; text-wrap: balance;
+  }
+  h2 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(2rem, 5.5vw, 3.9rem); line-height: 1.05;
+    letter-spacing: -0.022em; margin: 0 0 1.2rem; text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--tinta-3); font-weight: 500;
+    margin: 0 0 0.6rem;
+  }
+  p { max-width: 42rem; margin: 0 0 1rem; color: var(--tinta-2); }
+  p.lead {
+    font-size: clamp(1.1rem, 2.3vw, 1.5rem); line-height: 1.42; color: var(--tinta);
+    max-width: 40rem;
+  }
+  p.grande {
+    font-family: var(--serif); font-size: clamp(1.4rem, 3.4vw, 2.2rem);
+    line-height: 1.28; color: var(--tinta); max-width: 38rem;
+  }
+  strong { color: var(--tinta); font-weight: 650; }
+  em { color: var(--acento); font-style: normal; }
+
+  /* ---------- disposición en dos columnas ---------- */
+  .duo {
+    display: grid; grid-template-columns: 1fr minmax(15rem, 20rem);
+    gap: clamp(2rem, 6vw, 5rem); align-items: center;
+  }
+  .duo.invertido { grid-template-columns: minmax(15rem, 20rem) 1fr; }
+  @media (max-width: 860px) {
+    .duo, .duo.invertido { grid-template-columns: 1fr; gap: 2.2rem; }
+    .duo .marco-tel { max-width: 15rem; margin: 0 auto; }
+  }
+
+  /* ---------- marco de celular ---------- */
+  .marco-tel {
+    background: #050807; border: 1px solid var(--linea); border-radius: 26px;
+    padding: 9px; box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6);
+    position: relative;
+  }
+  .marco-tel::before {
+    content: ""; position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 4px; border-radius: 3px; background: #1c2521; z-index: 2;
+  }
+  .marco-tel img { display: block; width: 100%; border-radius: 18px; }
+
+  .marco-ancho {
+    border: 1px solid var(--linea); border-radius: 8px; overflow: hidden;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55); background: #050807;
+  }
+  .marco-ancho img { display: block; width: 100%; }
+
+  /* ---------- cifras ---------- */
+  .cifras {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 2.2rem 2.5rem; margin: 2.2rem 0 0;
+  }
+  .cifra .n {
+    font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.4rem);
+    line-height: 1; color: var(--acento); display: block;
+    font-variant-numeric: tabular-nums;
+  }
+  .cifra .t {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--tinta-3); margin-top: 0.5rem;
+    display: block; line-height: 1.5;
+  }
+
+  /* ---------- listas ---------- */
+  ul.limpia { list-style: none; padding: 0; margin: 1.6rem 0 0; max-width: 42rem; }
+  ul.limpia li {
+    padding: 0.7rem 0 0.7rem 1.6rem; border-top: 1px solid var(--linea);
+    position: relative; color: var(--tinta-2);
+  }
+  ul.limpia li:last-child { border-bottom: 1px solid var(--linea); }
+  ul.limpia li::before {
+    content: ""; position: absolute; left: 0; top: 1.35rem;
+    width: 6px; height: 6px; background: var(--acento); border-radius: 50%;
+  }
+
+  /* ---------- capas de arquitectura ---------- */
+  .capas { display: grid; gap: 1px; background: var(--linea);
+           border: 1px solid var(--linea); margin: 1.8rem 0 0; }
+  .capa { background: var(--superficie); padding: 0.9rem 1.2rem;
+          display: grid; grid-template-columns: 12rem 1fr; gap: 0.2rem 1.5rem; }
+  .capa .k { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.1em;
+             text-transform: uppercase; color: var(--acento); }
+  .capa .v { color: var(--tinta-2); font-size: 0.95rem; }
+  @media (max-width: 700px) { .capa { grid-template-columns: 1fr; } }
+
+  /* ---------- consola ---------- */
+  .consola {
+    background: #050907; border: 1px solid var(--linea); border-radius: 6px;
+    padding: 1.2rem 1.4rem; font-family: var(--mono); font-size: 0.86rem;
+    line-height: 1.85; overflow-x: auto; margin: 1.8rem 0 0; color: var(--tinta-2);
+  }
+  .consola .ok { color: var(--ok); }
+  .consola .at { color: var(--acento); }
+
+  /* ---------- avisos ---------- */
+  .nota {
+    border-left: 3px solid var(--acento); padding: 0.3rem 0 0.3rem 1.2rem;
+    margin: 1.8rem 0 0; max-width: 42rem; color: var(--tinta-2);
+  }
+  .nota.alerta { border-left-color: var(--alerta); }
+
+  /* ---------- cromo del deck ---------- */
+  .barra {
+    position: fixed; top: 0; left: 0; height: 2px; background: var(--acento);
+    width: 0; z-index: 50; transition: width 0.2s linear;
+  }
+  .contador {
+    position: fixed; right: 1.6rem; bottom: 1.4rem; z-index: 50;
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em;
+    color: var(--tinta-3);
+  }
+  .marca {
+    position: fixed; left: 1.6rem; bottom: 1.4rem; z-index: 50;
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em;
+    color: var(--tinta-3);
+  }
+  @media (max-width: 700px) { .marca { display: none; } }
+
+  .pista-teclado {
+    position: fixed; right: 1.6rem; bottom: 3rem; z-index: 50;
+    font-family: var(--mono); font-size: 0.66rem; color: var(--tinta-3);
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .pista-teclado.visible { opacity: 1; }
+</style>
+
+<div class="barra" id="barra"></div>
+<div class="marca">RAÍZ</div>
+<div class="contador" id="contador">01</div>
+<div class="pista-teclado" id="pista">← → para navegar</div>
+
+<!-- 01 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Sevilla, Valle del Cauca · Agosto 2026</p>
+    <h1>Raíz</h1>
+    <p class="lead">Caracterización de familias afectadas por el sismo, levantada por la comunidad donde no llega ni la señal ni la institucionalidad.</p>
+  </div>
+</section>
+
+<!-- 02 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">El problema</p>
+    <h2>El obstáculo no es la ayuda.<br>Es el dato.</h2>
+    <p class="lead">Una entidad no asigna recursos sobre información que no puede verificar. Un organismo de cooperación no formula un proyecto sobre una lista de nombres en un cuaderno.</p>
+    <p class="lead" style="margin-top:1.4rem">Los reportes existen. Llegan por WhatsApp, en audios y en listas sueltas. No se pueden usar.</p>
+  </div>
+</section>
+
+<!-- 03 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">La restricción</p>
+    <h2>No hay señal.<br>Y no hay quien vaya.</h2>
+    <p class="lead">La zona veredal es extensa y no hay capacidad de desplazar equipos. Quien puede llegar a esas familias es el líder que ya vive allá, con el celular que ya tiene en el bolsillo.</p>
+    <div class="nota">
+      <p style="margin:0"><strong>Esa restricción no es un detalle de contexto: es la especificación del producto.</strong> Cualquier decisión técnica que exija conexión en el momento de capturar está mal, por elegante que sea.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Decisión de arquitectura</p>
+    <h2>Una base de datos.<br>Tres reportes.</h2>
+    <p class="lead">Se pidieron tres bases: vivienda rural, vivienda urbana y convenio de cooperación. Se rechazó.</p>
+    <p>Una familia rural afiliada entraría en dos listados. Al comparar cifras entre entidades, los totales no cuadrarían — y el total consolidado es toda la palanca de negociación que tiene la comunidad.</p>
+    <ul class="limpia">
+      <li>Registro único de <strong>hogares</strong>, no de viviendas. Un inmueble puede alojar tres familias damnificadas.</li>
+      <li>Marcadores de zona, afiliación y postulación. Los reportes por entidad son <em>filtros</em>, no bases distintas.</li>
+      <li>Una cuarta entidad se atiende en diez minutos, sin volver al terreno.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 05 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior duo">
+    <div>
+      <p class="eyebrow">Producto · Captura</p>
+      <h2>Cuatro pasos.<br>Cuatro minutos.</h2>
+      <p class="lead">El voluntario está de pie, con el celular en una mano y la familia esperando. Cada pantalla adicional es abandono.</p>
+      <ul class="limpia">
+        <li><strong>Autorización primero.</strong> El texto de consentimiento se lee en voz alta antes de tomar un solo dato.</li>
+        <li><strong>Coordenada por satélite.</strong> El GPS del celular no necesita internet. Se muestra la precisión en metros mientras el receptor fija satélites.</li>
+        <li><strong>Guardado incremental.</strong> Si la aplicación se cierra en el paso 3, al volver el registro sigue ahí.</li>
+      </ul>
+    </div>
+    <div class="marco-tel"><img src="{{IMG_GPS}}" alt="Pantalla de captura mostrando la coordenada GPS obtenida con precisión de 11 metros"></div>
+  </div>
+</section>
+
+<!-- 06 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior duo invertido">
+    <div class="marco-tel"><img src="{{IMG_HOGAR}}" alt="Rejilla de composición del hogar por sexo y rango de edad"></div>
+    <div>
+      <p class="eyebrow">Producto · El dato que exigen</p>
+      <h2>Desagregado por sexo y edad</h2>
+      <p class="lead">Es el bloque que más se omite en los censos improvisados y el que las entidades y la cooperación exigen para focalizar la ayuda.</p>
+      <p>La aplicación avisa cuando la suma por edades no coincide con el total declarado, pero <strong>no bloquea</strong>: en campo el total suele ser correcto y el desagregado se corrige después por teléfono. Un formulario que bloquea es un formulario que se abandona.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 07 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior duo">
+    <div>
+      <p class="eyebrow">Producto · Triaje</p>
+      <h2>Lo urgente no espera al censo</h2>
+      <p class="lead">Cuatro niveles de prioridad. Los casos de riesgo de vida se escalan el mismo día a los organismos de socorro, sin esperar a que el registro esté completo.</p>
+      <ul class="limpia">
+        <li><strong>Tenencia.</strong> El arrendatario perdió el techo aunque no sea propietario. Sin ese campo queda fuera de subsidio de arriendo.</li>
+        <li><strong>Hogares por estructura.</strong> Contar viviendas subestima la emergencia.</li>
+        <li><strong>Familias no afiliadas.</strong> Las que más riesgo tienen de quedar invisibles.</li>
+      </ul>
+    </div>
+    <div class="marco-tel"><img src="{{IMG_RIESGO}}" alt="Pantalla de vivienda con alerta de riesgo de colapso y prioridad P0"></div>
+  </div>
+</section>
+
+<!-- 08 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior duo invertido">
+    <div class="marco-tel"><img src="{{IMG_OFFLINE}}" alt="La aplicación abierta sin conexión, mostrando el caso guardado y un elemento pendiente de envío"></div>
+    <div>
+      <p class="eyebrow">La prueba</p>
+      <h2>Red apagada.<br>El caso sigue ahí.</h2>
+      <p class="lead">Esta es la única demostración que importa. Con la conexión cortada, la aplicación abre, muestra los casos capturados y permite seguir registrando.</p>
+      <div class="consola">
+        <div>GPS capturado: <span class="at">4.3283783, -75.9029183</span> · precision 11 m</div>
+        <div>caso en la lista: <span class="at">L-B833-001</span> P0 SIN ENVIAR</div>
+        <div>tras recargar la pagina siguen <span class="ok">1 caso(s)</span> en IndexedDB</div>
+        <div><span class="ok">SIN CONEXION:</span> la app abre y muestra 1 caso(s)</div>
+        <div>errores de consola: <span class="ok">ninguno</span></div>
+      </div>
+      <p style="margin-top:1.2rem;font-size:.85rem">Prueba automatizada en navegador real, resolución de celular, con geolocalización.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 09 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior duo">
+    <div>
+      <p class="eyebrow">Producto · Sincronización</p>
+      <h2>El voluntario decide cuándo enviar</h2>
+      <p class="lead">Nunca se sincroniza automáticamente. En zona rural la señal aparece y desaparece, y un envío automático consume los datos del voluntario sin que él lo decida.</p>
+      <ul class="limpia">
+        <li><strong>Casos antes que fotos.</strong> Si la ventana de señal alcanza para una sola cosa, que sea el registro que permite atender a la familia.</li>
+        <li><strong>Riesgo de vida primero</strong> dentro de la cola.</li>
+        <li><strong>Envío secuencial.</strong> Una conexión móvil débil se degrada con peticiones concurrentes y termina fallando todas.</li>
+        <li><strong>Idempotente.</strong> Si el envío llega pero la respuesta se pierde, el reintento actualiza la misma fila. Nunca duplica.</li>
+      </ul>
+    </div>
+    <div class="marco-tel"><img src="{{IMG_LISTA}}" alt="Listado de casos con el contador de pendientes y el botón de sincronizar"></div>
+  </div>
+</section>
+
+<!-- 10 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Evidencia</p>
+    <h2>La cifra que sustenta la petición</h2>
+    <p class="lead" style="margin-bottom:1.6rem">Tablero público con datos agregados y coordenada degradada a cien metros: ubica la afectación, nunca la vivienda de una familia.</p>
+    <div class="marco-ancho"><img src="{{IMG_TABLERO}}" alt="Tablero con contadores de familias, personas y daño severo, y mapa de afectación sobre Sevilla"></div>
+  </div>
+</section>
+
+<!-- 11 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Por dentro</p>
+    <h2>Arquitectura hexagonal</h2>
+    <p class="lead">El dominio no conoce a ningún proveedor. Todo lo externo entra por un puerto.</p>
+    <div class="capas">
+      <div class="capa"><span class="k">Dominio</span><span class="v">Tipos, enumeraciones y puertos. Cero dependencias.</span></div>
+      <div class="capa"><span class="k">Infraestructura</span><span class="v">IndexedDB en el dispositivo. Adaptadores de transporte y autenticación.</span></div>
+      <div class="capa"><span class="k">Servicios</span><span class="v">Cola de sincronización, GPS, compresión de imágenes, sesión.</span></div>
+      <div class="capa"><span class="k">Funcionalidades</span><span class="v">Formulario por pasos, listado, acceso.</span></div>
+    </div>
+    <div class="nota">
+      <p style="margin:0">Tres interfaces —<span class="mono">CasoStoragePort</span>, <span class="mono">SincronizacionPort</span>, <span class="mono">AuthPort</span>— se enlazan en un solo archivo. Cambiar de proveedor de backend es cambiar dos líneas: <strong>la decisión de hoy no hay que acertarla, hay que poder revertirla.</strong></p>
+    </div>
+    <div class="cifras">
+      <div class="cifra"><span class="n">100 kB</span><span class="t">Carga inicial</span></div>
+      <div class="cifra"><span class="n">0</span><span class="t">Tipos any</span></div>
+      <div class="cifra"><span class="n">200 kB</span><span class="t">Por fotografía, comprimida en el dispositivo</span></div>
+      <div class="cifra"><span class="n">0 USD</span><span class="t">Costo de infraestructura hoy</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Datos sensibles</p>
+    <h2>La seguridad no está en la interfaz</h2>
+    <p class="lead">Se manejan nombre, documento, composición del hogar, discapacidad y condición de víctima, de población vulnerable, bajo la Ley 1581 de 2012.</p>
+    <ul class="limpia">
+      <li><strong>El consentimiento se aplica en el borde de salida</strong> hacia el servidor, no en la pantalla. Sin autorización la identidad no viaja, y ninguna ruta de la aplicación puede saltarse esa validación.</li>
+      <li><strong>Acceso por fila en la base de datos.</strong> Cada líder ve únicamente lo que él mismo reportó. Ocultar un botón no protege un dato.</li>
+      <li><strong>Revisión previa al despliegue:</strong> seis fallos de control de acceso corregidos antes de crear el proyecto, incluidas dos vistas que exponían identidad saltándose las políticas.</li>
+      <li><strong>Toda vista pública es agregada</strong> y con la coordenada degradada.</li>
+    </ul>
+    <div class="nota alerta">
+      <p style="margin:0">Un error de control de acceso en una base ya poblada es mucho más caro que antes de crearla. Por eso la auditoría de seguridad se hizo primero.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Estado</p>
+    <h2>Qué está listo y qué falta</h2>
+    <div class="duo" style="align-items:start;margin-top:1.2rem">
+      <div>
+        <h3>Funcionando y verificado</h3>
+        <ul class="limpia" style="margin-top:0.8rem">
+          <li>Captura sin conexión con fotos y coordenada</li>
+          <li>Cola de sincronización idempotente</li>
+          <li>Identidad y control de acceso por rol</li>
+          <li>Modelo de datos, auditoría y vista pública</li>
+        </ul>
+      </div>
+      <div style="max-width:none">
+        <h3>Pendiente</h3>
+        <ul class="limpia" style="margin-top:0.8rem">
+          <li>Prueba en celulares reales de gama baja</li>
+          <li>Servidor y despliegue</li>
+          <li>Tablero y mapa en vivo</li>
+          <li>Remisiones con radicado y seguimiento</li>
+        </ul>
+      </div>
+    </div>
+    <div class="nota alerta">
+      <p style="margin:0"><strong>El levantamiento masivo aún no comienza.</strong> Lo que se presenta es el método y el instrumento, no un resultado. Las cifras se reportarán cuando existan y estén verificadas.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 14 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Cierre</p>
+    <h2>Que ninguna familia quede por fuera<br>porque nadie llegó a contarla</h2>
+    <p class="lead">La reconstrucción de una casa o de un cultivo empieza mucho antes que la obra. Empieza cuando esa familia existe en un registro que alguien puede consultar, verificar y atender.</p>
+    <p style="margin-top:2.5rem;font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;color:var(--tinta-3)">
+      EQUIPO TÉCNICO VOLUNTARIO · CÓDIGO ABIERTO<br>
+      github.com/anavelezconsultoria/raiz
+    </p>
+  </div>
+</section>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const barra = document.getElementById('barra');
+  const contador = document.getElementById('contador');
+  const pista = document.getElementById('pista');
+
+  const actual = () => {
+    const centro = window.scrollY + window.innerHeight / 2;
+    return slides.findIndex((s) => s.offsetTop + s.offsetHeight > centro);
+  };
+
+  const pintar = () => {
+    const i = Math.max(0, actual());
+    contador.textContent = String(i + 1).padStart(2, '0') + ' / ' + slides.length;
+    barra.style.width = ((i + 1) / slides.length) * 100 + '%';
+  };
+
+  const ir = (paso) => {
+    const destino = Math.min(slides.length - 1, Math.max(0, actual() + paso));
+    slides[destino].scrollIntoView();
+  };
+
+  addEventListener('scroll', pintar, { passive: true });
+  addEventListener('resize', pintar);
+  pintar();
+
+  addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); ir(1); }
+    if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); ir(-1); }
+    if (e.key === 'Home') { e.preventDefault(); slides[0].scrollIntoView(); }
+    if (e.key === 'End') { e.preventDefault(); slides[slides.length - 1].scrollIntoView(); }
+  });
+
+  pista.classList.add('visible');
+  setTimeout(() => pista.classList.remove('visible'), 4500);
+</script>
