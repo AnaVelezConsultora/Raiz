@@ -9,16 +9,39 @@
     "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta."
   },
   "etiquetas": [
-    { "nombre": "FrontEnd", "color": "sky" },
-    { "nombre": "BackEnd", "color": "purple" },
-    { "nombre": "Infra", "color": "black" },
-    { "nombre": "sin código", "color": "pink" },
-    { "nombre": "defecto", "color": "red" },
-    { "nombre": "decisión F7", "color": "orange" },
-    { "nombre": "bloqueada", "color": "yellow" },
-    { "nombre": "hecha", "color": "green" }
+    {
+      "nombre": "FrontEnd",
+      "color": "sky"
+    },
+    {
+      "nombre": "BackEnd",
+      "color": "purple"
+    },
+    {
+      "nombre": "Infra",
+      "color": "black"
+    },
+    {
+      "nombre": "sin código",
+      "color": "pink"
+    },
+    {
+      "nombre": "defecto",
+      "color": "red"
+    },
+    {
+      "nombre": "decisión F7",
+      "color": "orange"
+    },
+    {
+      "nombre": "bloqueada",
+      "color": "yellow"
+    },
+    {
+      "nombre": "hecha",
+      "color": "green"
+    }
   ],
-
   "hitos": [
     {
       "numero": 0,
@@ -41,7 +64,10 @@
                 "Coordenada por satélite, que no requiere internet",
                 "Verificado en navegador real con la red apagada"
               ],
-              "etiquetas": ["FrontEnd", "hecha"],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
               "origen": "FRENTES.md F1"
             }
           ]
@@ -61,7 +87,11 @@
                 "La mora se calcula al consultar, así que crece cada día que la entidad no responde",
                 "12 tablas, 5 vistas, 19 políticas y PostGIS, verificado"
               ],
-              "etiquetas": ["BackEnd", "defecto", "hecha"],
+              "etiquetas": [
+                "BackEnd",
+                "defecto",
+                "hecha"
+              ],
               "origen": "hallazgos-revision.md H14"
             }
           ]
@@ -81,7 +111,10 @@
                 "Quien trabaje formulario, listado, tablero o mapa no necesita Docker",
                 "Quien trabaje contra la base levanta el entorno con un comando"
               ],
-              "etiquetas": ["Infra", "hecha"],
+              "etiquetas": [
+                "Infra",
+                "hecha"
+              ],
               "origen": "entorno/README.md, ADR 004"
             },
             {
@@ -95,14 +128,17 @@
                 "Falla al primer error y devuelve código distinto de cero",
                 "Verificada en negativo: detecta la regresión que busca"
               ],
-              "etiquetas": ["Infra", "BackEnd", "hecha"],
+              "etiquetas": [
+                "Infra",
+                "BackEnd",
+                "hecha"
+              ],
               "origen": "entorno/pruebas/seguridad.sql, SEGURIDAD.md"
             }
           ]
         }
       ]
     },
-
     {
       "numero": 1,
       "nombre": "Captura real",
@@ -125,9 +161,15 @@
                 "Sin puerta de enlace NAT: se usan endpoints de VPC",
                 "Se levanta y se destruye completo desde cero"
               ],
-              "etiquetas": ["Infra"],
+              "etiquetas": [
+                "Infra"
+              ],
               "origen": "ADR 002, ADR 004",
-              "desbloquea": "todo el hito 1"
+              "desbloquea": "todo el hito 1",
+              "sugerido": [
+                "pkill2913",
+                "Frank-Apotheosis"
+              ]
             },
             {
               "id": "HU 1.1.2",
@@ -140,8 +182,13 @@
                 "Ningún secreto de AWS en la configuración del repositorio",
                 "Los devs no reciben consola de la nube; quien depure recibe lectura de registros"
               ],
-              "etiquetas": ["Infra"],
-              "origen": "ADR 004"
+              "etiquetas": [
+                "Infra"
+              ],
+              "origen": "ADR 004",
+              "sugerido": [
+                "Inmemorialake"
+              ]
             },
             {
               "id": "HU 1.1.3",
@@ -155,8 +202,14 @@
                 "Nunca se asume que todos los clientes están actualizados: un celular puede correr la versión de la semana pasada durante días",
                 "Los catálogos NO son migraciones"
               ],
-              "etiquetas": ["Infra", "BackEnd"],
-              "origen": "ADR 004"
+              "etiquetas": [
+                "Infra",
+                "BackEnd"
+              ],
+              "origen": "ADR 004",
+              "sugerido": [
+                "EdwarMontano"
+              ]
             },
             {
               "id": "HU 1.1.4",
@@ -169,8 +222,13 @@
                 "Sin puerta de enlace NAT, sin intermediario de conexiones, sin base sin servidor con mínimo de capacidad",
                 "Costo mensual verificado dentro del rango del ADR 002"
               ],
-              "etiquetas": ["Infra"],
-              "origen": "ADR 002"
+              "etiquetas": [
+                "Infra"
+              ],
+              "origen": "ADR 002",
+              "sugerido": [
+                "pkill2913"
+              ]
             }
           ]
         },
@@ -190,9 +248,14 @@
                 "Los errores se clasifican en transporte, sesión y rechazo, según ADR 003",
                 "Acepta cargas de clientes viejos: ningún campo nuevo es obligatorio"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 003, ADR 002",
-              "desbloquea": "casi todo el apartado 1.2 y la HU 1.3.4"
+              "desbloquea": "casi todo el apartado 1.2 y la HU 1.3.4",
+              "sugerido": [
+                "davidf9265"
+              ]
             },
             {
               "id": "HU 1.2.2",
@@ -206,9 +269,14 @@
                 "Se construye con un comando estándar, sin argumentos especiales",
                 "Corre contra el entorno local sin tocar la nube"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 002, ADR 004",
-              "depende_de": "HU 1.2.1"
+              "depende_de": "HU 1.2.1",
+              "sugerido": [
+                "diegof59"
+              ]
             },
             {
               "id": "HU 1.2.3",
@@ -222,9 +290,14 @@
                 "La identidad es local a la transacción: una conexión reutilizada del pool no arrastra al usuario anterior",
                 "Ninguna autorización se decide en código de la aplicación"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 002, entorno/postgres/00-shim-auth.sql",
-              "depende_de": "HU 1.2.2"
+              "depende_de": "HU 1.2.2",
+              "sugerido": [
+                "Clavijo110"
+              ]
             },
             {
               "id": "HU 1.2.4",
@@ -238,9 +311,14 @@
                 "El registrador no puede firmar un caso a nombre de otro",
                 "Prueba automática del reintento tras respuesta perdida"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 003",
-              "depende_de": "HU 1.2.3"
+              "depende_de": "HU 1.2.3",
+              "sugerido": [
+                "oramirez1512-CO"
+              ]
             },
             {
               "id": "HU 1.2.5",
@@ -254,9 +332,14 @@
                 "Sin consentimiento no se emite URL: la regla en el borde, no en la interfaz",
                 "El objeto no queda legible sin firma"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 003",
-              "depende_de": "HU 1.2.3"
+              "depende_de": "HU 1.2.3",
+              "sugerido": [
+                "lDavidSantiago"
+              ]
             },
             {
               "id": "HU 1.2.6",
@@ -270,9 +353,14 @@
                 "Un token vencido devuelve clase sesión, nunca clase rechazo",
                 "Iniciar sesión exige conexión; capturar, no"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 002, ADR 003",
-              "depende_de": "HU 1.2.2"
+              "depende_de": "HU 1.2.2",
+              "sugerido": [
+                "DdeDiegoA"
+              ]
             },
             {
               "id": "HU 1.2.7",
@@ -286,8 +374,14 @@
                 "Es idempotente: los reintentos no duplican",
                 "El disparador existente no se modifica"
               ],
-              "etiquetas": ["Infra", "BackEnd"],
-              "origen": "ADR 002, schema.sql §10.b"
+              "etiquetas": [
+                "Infra",
+                "BackEnd"
+              ],
+              "origen": "ADR 002, schema.sql §10.b",
+              "sugerido": [
+                "EdwarMontano"
+              ]
             }
           ]
         },
@@ -306,8 +400,14 @@
                 "Se vigila el espacio disponible y se avisa ANTES de que falle una captura",
                 "Prueba automática de la solicitud"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H11, ADR 003"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H11, ADR 003",
+              "sugerido": [
+                "HKevinH"
+              ]
             },
             {
               "id": "HU 1.3.2",
@@ -322,8 +422,14 @@
                 "Espera con retroceso entre pasadas",
                 "Pruebas: sesión vencida, red caída a la mitad, reintento idempotente"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H10, ADR 003"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H10, ADR 003",
+              "sugerido": [
+                "skLuan"
+              ]
             },
             {
               "id": "HU 1.3.3",
@@ -336,8 +442,13 @@
                 "El botón dice qué va a mandar y cuánto pesa antes de mandarlo",
                 "Nada de sincronización automática en segundo plano"
               ],
-              "etiquetas": ["FrontEnd"],
-              "origen": "ADR 003"
+              "etiquetas": [
+                "FrontEnd"
+              ],
+              "origen": "ADR 003",
+              "sugerido": [
+                "johan1113"
+              ]
             },
             {
               "id": "HU 1.3.4",
@@ -350,9 +461,14 @@
                 "Ningún componente ni servicio de dominio se modifica",
                 "La aplicación sigue corriendo completa en modo local sin backend"
               ],
-              "etiquetas": ["FrontEnd"],
+              "etiquetas": [
+                "FrontEnd"
+              ],
               "origen": "ADR 002",
-              "depende_de": "HU 1.2.1"
+              "depende_de": "HU 1.2.1",
+              "sugerido": [
+                "Herreran903"
+              ]
             },
             {
               "id": "HU 1.3.5",
@@ -365,8 +481,14 @@
                 "El comportamiento de la cola ante sesión vencida y red caída",
                 "Corren en el pipeline de cada PR"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H13"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H13",
+              "sugerido": [
+                "johan1113"
+              ]
             }
           ]
         },
@@ -386,8 +508,15 @@
                 "Reporte con qué se intentó, qué pasó y qué incomodó",
                 "Los hallazgos entran como historias nuevas"
               ],
-              "etiquetas": ["sin código"],
-              "origen": "FRENTES.md F6, ESTADO.md §5"
+              "etiquetas": [
+                "sin código"
+              ],
+              "origen": "FRENTES.md F6, ESTADO.md §5",
+              "sugerido": [
+                "HKevinH",
+                "skLuan",
+                "DdeDiegoA"
+              ]
             },
             {
               "id": "HU 1.4.2",
@@ -400,9 +529,14 @@
                 "La vista previa funciona sin backend, en modo local",
                 "Se retira al cerrar la propuesta"
               ],
-              "etiquetas": ["Infra"],
+              "etiquetas": [
+                "Infra"
+              ],
               "origen": "ADR 004, FRENTES.md F6",
-              "desbloquea": "HU 1.4.1"
+              "desbloquea": "HU 1.4.1",
+              "sugerido": [
+                "kvinstuard"
+              ]
             }
           ]
         },
@@ -422,7 +556,11 @@
                 "Escoger una de tres: que el teléfono entre en la regla; mantenerlo y CORREGIR la documentación; o pedir autorización específica para el contacto",
                 "La decisión queda escrita en docs/cumplimiento/"
               ],
-              "etiquetas": ["decisión F7", "sin código", "bloqueada"],
+              "etiquetas": [
+                "decisión F7",
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "hallazgos-revision.md H7",
               "depende_de": "que la custodia de datos resuelva",
               "desbloquea": "HU 1.5.2 (alcance)"
@@ -438,9 +576,15 @@
                 "Se aplica ANTES de que haya datos: después es una migración con filas adentro",
                 "Prueba automática que verifica el rechazo"
               ],
-              "etiquetas": ["BackEnd", "defecto"],
+              "etiquetas": [
+                "BackEnd",
+                "defecto"
+              ],
               "origen": "hallazgos-revision.md H9",
-              "depende_de": "HU 1.5.1 sólo para el alcance del teléfono"
+              "depende_de": "HU 1.5.1 sólo para el alcance del teléfono",
+              "sugerido": [
+                "Clavijo110"
+              ]
             },
             {
               "id": "HU 1.5.3",
@@ -453,8 +597,14 @@
                 "Al desmarcar la autorización, las fotografías del caso se descartan",
                 "Prueba automática del escenario: se autoriza, se toman fotos, se retracta"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H8"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H8",
+              "sugerido": [
+                "Herreran903"
+              ]
             }
           ]
         },
@@ -474,7 +624,9 @@
                 "Varios revisores por capacidad: con 15 contribuyentes el cuello de botella es la revisión, no la capacidad",
                 "La plataforma va ANTES de los frentes que dependen de ella"
               ],
-              "etiquetas": ["sin código"],
+              "etiquetas": [
+                "sin código"
+              ],
               "origen": "ADR 004, capacidades del equipo"
             },
             {
@@ -488,14 +640,18 @@
                 "El prefijo de código del tablero estático frente al del esquema",
                 "Política de seguridad de contenido en las cabeceras de despliegue"
               ],
-              "etiquetas": ["sin código"],
-              "origen": "hallazgos-revision.md, desajustes menores"
+              "etiquetas": [
+                "sin código"
+              ],
+              "origen": "hallazgos-revision.md, desajustes menores",
+              "sugerido": [
+                "davidf9265"
+              ]
             }
           ]
         }
       ]
     },
-
     {
       "numero": 2,
       "nombre": "Evidencia",
@@ -517,7 +673,11 @@
                 "Escoger: umbral de anonimato por vereda, retirar código y desglose, o agregar por vereda",
                 "Confirmar si el archivo del tablero estático contiene dato inventado o real"
               ],
-              "etiquetas": ["decisión F7", "sin código", "bloqueada"],
+              "etiquetas": [
+                "decisión F7",
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "hallazgos-revision.md H12",
               "depende_de": "que la custodia de datos resuelva",
               "desbloquea": "HU 2.1.2"
@@ -533,7 +693,9 @@
                 "Funciona con los datos inventados del entorno local",
                 "Las cifras cuadran con el total consolidado: si no cuadran, se pierde la palanca"
               ],
-              "etiquetas": ["FrontEnd"],
+              "etiquetas": [
+                "FrontEnd"
+              ],
               "origen": "FRENTES.md F4",
               "depende_de": "HU 2.1.1"
             },
@@ -548,7 +710,10 @@
                 "Se revoca el permiso del rol anónimo cuando el archivo esté en uso",
                 "Coordenada degradada y sin identidad, verificado en la generación"
               ],
-              "etiquetas": ["Infra", "BackEnd"],
+              "etiquetas": [
+                "Infra",
+                "BackEnd"
+              ],
               "origen": "ADR 002"
             }
           ]
@@ -569,7 +734,10 @@
                 "Nombra explícitamente el paso de borrar las fotografías del almacenamiento y quién lo ejecuta",
                 "Define qué pasa con la base cuando la emergencia se cierre y quién la custodia"
               ],
-              "etiquetas": ["decisión F7", "sin código"],
+              "etiquetas": [
+                "decisión F7",
+                "sin código"
+              ],
               "origen": "cumplimiento/README.md"
             },
             {
@@ -583,7 +751,10 @@
                 "Sólo se borra lo confirmado por el servidor",
                 "Procedimiento escrito para cuando un voluntario se retira o pierde el teléfono"
               ],
-              "etiquetas": ["FrontEnd", "decisión F7"],
+              "etiquetas": [
+                "FrontEnd",
+                "decisión F7"
+              ],
               "origen": "cumplimiento/README.md §3, ADR 003",
               "depende_de": "HU 2.2.1 define el plazo"
             }
@@ -606,7 +777,9 @@
                 "Un cambio que toque exportación nominal, vistas públicas o políticas requiere aprobación de la custodia",
                 "Preproducción NUNCA recibe datos reales: garantía del pipeline, no disciplina de las personas"
               ],
-              "etiquetas": ["Infra"],
+              "etiquetas": [
+                "Infra"
+              ],
               "origen": "ADR 004"
             },
             {
@@ -621,7 +794,9 @@
                 "El asesor de seguridad no reporta advertencias",
                 "Las seis verificaciones de SEGURIDAD.md corren contra el proyecto real"
               ],
-              "etiquetas": ["Infra"],
+              "etiquetas": [
+                "Infra"
+              ],
               "origen": "SEGURIDAD.md punto 6, entorno/pruebas/flujo-completo.sh"
             }
           ]
@@ -641,14 +816,15 @@
                 "Los campos de selección múltiple llegan separados por espacio y se convierten correctamente",
                 "Se puede correr sin supervisión"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "schema.sql §11, ESTADO.md"
             }
           ]
         }
       ]
     },
-
     {
       "numero": 3,
       "nombre": "Exigibilidad",
@@ -669,7 +845,10 @@
                 "Sin radicado la remisión no es exigible: la interfaz lo refleja",
                 "El destinatario cambia según el tipo de afectación, sobre el mismo registro único"
               ],
-              "etiquetas": ["FrontEnd", "BackEnd"],
+              "etiquetas": [
+                "FrontEnd",
+                "BackEnd"
+              ],
               "origen": "FRENTES.md F5"
             },
             {
@@ -683,7 +862,9 @@
                 "Ordenado por entidad con más casos sin responder",
                 "Verificado de punta a punta en la prueba funcional del entorno"
               ],
-              "etiquetas": ["FrontEnd"],
+              "etiquetas": [
+                "FrontEnd"
+              ],
               "origen": "FRENTES.md F5, entorno/pruebas/flujo-completo.sh"
             },
             {
@@ -697,7 +878,10 @@
                 "Al responder, el caso sale de la mora",
                 "Queda el rastro completo: quién remitió, cuándo, qué contestaron"
               ],
-              "etiquetas": ["FrontEnd", "BackEnd"],
+              "etiquetas": [
+                "FrontEnd",
+                "BackEnd"
+              ],
               "origen": "FRENTES.md F5, ESTADO.md §1"
             }
           ]
@@ -718,7 +902,9 @@
                 "Se entrega por enlace de vida corta, no como adjunto abierto",
                 "Incluye la cláusula de finalidad: la entidad pasa a ser responsable y no se autoriza uso secundario"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "README.md, cumplimiento/README.md §7"
             },
             {
@@ -733,7 +919,10 @@
                 "Sigla y nombre completo de la organización internacional de representación",
                 "Formato oficial de censo del consejo municipal de gestión del riesgo"
               ],
-              "etiquetas": ["sin código", "bloqueada"],
+              "etiquetas": [
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "ESTADO.md §4, FRENTES.md",
               "depende_de": "gestión ante las entidades",
               "bloquea": "radicar el primer reporte"
@@ -742,7 +931,6 @@
         }
       ]
     },
-
     {
       "numero": 4,
       "nombre": "Escala",
@@ -762,7 +950,10 @@
                 "Listado oficial obtenido y versionado como catálogo",
                 "Criterio de normalización de nombres definido"
               ],
-              "etiquetas": ["sin código", "bloqueada"],
+              "etiquetas": [
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "ESTADO.md §4",
               "depende_de": "gestión ante la alcaldía",
               "bloquea": "HU 4.1.2 y las cifras por vereda"
@@ -778,7 +969,10 @@
                 "Catálogo de veredas por municipio",
                 "Un municipio nuevo no requiere desplegar código"
               ],
-              "etiquetas": ["BackEnd", "Infra"],
+              "etiquetas": [
+                "BackEnd",
+                "Infra"
+              ],
               "origen": "FRENTES.md F8",
               "depende_de": "HU 4.1.1"
             }
@@ -799,7 +993,10 @@
                 "Restringido a la mesa",
                 "Los cambios quedan auditados"
               ],
-              "etiquetas": ["FrontEnd", "BackEnd"],
+              "etiquetas": [
+                "FrontEnd",
+                "BackEnd"
+              ],
               "origen": "ADR 004"
             }
           ]

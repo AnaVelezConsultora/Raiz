@@ -122,6 +122,13 @@ def descripcion(hu, apartado):
             + "\n".join(f"- {c}" for c in hu["criterios"])
         )
 
+    if hu.get("sugerido"):
+        gente = ", ".join(f"@{p}" for p in hu["sugerido"])
+        partes.append(
+            f"**Responsable sugerido:** {gente} _(handle de GitHub)_\n"
+            "Es un punto de partida, no una asignación cerrada: se confirma en el grupo."
+        )
+
     referencias = [
         (etiqueta, hu[campo])
         for campo, etiqueta in (
@@ -201,27 +208,35 @@ def main():
 
     # --- historias -----------------------------------------------------------
     print("\nHistorias")
-    ya_estan = set()
+    ya_estan = {}
     for id_lista in listas.values():
-        for tarjeta in consultar(f"/lists/{id_lista}/cards", fields="name"):
-            ya_estan.add(tarjeta["name"].split(" · ")[0])
+        for tarjeta in consultar(f"/lists/{id_lista}/cards", fields="name,desc"):
+            ya_estan[tarjeta["name"].split(" · ")[0]] = tarjeta
 
-    creadas = omitidas = 0
+    creadas = actualizadas = iguales = 0
     for hito, apartado, hu in sorted(todas, key=lambda t: orden(t[2]["id"])):
+        texto = descripcion(hu, apartado)
+
         if hu["id"] in ya_estan:
-            omitidas += 1
+            existente = ya_estan[hu["id"]]
+            if existente.get("desc") == texto:
+                iguales += 1
+            else:
+                pedir("PUT", f"/cards/{existente['id']}", desc=texto)
+                actualizadas += 1
+                print(f"  ~ {hu['id']} · descripción actualizada")
             continue
 
         pedir("POST", "/cards",
               idList=listas[nombre_lista(hito)],
               name=f"{hu['id']} · {hu['titulo']}",
-              desc=descripcion(hu, apartado),
+              desc=texto,
               idLabels=",".join(etiquetas[e] for e in hu["etiquetas"]),
               pos=orden(hu["id"]))
         creadas += 1
         print(f"  + {hu['id']} · {hu['titulo'][:58]}")
 
-    print(f"\nListo. Creadas: {creadas}. Ya existian: {omitidas}.")
+    print(f"\nListo. Creadas: {creadas}. Actualizadas: {actualizadas}. Sin cambios: {iguales}.")
     if not SIMULAR:
         print(f"https://trello.com/b/{tablero.get('shortLink', id_tablero)}")
         print(
