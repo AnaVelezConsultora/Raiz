@@ -333,8 +333,8 @@
       <ul class="limpia">
         <li><strong>Casos antes que fotos.</strong> Si la ventana de señal alcanza para una sola cosa, que sea el registro que permite atender a la familia.</li>
         <li><strong>Riesgo de vida primero</strong> dentro de la cola.</li>
-        <li><strong>Envío secuencial.</strong> Una conexión móvil débil se degrada con peticiones concurrentes y termina fallando todas.</li>
-        <li><strong>Idempotente.</strong> Si el envío llega pero la respuesta se pierde, el reintento actualiza la misma fila. Nunca duplica.</li>
+        <li><strong>Uno a la vez.</strong> Enviar todo al tiempo tumba una conexión móvil débil y termina fallando el envío completo.</li>
+        <li><strong>Nunca duplica.</strong> Si el envío llega al servidor pero la respuesta se pierde por un corte, al reintentar se actualiza el mismo registro en vez de crear otro.</li>
       </ul>
     </div>
     <div class="marco-tel"><img src="{{IMG_LISTA}}" alt="Listado de casos con el contador de pendientes y el botón de sincronizar"></div>
@@ -354,24 +354,26 @@
 <!-- 11 --------------------------------------------------------------------->
 <section class="slide">
   <div class="interior">
-    <p class="eyebrow">Por dentro</p>
-    <h2>Arquitectura hexagonal</h2>
-    <p class="lead">El dominio no conoce a ningún proveedor. Todo lo externo entra por un puerto.</p>
-    <div class="capas">
-      <div class="capa"><span class="k">Dominio</span><span class="v">Tipos, enumeraciones y puertos. Cero dependencias.</span></div>
-      <div class="capa"><span class="k">Infraestructura</span><span class="v">IndexedDB en el dispositivo. Adaptadores de transporte y autenticación.</span></div>
-      <div class="capa"><span class="k">Servicios</span><span class="v">Cola de sincronización, GPS, compresión de imágenes, sesión.</span></div>
-      <div class="capa"><span class="k">Funcionalidades</span><span class="v">Formulario por pasos, listado, acceso.</span></div>
-    </div>
-    <div class="nota">
-      <p style="margin:0">Tres interfaces —<span class="mono">CasoStoragePort</span>, <span class="mono">SincronizacionPort</span>, <span class="mono">AuthPort</span>— se enlazan en un solo archivo. Cambiar de proveedor de backend es cambiar dos líneas: <strong>la decisión de hoy no hay que acertarla, hay que poder revertirla.</strong></p>
-    </div>
+    <p class="eyebrow">Independencia</p>
+    <h2>El sistema no queda<br>amarrado a nadie</h2>
+    <p class="lead">Ni a una empresa, ni a un proveedor, ni a quienes lo construimos. Está diseñado para poder cambiar de manos sin perder un dato.</p>
+    <ul class="limpia">
+      <li><strong>Los datos son exportables en formatos estándar.</strong> No quedan secuestrados en el formato propietario de nadie.</li>
+      <li><strong>Si mañana hay que cambiar de proveedor</strong> o llevarlo a servidores propios, se hace sin rehacer la herramienta y sin interrumpir la captura en terreno.</li>
+      <li><strong>El código es abierto y auditable.</strong> Cualquiera puede revisarlo, y otro municipio puede usarlo sin pedir permiso ni pagar licencia.</li>
+      <li><strong>Si este equipo desaparece</strong>, la herramienta y la información siguen siendo utilizables por quien la comunidad designe.</li>
+    </ul>
     <div class="cifras">
-      <div class="cifra"><span class="n">100 kB</span><span class="t">Carga inicial</span></div>
-      <div class="cifra"><span class="n">0</span><span class="t">Tipos any</span></div>
-      <div class="cifra"><span class="n">200 kB</span><span class="t">Por fotografía, comprimida en el dispositivo</span></div>
+      <div class="cifra"><span class="n">0</span><span class="t">Señal necesaria para capturar</span></div>
+      <div class="cifra"><span class="n">4 min</span><span class="t">Por familia registrada</span></div>
       <div class="cifra"><span class="n">0 USD</span><span class="t">Costo de infraestructura hoy</span></div>
+      <div class="cifra"><span class="n">0</span><span class="t">Equipos por comprar</span></div>
     </div>
+    <p style="margin-top:1.6rem;font-size:.82rem;color:var(--tinta-3);font-family:var(--mono)">
+      Para quien pregunte por el detalle técnico: arquitectura hexagonal, el dominio no
+      conoce a ningún proveedor y todo lo externo entra por interfaces enlazadas en un
+      solo archivo de composición.
+    </p>
   </div>
 </section>
 
@@ -401,7 +403,7 @@
     <p class="lead">Se manejan nombre, documento, composición del hogar, discapacidad y condición de víctima, de población vulnerable, bajo la Ley 1581 de 2012.</p>
     <ul class="limpia">
       <li><strong>El consentimiento se aplica en el borde de salida</strong> hacia el servidor, no en la pantalla. Sin autorización la identidad no viaja, y ninguna ruta de la aplicación puede saltarse esa validación.</li>
-      <li><strong>Acceso por fila en la base de datos.</strong> Cada líder ve únicamente lo que él mismo reportó. Ocultar un botón no protege un dato.</li>
+      <li><strong>Quien controla el acceso es la base de datos, no la pantalla.</strong> Cada líder ve únicamente lo que él mismo reportó. Ocultar un botón no protege un dato.</li>
       <li><strong>Revisión previa al despliegue:</strong> seis fallos de control de acceso corregidos antes de crear el proyecto, incluidas dos vistas que exponían identidad saltándose las políticas.</li>
       <li><strong>Toda vista pública es agregada</strong> y con la coordenada degradada.</li>
     </ul>
@@ -421,7 +423,7 @@
         <h3>Funcionando y verificado</h3>
         <ul class="limpia" style="margin-top:0.8rem">
           <li>Captura sin conexión con fotos y coordenada</li>
-          <li>Cola de sincronización idempotente</li>
+          <li>Envío que nunca duplica registros</li>
           <li>Identidad y control de acceso por rol</li>
           <li>Modelo de datos, auditoría y vista pública</li>
         </ul>
