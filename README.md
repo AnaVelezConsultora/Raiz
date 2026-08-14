@@ -41,10 +41,16 @@ arriendo). Las familias no afiliadas a ninguna organizacion se registran.
 
 ```
 raiz/
-  frontend/          Angular 21 PWA. Captura offline, mapa y tablero.
-  supabase/          Esquema PostgreSQL, politicas RLS, vistas y carga desde Kobo.
-  docs/              Protocolo operativo, plantillas de campo, formulario XLSForm.
+  frontend/          Angular 21 PWA. Captura offline con fotos y GPS.
+  supabase/          Esquema PostgreSQL, politicas RLS, vistas y revision de seguridad.
+  entorno/           Entorno local reproducible: PostgreSQL, almacenamiento y pruebas.
+  tablero/           Tablero publico estatico con mapa de afectacion.
+  docs/              Estado, frentes, roles, gobernanza, ADR, backlog y protocolo.
 ```
+
+Para levantarlo en su maquina: **[docs/DESARROLLO.md](docs/DESARROLLO.md)**.
+
+`main` esta protegida: todo cambio entra por propuesta de cambio con una aprobacion.
 
 ## Estado por fases
 

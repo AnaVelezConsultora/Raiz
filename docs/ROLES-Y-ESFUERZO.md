@@ -5,6 +5,9 @@ Corte: 13 de agosto de 2026.
 Este documento responde tres preguntas: quién responde por qué, cuánto cuesta cada
 frente y en qué orden se hace.
 
+Es el marco. El detalle operativo —las historias de usuario dentro de cada hito— vive en
+[backlog/](backlog/), y usa estos mismos hitos.
+
 No confundir con los **roles de usuario dentro de la aplicación** (coordinador,
 custodio, validador, digitador, líder), que son permisos de acceso a datos y están
 descritos en [FRENTES.md](FRENTES.md). Aquí se habla de roles del equipo de trabajo.
@@ -70,8 +73,13 @@ de eso es inventada.
 | F7 Datos y cumplimiento | 5 | En curso | — |
 | F8 Multi-municipio | 8 | Pendiente | Hito 1 cerrado |
 | F9 Despliegue e integración continua | 3 | Pendiente | — |
+| **Defectos** de la revisión independiente | 5 | H14 y H11 corregidos; quedan **3** | — |
 
-**Terminado: 21 puntos. Pendiente: 52 puntos.**
+**Terminado: 23 puntos. Pendiente: 52 puntos.**
+
+Los defectos no se estiman como frente sino aparte, porque no agregan capacidad: hacen
+que lo que ya existe cumpla lo que la documentación afirma. Aun así se cuentan, porque
+consumen tiempo real del equipo y omitirlos infla la velocidad aparente.
 
 ### Escenarios de calendario
 
@@ -129,16 +137,24 @@ Otro municipio puede usar Raíz sin tocar código.
 | Responsabilidad | Estado |
 |---|---|
 | Coordinación técnica | Asignada |
+| **Responsable del tratamiento de datos** | **Sin dueño. Bloquea la presentación ante entidades** |
 | Custodio de datos | **Sin dueño** |
 | Enlace con la mesa | **Sin dueño** |
-| Dueño de F3 | **Sin dueño** — bloquea el Hito 1 |
+| Dueño de F3 | En conversación |
 | Dueño de F4 | **Sin dueño** |
-| Prueba en campo (F6) | **Sin dueño** — es lo más urgente |
+| Prueba en campo (F6) | **Sin dueño** — es lo más urgente en lo técnico |
 | Dueño de F7 | Asignado. Borrador de política, autorización, retención y supresión en curso |
+| Administración del repositorio | Asignada |
 
-Las dos primeras no son técnicas y son las que más rápido se vuelven un problema si
-nadie las toma: sin custodio de datos no hay quien autorice una exportación, y sin
-enlace con la mesa el equipo construye lo que cree, no lo que se necesita.
+**La primera es la más urgente y no es técnica.** La Ley 1581 exige un responsable del
+tratamiento identificable. La figura jurídica del proceso puede estar en definición; el
+responsable del tratamiento, no, porque es lo que le da amparo legal a estar recogiendo
+nombre, documento y condición de vulnerabilidad de familias damnificadas. Necesita una
+persona natural o una organización con personería que lo asuma mientras tanto.
+
+Custodio de datos y enlace con la mesa tampoco son técnicas y se vuelven un problema
+rápido: sin custodio no hay quien autorice una exportación, y sin enlace el equipo
+construye lo que cree, no lo que se necesita.
 
 ---
 

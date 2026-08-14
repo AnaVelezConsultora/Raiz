@@ -73,6 +73,15 @@ cambios y vista pública anonimizada con la coordenada redondeada a tres decimal
 KoboToolbox, plantilla fija de reporte por WhatsApp y tablero estático con mapa. Eso
 permite empezar a capturar hoy mientras la aplicación propia madura.
 
+**Entorno local reproducible.** `entorno/` levanta PostgreSQL con el esquema completo,
+almacenamiento de archivos y las pruebas de acceso ejecutables. Sirve para dos cosas:
+verificar el esquema sin depender de ningún proveedor, y comprobar que las políticas de
+acceso hacen lo que dicen. Efecto colateral valioso: **el esquema corre sobre PostgreSQL
+puro**, así que el proyecto no está atado a ningún servicio en particular.
+
+**Rama principal protegida.** Todo cambio entra por propuesta con una aprobación.
+Verificado: un envío directo a `main` es rechazado por el servidor.
+
 ### Evidencia
 
 Prueba de punta a punta en navegador real, resolución de celular, con geolocalización:
@@ -96,6 +105,24 @@ escritorio emulando un celular. Un teléfono de gama baja con poca memoria, pant
 bajo el sol y un pulgar de verdad es otra cosa. Ese es el frente F6 y es el más
 urgente.
 
+### Revisión independiente
+
+Un integrante del equipo revisó la documentación contra el código y encontró ocho
+defectos, todos válidos. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
+[SEGURIDAD.md](../supabase/SEGURIDAD.md).
+
+| | Hallazgo | Estado |
+|---|---|---|
+| H14 | El esquema no se podía crear: columna generada sobre una expresión no inmutable | **Corregido** |
+| H11 | El navegador podía desalojar los casos sin sincronizar, en silencio | **Corregido** |
+| H7 | El teléfono viajaba sin autorización de la familia | Pendiente |
+| H9 | La regla de consentimiento no existe en la base, solo en el cliente | Pendiente |
+| H10 | La cola no consulta si la sesión sigue vigente | Pendiente |
+| H8, H12, H13 | Imprecisiones de documentación y ausencia de pruebas automáticas | Pendiente |
+
+H14 era bloqueante: el esquema completo habría fallado al ejecutarse el día que alguien
+creara la base.
+
 ---
 
 ## 4. Qué falta
@@ -111,7 +138,21 @@ urgente.
 | F7 Datos y cumplimiento | Abierto | — |
 | F8 Multi-municipio | Abierto | — |
 
-Detalle de cada frente en [FRENTES.md](FRENTES.md).
+Detalle de cada frente en [FRENTES.md](FRENTES.md). Roles, estimación e hitos en
+[ROLES-Y-ESFUERZO.md](ROLES-Y-ESFUERZO.md). Las historias de usuario dentro de cada
+hito, en [backlog/](backlog/).
+
+### Decisión abierta
+
+[ADR 002](adr/002-infraestructura-en-aws.md) propone mover la infraestructura a AWS y
+está en estado **Propuesta**. No se apoya en carga ni en límites alcanzados —el cálculo
+del [ADR 001](adr/001-supabase-frente-a-nube-propia.md) sigue vigente— sino en que se
+habría cumplido su sexta condición: que exista capacidad real de *operar*
+infraestructura.
+
+Esa es una afirmación sobre personas, no sobre código. Antes de aceptarla hay que
+responder tres cosas por escrito: quién opera y qué pasa cuando se retire, el costo
+mensual con los servicios concretos, y si retrasa el Hito 1.
 
 ### Los dos bloqueos reales
 
