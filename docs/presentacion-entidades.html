@@ -78,7 +78,20 @@
   .marco.alerta { border-left-color: var(--alerta); background: var(--alerta-bg); }
   .marco p:last-child { margin: 0; }
 
-  /* flujo */
+  .reloj {
+    display: grid; gap: 1px; background: var(--rule);
+    border: 1px solid var(--rule); margin: 1.8rem 0;
+  }
+  .momento { background: var(--surface); padding: 1.1rem 1.3rem; }
+  .momento .t {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); display: block;
+    margin-bottom: 0.35rem;
+  }
+  .momento p { margin: 0; font-size: 0.96rem; }
+  .momento.pierde { background: var(--alerta-bg); }
+  .momento.pierde .t { color: var(--alerta); }
+
   .flujo { display: grid; gap: 1px; background: var(--rule);
            border: 1px solid var(--rule); margin: 1.8rem 0; }
   .paso { background: var(--surface); padding: 1.1rem 1.3rem;
@@ -87,26 +100,28 @@
   .paso h4 { margin: 0 0 0.25rem; font-size: 1.02rem; font-weight: 650; }
   .paso p { margin: 0; font-size: 0.94rem; color: var(--ink-soft); }
 
-  /* rejillas */
   .rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
              gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin: 1.6rem 0; }
   .celda { background: var(--surface); padding: 1.1rem 1.2rem; }
   .celda h4 { margin: 0 0 0.35rem; font-size: 1rem; font-weight: 650; }
   .celda p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
+  .celda .cero {
+    font-family: var(--serif); font-size: 2rem; color: var(--accent);
+    line-height: 1; display: block; margin-bottom: 0.4rem;
+  }
 
-  /* peticiones */
-  .peticiones { counter-reset: pet; list-style: none; padding: 0; margin: 1.8rem 0 0; }
+  .peticiones { counter-reset: pet; list-style: none; padding: 0; margin: 1.5rem 0 0; }
   .peticiones li {
     counter-increment: pet; position: relative; padding-left: 3.2rem;
-    margin-bottom: 1.4rem; max-width: 44rem;
+    margin-bottom: 1.3rem; max-width: 44rem;
   }
   .peticiones li::before {
     content: counter(pet); position: absolute; left: 0; top: -0.1rem;
     font-family: var(--serif); font-size: 1.9rem; color: var(--accent);
     line-height: 1;
   }
-  .peticiones strong { display: block; font-size: 1.08rem; margin-bottom: 0.2rem; }
-  .peticiones span { color: var(--ink-soft); font-size: 0.95rem; }
+  .peticiones strong { display: block; font-size: 1.06rem; margin-bottom: 0.2rem; }
+  .peticiones span { color: var(--ink-soft); font-size: 0.94rem; }
 
   .tablawrap { overflow-x: auto; margin: 1.4rem 0; }
   table { border-collapse: collapse; width: 100%; min-width: 30rem; font-size: 0.95rem; }
@@ -124,11 +139,14 @@
     font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--ink-faint);
   }
+  .vacio {
+    border-bottom: 2px dotted var(--alerta); padding: 0 2.5rem;
+  }
 
   @media print {
     body { background: #fff; color: #000; font-size: 11pt; }
     .lamina { page-break-after: always; padding: 1.5cm; border: 0; max-width: none; }
-    .marco, .celda, .paso { background: #fff; }
+    .marco, .celda, .paso, .momento { background: #fff; }
     h1 { font-size: 28pt; }
     h2 { font-size: 18pt; }
   }
@@ -137,258 +155,272 @@
 <section class="lamina">
   <span class="sello">Sevilla, Valle del Cauca · Agosto de 2026</span>
   <h1>Raíz</h1>
-  <p class="destacado">Caracterización y seguimiento de las familias afectadas por el sismo, levantada por la comunidad y entregada a las entidades competentes.</p>
-  <p class="grande" style="margin-top:2rem">Presentación ante autoridades municipales y departamentales.</p>
+  <p class="destacado">Caracterización de las familias afectadas por el sismo, levantada por la red comunitaria en los territorios donde no llega la señal ni la atención.</p>
+  <p class="grande" style="margin-top:2rem">Presentación ante autoridades, organizaciones sociales, asociaciones campesinas y organismos de cooperación.</p>
 </section>
 
 <section class="lamina">
-  <span class="num">01 · La situación</span>
-  <h2>Hay familias afectadas que hoy nadie ha contado</h2>
-  <p class="grande">El sismo dejó daños estructurales en vivienda urbana y rural, pérdida de cultivos, de animales y de infraestructura productiva, y familias durmiendo fuera de sus casas.</p>
-  <p>La zona veredal es extensa y de difícil acceso. Parte de las familias afectadas no han sido visitadas por ninguna entidad, y no porque falte voluntad institucional, sino porque el territorio es grande y la capacidad de desplazamiento es limitada.</p>
-  <div class="marco">
-    <p>Mientras tanto los reportes llegan por WhatsApp, en listas sueltas y en cuadernos. Existen, pero no se pueden usar: no están verificados, no están completos, no tienen formato y no se pueden comparar entre sí.</p>
+  <span class="num">01 · Urgencia</span>
+  <h2>Cada día que pasa se pierde información que ya no se recupera</h2>
+  <p class="grande">No es una herramienta que convenga tener. Es una herramienta que hay que aplicar ahora, porque el objeto de la documentación se está desvaneciendo mientras se decide.</p>
+
+  <div class="reloj">
+    <div class="momento">
+      <span class="t">Hoy</span>
+      <p>La familia está en el sitio del daño. Se puede documentar la vivienda, medir la coordenada, fotografiar la grieta y registrar quién vivía ahí. <strong>Es un caso con evidencia.</strong></p>
+    </div>
+    <div class="momento pierde">
+      <span class="t">En dos semanas</span>
+      <p>La familia se dispersó donde parientes, a veces en otro municipio. Los escombros se removieron. El techo se reparó provisionalmente. <strong>Queda un testimonio, no una evidencia.</strong></p>
+    </div>
+    <div class="momento pierde">
+      <span class="t">Cuando lleguen los recursos</span>
+      <p>Las entidades y la cooperación formulan proyectos de reconstrucción y preguntan cuántas familias y dónde. <strong>La asignación se hace sobre la información que exista en ese momento</strong>, no sobre la que se levante después.</p>
+    </div>
   </div>
+
+  <div class="marco alerta">
+    <p><strong>Y hay un costo que crece en silencio:</strong> mientras no exista un registro único, se consolidan listados paralelos en distintas organizaciones y puntos de atención. Cuando se comparen, no van a cuadrar, y un total que no cuadra invalida todo el ejercicio ante quien decide.</p>
+  </div>
+</section>
+
+<section class="lamina">
+  <span class="num">02 · La brecha</span>
+  <h2>Hay familias que hoy nadie ha contado</h2>
+  <p class="grande">El sismo dejó daños estructurales en vivienda urbana y rural, pérdida de cultivos, de animales y de infraestructura productiva, y familias durmiendo fuera de sus casas.</p>
 
   <h3>Caracterizar no es lo mismo que atender la emergencia</h3>
   <p>No lo hace la misma gente, ni en el mismo momento. En Sevilla el punto de recolección está a cargo del cuerpo de bomberos, que hoy está en fase de respuesta: rescate, evaluación de riesgo inmediato y atención de urgencias. Esa es su función y es la prioritaria.</p>
-  <p>Precisamente por eso quedan dos vacíos que hoy nadie está cubriendo:</p>
+  <p>Precisamente por eso quedan dos vacíos que nadie está cubriendo:</p>
   <ul>
     <li><strong>Un punto de atención fijo solo alcanza a quien puede llegar hasta él.</strong> La familia de una vereda incomunicada, sin vía transitable y sin señal, no puede desplazarse a registrarse.</li>
-    <li><strong>Mientras dura la fase de respuesta, la caracterización no avanza.</strong> Y la ventana para levantar el dato con la familia todavía en el sitio del daño se cierra: después vienen la reubicación, el desplazamiento a casa de familiares y la dispersión.</li>
+    <li><strong>Mientras dura la fase de respuesta, la caracterización no avanza.</strong> Y es justo la ventana en que la evidencia todavía existe.</li>
   </ul>
-  <p>Son familias en situación de alta vulnerabilidad de sus derechos fundamentales, en zonas donde además hay incomunicación. La caracterización oportuna es lo que permite que existan para el sistema.</p>
+  <p>Son familias en alta vulnerabilidad de sus derechos fundamentales, en zonas con incomunicación. <strong>Quien no está en ninguna lista no existe para ninguna asignación.</strong></p>
 </section>
 
 <section class="lamina">
-  <span class="num">02 · El problema</span>
-  <h2>El obstáculo no es la ayuda. Es el dato.</h2>
-  <p class="grande">Ninguna entidad puede asignar recursos sobre información que no puede verificar, y ningún organismo de cooperación gestiona apoyo sobre una lista de nombres en una libreta.</p>
-  <h3>Lo que hoy falta para poder actuar</h3>
-  <ul>
-    <li>Un conteo de familias afectadas que sea uno solo y no varios que se contradicen</li>
-    <li>Composición del hogar desagregada por sexo y edad, que es lo que permite dimensionar y focalizar</li>
-    <li>Ubicación georreferenciada del daño</li>
-    <li>Clasificación del nivel de afectación de cada vivienda</li>
-    <li>Registro de las familias arrendatarias, que perdieron su techo sin ser propietarias</li>
-    <li>Trazabilidad de qué caso se remitió, a quién y qué respuesta obtuvo</li>
-  </ul>
+  <span class="num">03 · El obstáculo</span>
+  <h2>No falta voluntad. Falta el dato.</h2>
+  <p class="grande">Ninguna entidad asigna recursos sobre información que no puede verificar, y ningún organismo de cooperación formula un proyecto sobre una lista de nombres en un cuaderno.</p>
+  <p>Los reportes existen: llegan por WhatsApp, en audios, en listas sueltas. Pero no están verificados, no están completos, no tienen formato y no se pueden comparar entre sí. La información está, y aun así no se puede usar.</p>
 </section>
 
 <section class="lamina">
-  <span class="num">03 · La propuesta</span>
-  <h2>Que la comunidad levante el dato y las entidades reciban el reporte</h2>
-  <p class="grande">Raíz es un instrumento de caracterización que opera donde no hay conexión a internet, construido y sostenido por un equipo técnico voluntario, sin costo para el municipio ni para el departamento.</p>
-
-  <div class="marco">
-    <p><strong>Raíz no produce un censo oficial ni sustituye la competencia de la autoridad.</strong> Produce fuentes comunitarias de información, documentación y evidencia primaria, levantadas mediante una metodología verificable, destinadas a alimentar y complementar la información oficial.</p>
-  </div>
+  <span class="num">04 · Qué es</span>
+  <h2>Una herramienta para documentar, no un censo paralelo</h2>
+  <p><strong>Raíz no produce un censo oficial ni sustituye la competencia de la autoridad.</strong> Produce fuentes comunitarias de información, documentación y evidencia primaria, levantadas mediante una metodología verificable, destinadas a alimentar y complementar la información oficial.</p>
+  <p>Llega a veredas donde la institucionalidad no ha podido llegar todavía, y entrega la información en el formato que cada entidad requiere.</p>
 
   <h3>Quién levanta la información</h3>
   <p>Líderes comunales, juntas de acción comunal, comités de reforma agraria y asociaciones campesinas que ya viven en cada vereda y en cada barrio. No se desplaza un equipo externo: se organiza y se capacita la red que ya está en el territorio.</p>
 
   <h3>Autonomía técnica, articulación institucional</h3>
-  <p>La herramienta no requiere presupuesto, contratación ni autorización previa para existir y operar. Por eso está disponible en días y no en meses, y por eso puede ponerse al servicio de cualquier entidad y de cualquier municipio sin competir con nadie.</p>
-  <p>Pero su cadena completa es <strong>caracterizar, remitir, hacer seguimiento y reconstruir</strong>, y los tres últimos pasos pasan necesariamente por la institucionalidad. Independencia en los medios; articulación en los fines.</p>
+  <p>La herramienta no requiere presupuesto, contratación ni autorización previa para existir y operar. Por eso está disponible en días y no en meses, y puede ponerse al servicio de cualquier entidad y de cualquier municipio sin competir con nadie.</p>
+  <p>Su cadena completa es <strong>caracterizar, remitir, hacer seguimiento y reconstruir</strong>, y los tres últimos pasos pasan por la institucionalidad. Independencia en los medios; articulación en los fines.</p>
 </section>
 
 <section class="lamina">
-  <span class="num">04 · Cómo funciona</span>
-  <h2>De la vereda al radicado</h2>
+  <span class="num">05 · Aplicabilidad</span>
+  <h2>Se puede empezar mañana</h2>
+  <p class="grande">La barrera de entrada es prácticamente nula. No hay nada que comprar, contratar ni esperar.</p>
 
+  <div class="rejilla">
+    <div class="celda">
+      <span class="cero">0</span>
+      <h4>Equipos por comprar</h4>
+      <p>Se usa el celular que el líder ya tiene en el bolsillo.</p>
+    </div>
+    <div class="celda">
+      <span class="cero">0</span>
+      <h4>Costo de infraestructura</h4>
+      <p>Sin costo para el municipio, el departamento ni las organizaciones.</p>
+    </div>
+    <div class="celda">
+      <span class="cero">0</span>
+      <h4>Trámites previos</h4>
+      <p>No requiere convenio, contrato ni acto administrativo para comenzar a documentar.</p>
+    </div>
+    <div class="celda">
+      <span class="cero">30</span>
+      <h4>Minutos de capacitación</h4>
+      <p>Una videollamada basta para que un líder registre su primer caso.</p>
+    </div>
+    <div class="celda">
+      <span class="cero">4</span>
+      <h4>Minutos por familia</h4>
+      <p>Cuatro pasos en el celular, de pie, con la familia presente.</p>
+    </div>
+    <div class="celda">
+      <span class="cero">3</span>
+      <h4>Canales de captura</h4>
+      <p>Aplicación sin conexión, plantilla fija por WhatsApp, u hoja impresa. Ninguno se descarta.</p>
+    </div>
+  </div>
+
+  <div class="marco">
+    <p><strong>Y funciona donde hoy no funciona nada:</strong> la captura no requiere señal. El líder registra en la vereda incomunicada, con fotografías y coordenada satelital, y la información se envía cuando vuelve a donde hay cobertura.</p>
+  </div>
+</section>
+
+<section class="lamina">
+  <span class="num">06 · Cómo opera</span>
+  <h2>De la vereda al radicado</h2>
   <div class="flujo">
     <div class="paso">
       <span class="p">01</span>
       <div>
         <h4>Captura sin conexión</h4>
-        <p>El líder registra a la familia en su propio celular, aunque no haya señal. Toma fotografías del daño y captura la coordenada por satélite, que no requiere internet. Todo queda guardado en el dispositivo.</p>
+        <p>El líder registra a la familia en su celular aunque no haya señal. Fotografía el daño y captura la coordenada por satélite, que no requiere internet.</p>
       </div>
     </div>
     <div class="paso">
       <span class="p">02</span>
       <div>
         <h4>Sincronización</h4>
-        <p>Cuando el líder vuelve a tener señal, la información se envía al registro central con un solo toque.</p>
+        <p>Al recuperar señal, la información se envía al registro central con un solo toque.</p>
       </div>
     </div>
     <div class="paso">
       <span class="p">03</span>
       <div>
         <h4>Depuración y verificación</h4>
-        <p>Un equipo de sistematización detecta registros duplicados por documento, teléfono y cercanía geográfica, completa por vía telefónica lo que quedó incompleto y confirma el daño reportado. Cada caso queda marcado como reportado, contactado o verificado.</p>
+        <p>Se detectan duplicados por documento, teléfono y cercanía geográfica; se completa por vía telefónica lo incompleto y se confirma el daño. Cada caso queda como reportado, contactado o verificado.</p>
       </div>
     </div>
     <div class="paso">
       <span class="p">04</span>
       <div>
         <h4>Priorización</h4>
-        <p>Cuatro niveles: riesgo de vida, familia sin techo, daño severo con alojamiento resuelto, y daño leve. Los casos de riesgo de vida se escalan el mismo día a los organismos de socorro, sin esperar al censo.</p>
+        <p>Cuatro niveles. Los casos de riesgo de vida se escalan el mismo día a los organismos de socorro, sin esperar al censo.</p>
       </div>
     </div>
     <div class="paso">
       <span class="p">05</span>
       <div>
         <h4>Remisión y seguimiento</h4>
-        <p>Se entrega a cada entidad el reporte que le corresponde, por escrito y con número de radicado. Ese radicado queda registrado, junto con la respuesta recibida y el tiempo transcurrido.</p>
+        <p>Se entrega a cada entidad el reporte que le corresponde, con número de radicado. Ese radicado queda registrado junto con la respuesta y el tiempo transcurrido.</p>
       </div>
     </div>
   </div>
 </section>
 
 <section class="lamina">
-  <span class="num">05 · Qué se caracteriza</span>
-  <h2>Los datos que las entidades necesitan para decidir</h2>
-
+  <span class="num">07 · Qué se documenta</span>
+  <h2>Los datos que permiten decidir</h2>
   <div class="rejilla">
-    <div class="celda">
-      <h4>Ubicación</h4>
-      <p>Municipio, vereda o barrio, punto de referencia y coordenada georreferenciada con precisión medida.</p>
-    </div>
-    <div class="celda">
-      <h4>Hogar</h4>
-      <p>Responsable, documento, contacto, y total de personas desagregadas por sexo y rango de edad.</p>
-    </div>
-    <div class="celda">
-      <h4>Vulnerabilidad</h4>
-      <p>Gestantes, personas con discapacidad, adultos mayores, enfermedad crónica, pertenencia étnica y condición de víctima.</p>
-    </div>
-    <div class="celda">
-      <h4>Vivienda</h4>
-      <p>Tenencia, materiales, nivel de afectación, habitabilidad, riesgo de colapso y dónde está durmiendo la familia hoy.</p>
-    </div>
-    <div class="celda">
-      <h4>Producción rural</h4>
-      <p>Predio, cultivos y área afectada, animales perdidos, infraestructura productiva y estado de la vía de acceso.</p>
-    </div>
-    <div class="celda">
-      <h4>Necesidad inmediata</h4>
-      <p>Requerimientos de las próximas 72 horas y ayudas ya recibidas, para evitar duplicidad en la entrega.</p>
-    </div>
+    <div class="celda"><h4>Ubicación</h4><p>Municipio, vereda o barrio, referencia y coordenada georreferenciada con precisión medida.</p></div>
+    <div class="celda"><h4>Hogar</h4><p>Responsable, documento, contacto y personas desagregadas por sexo y rango de edad.</p></div>
+    <div class="celda"><h4>Vulnerabilidad</h4><p>Gestantes, discapacidad, adultos mayores, enfermedad crónica, pertenencia étnica y condición de víctima.</p></div>
+    <div class="celda"><h4>Vivienda</h4><p>Tenencia, materiales, nivel de afectación, habitabilidad, riesgo de colapso y dónde duerme la familia hoy.</p></div>
+    <div class="celda"><h4>Producción rural</h4><p>Predio, cultivos y área afectada, animales, infraestructura productiva y estado de la vía.</p></div>
+    <div class="celda"><h4>Necesidad inmediata</h4><p>Requerimientos de las próximas 72 horas y ayudas ya recibidas, para evitar duplicidad.</p></div>
   </div>
 
   <div class="marco">
-    <p><strong>Tres datos que suelen omitirse y aquí son obligatorios.</strong> La <strong>tenencia</strong>, porque la familia arrendataria perdió su techo aunque no sea propietaria y aplica a subsidio de arriendo. El <strong>número de hogares en la misma estructura</strong>, porque una vivienda dañada puede corresponder a tres familias damnificadas y contar viviendas subestima la emergencia. Y la <strong>ausencia de afiliación</strong> a cualquier organización, porque esa es la familia con mayor riesgo de quedar invisible.</p>
+    <p><strong>Tres datos que suelen omitirse y aquí son obligatorios.</strong> La <strong>tenencia</strong>, porque la familia arrendataria perdió su techo aunque no sea propietaria. El <strong>número de hogares en la misma estructura</strong>, porque una vivienda dañada puede ser tres familias damnificadas. Y la <strong>ausencia de afiliación</strong> a cualquier organización, porque esa es la familia con mayor riesgo de quedar invisible.</p>
   </div>
 </section>
 
 <section class="lamina">
-  <span class="num">06 · Entregables</span>
-  <h2>Un solo registro, un reporte por entidad</h2>
-  <p class="grande">No se levantan bases separadas. Existe un registro único de hogares y cada entidad recibe el subconjunto que le compete, en su formato.</p>
-
+  <span class="num">08 · Entregables</span>
+  <h2>Un solo registro, un reporte por destinatario</h2>
   <div class="tablawrap">
     <table>
-      <thead>
-        <tr><th>Destinatario</th><th>Contenido del reporte</th></tr>
-      </thead>
+      <thead><tr><th>Destinatario</th><th>Contenido del reporte</th></tr></thead>
       <tbody>
-        <tr>
-          <td>Consejo Municipal de Gestión del Riesgo y Alcaldía de Sevilla</td>
-          <td>Familias afectadas urbanas y rurales, nivel de daño, habitabilidad, riesgo de colapso y necesidad de alojamiento.</td>
-        </tr>
-        <tr>
-          <td>Secretaría de Agricultura y Pesca del Valle del Cauca</td>
-          <td>Unidades productivas afectadas: cultivos y área, animales, infraestructura productiva y estado de vías.</td>
-        </tr>
-        <tr>
-          <td>Consejo Departamental de Gestión del Riesgo y Gobernación</td>
-          <td>Consolidado municipal con desagregación por vereda y por nivel de afectación.</td>
-        </tr>
-        <tr>
-          <td>Organismos de cooperación</td>
-          <td>Caracterización lista para formulación de proyectos de reconstrucción de vivienda y reactivación productiva.</td>
-        </tr>
+        <tr><td>Consejo Municipal de Gestión del Riesgo y Alcaldía de Sevilla</td><td>Familias afectadas urbanas y rurales, nivel de daño, habitabilidad, riesgo de colapso y necesidad de alojamiento.</td></tr>
+        <tr><td>Secretaría de Agricultura y Pesca del Valle del Cauca</td><td>Unidades productivas afectadas: cultivos y área, animales, infraestructura productiva y estado de vías.</td></tr>
+        <tr><td>Consejo Departamental de Gestión del Riesgo y Gobernación</td><td>Consolidado municipal con desagregación por vereda y por nivel de afectación.</td></tr>
+        <tr><td>Organizaciones y organismos de cooperación</td><td>Caracterización lista para formulación de proyectos de reconstrucción de vivienda y reactivación productiva.</td></tr>
       </tbody>
     </table>
   </div>
-
-  <p>La razón de que el registro sea único es práctica: si se levantaran listados separados, una misma familia aparecería en dos y los totales no coincidirían al compararlos entre entidades. Un total que no cuadra invalida el ejercicio completo.</p>
+  <p>El registro es único porque si se levantaran listados separados, una misma familia aparecería en dos y los totales no coincidirían. <strong>Un total que no cuadra invalida el ejercicio completo.</strong></p>
 </section>
 
 <section class="lamina">
-  <span class="num">07 · Garantías</span>
-  <h2>Tratamiento de datos y límites del ejercicio</h2>
-
-  <h3>Protección de datos personales</h3>
-  <ul>
-    <li>Se solicita autorización expresa a la familia antes de tomar cualquier dato, conforme a la Ley 1581 de 2012. Sin autorización se registra únicamente el caso agregado, sin identidad ni fotografías.</li>
-    <li>El listado con identidad se comparte exclusivamente con la entidad destinataria, por canal formal y con radicado.</li>
-    <li>Toda visualización pública es agregada y la coordenada se degrada a aproximadamente cien metros: ubica la afectación, no la vivienda de una familia.</li>
-    <li>El acceso está restringido por rol y auditado. Cada líder ve únicamente lo que él mismo reportó.</li>
-    <li>Las fotografías registran la vivienda y el daño, nunca rostros de menores de edad.</li>
-  </ul>
+  <span class="num">09 · Garantías</span>
+  <h2>Rigor, trazabilidad y protección de datos</h2>
 
   <h3>Estándar de confiabilidad</h3>
   <p>El instrumento se diseña contra el estándar de valoración de fuentes no estatales desarrollado por la jurisprudencia interamericana y europea de derechos humanos: identificación de quien reporta, temporalidad, localización, trazabilidad de la evidencia, corroboración posterior, metodología previamente definida, integridad del registro y transparencia sobre qué fue observado y qué fue referido.</p>
   <p>De cada registro se puede responder <strong>quién lo reportó, cuándo, dónde, qué observó, con qué instrumento, con qué evidencia, si fue verificado y por quién.</strong> Esa trazabilidad es lo que permite que una fuente comunitaria sea ponderable, y no simplemente creída o descartada.</p>
 
+  <h3>Protección de datos personales</h3>
+  <ul>
+    <li>Se solicita autorización expresa a la familia antes de tomar cualquier dato, conforme a la Ley 1581 de 2012. Sin autorización se registra únicamente el caso agregado, sin identidad ni fotografías.</li>
+    <li>El listado con identidad se comparte exclusivamente con la entidad destinataria, por canal formal y con radicado. <strong>Ninguna organización participante recibe copia del listado nominal completo.</strong></li>
+    <li>Toda visualización pública es agregada y la coordenada se degrada a aproximadamente cien metros: ubica la afectación, no la vivienda.</li>
+    <li>El acceso está restringido por rol y auditado. Cada líder ve únicamente lo que él mismo reportó.</li>
+    <li>Las fotografías registran la vivienda y el daño, nunca rostros de menores de edad.</li>
+  </ul>
+
   <h3>Verificación independiente</h3>
-  <p>El modelo de datos fue sometido a revisión de seguridad <strong>antes</strong> de su puesta en operación, y posteriormente a una revisión independiente por otro integrante del equipo. Los defectos encontrados y sus correcciones son públicos y auditables en el repositorio.</p>
-  <p>Se declara también lo que aún no está resuelto. Un ejercicio que solo publica sus aciertos no es verificable.</p>
+  <p>El modelo de datos fue sometido a revisión de seguridad antes de su puesta en operación y posteriormente a una revisión independiente. Los defectos encontrados y sus correcciones son públicos y auditables. Se declara también lo que aún no está resuelto: <strong>un ejercicio que solo publica sus aciertos no es verificable.</strong></p>
 
   <h3>Límites que el ejercicio declara</h3>
   <ul>
-    <li><strong>No sustituye</strong> el censo oficial de damnificados ni la evaluación técnica de daños. Es un insumo complementario.</li>
+    <li><strong>No sustituye</strong> el censo oficial ni la evaluación técnica de daños. Es un insumo complementario.</li>
     <li><strong>No sustituye</strong> a los organismos de socorro. Los casos de riesgo de vida se escalan de inmediato.</li>
-    <li><strong>No promete ayuda.</strong> A cada familia se le informa expresamente que el registro gestiona pero no garantiza entrega.</li>
+    <li><strong>No promete ayuda.</strong> A cada familia se le informa que el registro gestiona pero no garantiza entrega.</li>
     <li><strong>No administra recursos.</strong> El equipo no recauda ni distribuye dinero ni bienes.</li>
   </ul>
 </section>
 
 <section class="lamina">
-  <span class="num">08 · Estado</span>
-  <h2>En qué punto está hoy</h2>
-  <p class="grande">El instrumento está construido y verificado. La aplicación captura sin conexión, con fotografías y coordenada, y sincroniza al recuperar señal. El modelo de datos, el control de acceso y el registro de remisiones están implementados.</p>
+  <span class="num">10 · Estado</span>
+  <h2>El instrumento está listo. Falta aplicarlo.</h2>
+  <p class="grande">La aplicación captura sin conexión, con fotografías y coordenada, y sincroniza al recuperar señal. El modelo de datos, el control de acceso y el registro de remisiones están implementados y verificados.</p>
 
   <div class="marco alerta">
-    <p><strong>El levantamiento masivo aún no ha comenzado.</strong> A la fecha hay casos piloto y la red de líderes está en conformación. Lo que se presenta hoy es el método y el instrumento, no un resultado consolidado. Las cifras se reportarán únicamente cuando existan y estén verificadas.</p>
+    <p><strong>El levantamiento masivo aún no ha comenzado.</strong> Hoy hay casos piloto y la red de líderes está en conformación. Lo que se presenta es el método y el instrumento, no un resultado consolidado. Las cifras se reportarán únicamente cuando existan y estén verificadas.</p>
   </div>
 
   <h3>Quién lo sostiene</h3>
   <p>Un equipo técnico voluntario de ingenieros de sistemas, articulado con líderes comunales, juntas de acción comunal, comités de reforma agraria y asociaciones campesinas. El desarrollo es de código abierto y sin costo para las entidades.</p>
 
   <h3>Naturaleza del ejercicio</h3>
-  <p>Raíz se presenta como <strong>una herramienta tecnológica puesta a disposición de la red comunitaria y de las entidades</strong>. La figura jurídica del proceso se encuentra en definición con las organizaciones participantes, y se informará una vez surtida esa concertación.</p>
+  <p>Raíz se presenta como <strong>una herramienta tecnológica puesta a disposición de la red comunitaria y de las entidades</strong>. La figura jurídica del proceso se encuentra en definición con las organizaciones participantes y se informará una vez surtida esa concertación.</p>
   <div class="marco">
-    <p><strong>Responsable del tratamiento de datos personales:</strong> <span style="border-bottom:2px dotted var(--alerta);padding:0 2.5rem">&nbsp;</span></p>
-    <p style="margin-top:.6rem;font-size:.9rem">Conforme a la Ley 1581 de 2012. Este dato se declara desde el inicio, con independencia de la figura jurídica que se adopte más adelante.</p>
+    <p><strong>Responsable del tratamiento de datos personales:</strong> <span class="vacio">&nbsp;</span></p>
+    <p style="margin-top:.6rem;font-size:.9rem">Conforme a la Ley 1581 de 2012. Se declara desde el inicio, con independencia de la figura jurídica que se adopte más adelante.</p>
   </div>
 </section>
 
 <section class="lamina">
-  <span class="num">09 · Solicitud</span>
-  <h2>Qué necesitamos de ustedes</h2>
-  <p class="grande">Ninguna de estas solicitudes implica erogación de recursos.</p>
+  <span class="num">11 · Solicitud</span>
+  <h2>Qué necesitamos, y de quién</h2>
+  <p class="grande">Ninguna de estas solicitudes implica erogación de recursos. Todas pueden resolverse esta semana.</p>
 
+  <h3>A las autoridades municipales y departamentales</h3>
   <ol class="peticiones">
-    <li>
-      <strong>Reconocimiento del ejercicio como fuente complementaria</strong>
-      <span>Que la información levantada por la red comunitaria sea recibida y considerada como insumo del censo oficial, sin que las familias tengan que ser registradas dos veces.</span>
-    </li>
-    <li>
-      <strong>El formato oficial vigente</strong>
-      <span>Entrega del instrumento oficial de censo de damnificados y de evaluación de daños que la entidad utiliza, para alinear los campos y evitar devoluciones por forma.</span>
-    </li>
-    <li>
-      <strong>Un punto de contacto y un canal de radicación</strong>
-      <span>Una persona responsable y el conducto formal por el cual se radican los reportes periódicos.</span>
-    </li>
-    <li>
-      <strong>Devolución de estado</strong>
-      <span>Que se informe el estado de los casos remitidos. Es lo que permite decirle a una familia si su caso avanzó, y evita que la comunidad pierda confianza en el proceso.</span>
-    </li>
-    <li>
-      <strong>El listado oficial de veredas y corregimientos</strong>
-      <span>Necesario para normalizar los nombres. Sin él, una misma vereda se registra escrita de varias formas y las cifras por territorio dejan de ser comparables.</span>
-    </li>
+    <li><strong>Reconocimiento del ejercicio como fuente complementaria</strong><span>Que la información levantada por la red comunitaria sea recibida y considerada como insumo, sin que las familias deban registrarse dos veces.</span></li>
+    <li><strong>El formato oficial vigente</strong><span>El instrumento de censo de damnificados y de evaluación de daños que la entidad utiliza, para alinear campos y evitar devoluciones por forma.</span></li>
+    <li><strong>Un punto de contacto y un canal de radicación</strong><span>Una persona responsable y el conducto formal para radicar los reportes periódicos.</span></li>
+    <li><strong>Devolución de estado</strong><span>Que se informe qué pasó con los casos remitidos. Es lo que permite decirle a una familia si su caso avanzó, y lo que evita que la comunidad pierda confianza en el proceso.</span></li>
+    <li><strong>El listado oficial de veredas y corregimientos</strong><span>Para normalizar los nombres. Sin él, una misma vereda se registra de varias formas y las cifras por territorio dejan de ser comparables.</span></li>
+  </ol>
+
+  <h3>A las organizaciones, asociaciones y comités</h3>
+  <ol class="peticiones">
+    <li><strong>Designar un enlace por territorio</strong><span>Una persona por vereda o barrio que capture y responda por lo que reporta. Es el único aporte insustituible: nadie más puede llegar donde ustedes ya están.</span></li>
+    <li><strong>Canalizar los reportes al registro único</strong><span>Que los listados que ya se estén levantando se integren en vez de multiplicarse. Cada listado paralelo debilita el total, y el total es la palanca.</span></li>
+    <li><strong>Convocar a las familias no afiliadas</strong><span>Las que no pertenecen a ninguna organización son las que más riesgo tienen de quedar por fuera. Se registran igual.</span></li>
+    <li><strong>Aportar el conocimiento del territorio</strong><span>Qué veredas están incomunicadas, qué vías están bloqueadas, dónde no ha llegado nadie. Eso define por dónde empezar.</span></li>
+  </ol>
+
+  <h3>A los organismos de cooperación</h3>
+  <ol class="peticiones">
+    <li><strong>Indicar qué información requieren para formular</strong><span>Si sus instrumentos exigen campos que hoy no se capturan, se agregan ahora y no cuando ya haya mil registros levantados con el formulario anterior.</span></li>
   </ol>
 </section>
 
 <section class="lamina">
-  <span class="num">10 · Cierre</span>
+  <span class="num">12 · Cierre</span>
   <h2>Que ninguna familia quede por fuera porque nadie llegó a contarla</h2>
-  <p class="grande">La reconstrucción de una vivienda o de un cultivo empieza mucho antes que la obra: empieza cuando esa familia existe en un registro que alguien puede consultar, verificar y atender.</p>
-  <p>Ese es el aporte que la comunidad puede hacer hoy, y es el que ofrecemos poner a disposición de las entidades.</p>
+  <p class="grande">La reconstrucción de una vivienda o de un cultivo empieza mucho antes que la obra. Empieza cuando esa familia existe en un registro que alguien puede consultar, verificar y atender.</p>
+  <p>El instrumento está construido y no cuesta nada aplicarlo. Lo único que puede perderse a partir de aquí es tiempo, y el tiempo aquí se mide en familias que dejan de ser documentables.</p>
 
   <div class="pie">
     <p><strong>Raíz</strong> · Sistema de caracterización y seguimiento de familias afectadas<br>
