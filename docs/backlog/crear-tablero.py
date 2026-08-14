@@ -110,7 +110,15 @@ def orden(hu_id):
     return hito * 10000 + apartado * 100 + historia
 
 
-def descripcion(hu, apartado):
+def rotular(handle, personas):
+    """'davidf9265' -> 'David Franco (@davidf9265)'. Sin ficha, deja el handle solo."""
+    ficha = personas.get(handle)
+    if not isinstance(ficha, dict) or not ficha.get("nombre"):
+        return f"@{handle}"
+    return f"{ficha['nombre']} (@{handle})"
+
+
+def descripcion(hu, apartado, personas):
     partes = [
         f"**Apartado {apartado['numero']} · {apartado['nombre']}**",
         f"**Como** {hu['como']}\n**quiero** {hu['quiero']}\n**para** {hu['para']}.",
@@ -122,18 +130,21 @@ def descripcion(hu, apartado):
             + "\n".join(f"- {c}" for c in hu["criterios"])
         )
 
-    personas = []
+    bloque = []
     if hu.get("asignado"):
-        personas.append(f"**Responsable:** {hu['asignado']}")
+        bloque.append(f"**Responsable:** {hu['asignado']}")
     if hu.get("sugerido"):
-        gente = ", ".join(f"@{p}" for p in hu["sugerido"])
+        gente = ", ".join(rotular(p, personas) for p in hu["sugerido"])
         etiqueta = "Apoyan" if hu.get("asignado") else "Responsable sugerido"
-        personas.append(
-            f"**{etiqueta}:** {gente} _(handle de GitHub)_\n"
+        # Quien ya tiene cuenta en el tablero queda ademas en el campo de miembros de la
+        # tarjeta; el texto se conserva para los demas y para que el handle de GitHub
+        # siga visible, que es como el equipo se nombra en el repositorio.
+        bloque.append(
+            f"**{etiqueta}:** {gente}\n"
             "Punto de partida, no asignación cerrada: se confirma en el grupo."
         )
-    if personas:
-        partes.append("\n\n".join(personas))
+    if bloque:
+        partes.append("\n\n".join(bloque))
 
     referencias = [
         (etiqueta, hu[campo])
@@ -213,19 +224,45 @@ def main():
         print(f"  + {etiqueta['nombre']} ({etiqueta['color']})")
 
     # --- miembros ------------------------------------------------------------
-    # Trello asigna por cuenta de Trello. Los handles de GitHub del campo `sugerido`
-    # no se pueden asignar: van en el texto hasta que esa persona este en el tablero.
+    # Trello asigna por cuenta de Trello, no por handle de GitHub. El bloque `personas`
+    # del modelo hace ese cruce; quien todavia no tiene cuenta en el tablero se queda en
+    # el texto de la tarjeta y entra sola la proxima vez que se corra esto, sin tocar
+    # el backlog.
+    print("\nMiembros")
     miembros = {m["username"]: m["id"]
                 for m in consultar(f"/boards/{id_tablero}/members", fields="username")}
+    personas = modelo.get("personas", {})
+
+    cuentas = {}          # handle de GitHub -> id de miembro de Trello
+    sin_cuenta = []
+    for handle, ficha in personas.items():
+        if handle.startswith("_") or not isinstance(ficha, dict):
+            continue
+        usuario = ficha.get("trello")
+        if usuario and usuario in miembros:
+            cuentas[handle] = miembros[usuario]
+        elif usuario:
+            print(f"  ! @{handle} -> {usuario} no esta en el tablero")
+            sin_cuenta.append(handle)
+        else:
+            sin_cuenta.append(handle)
+    print(f"  {len(cuentas)} de {len(cuentas) + len(sin_cuenta)} personas con cuenta en el tablero")
+    if sin_cuenta:
+        print(f"  pendientes de invitacion: {', '.join('@' + h for h in sin_cuenta)}")
 
     def ids_de(hu):
+        """Responsable + apoyos que ya tengan cuenta. Devuelve ids sin repetir."""
+        ids = []
         usuario = hu.get("asignado")
-        if not usuario:
-            return ""
-        if usuario not in miembros:
-            print(f"  ! {hu['id']}: {usuario} no esta en el tablero, no se asigna")
-            return ""
-        return miembros[usuario]
+        if usuario:
+            if usuario in miembros:
+                ids.append(miembros[usuario])
+            else:
+                print(f"  ! {hu['id']}: {usuario} no esta en el tablero, no se asigna")
+        for handle in hu.get("sugerido", []):
+            if handle in cuentas:
+                ids.append(cuentas[handle])
+        return list(dict.fromkeys(ids))
 
     # --- historias -----------------------------------------------------------
     print("\nHistorias")
@@ -236,22 +273,24 @@ def main():
 
     creadas = actualizadas = iguales = 0
     for hito, apartado, hu in sorted(todas, key=lambda t: orden(t[2]["id"])):
-        texto = descripcion(hu, apartado)
-        miembro = ids_de(hu)
+        texto = descripcion(hu, apartado, personas)
+        quienes = ids_de(hu)
 
         if hu["id"] in ya_estan:
             existente = ya_estan[hu["id"]]
             actuales = existente.get("idMembers", [])
-            cambia_miembro = bool(miembro) and miembro not in actuales
-            if existente.get("desc") == texto and not cambia_miembro:
+            # Union, no reemplazo: si alguien se asigno a mano en Trello, no se le quita.
+            faltan = [i for i in quienes if i not in actuales]
+            if existente.get("desc") == texto and not faltan:
                 iguales += 1
             else:
                 cambios = {"desc": texto}
-                if cambia_miembro:
-                    cambios["idMembers"] = ",".join(sorted(set(actuales + [miembro])))
+                if faltan:
+                    cambios["idMembers"] = ",".join(actuales + faltan)
                 pedir("PUT", f"/cards/{existente['id']}", **cambios)
                 actualizadas += 1
-                print(f"  ~ {hu['id']}{'  → asignada' if cambia_miembro else '  descripción'}")
+                detalle = f"  → +{len(faltan)} miembro(s)" if faltan else "  descripción"
+                print(f"  ~ {hu['id']}{detalle}")
             continue
 
         pedir("POST", "/cards",
@@ -259,7 +298,7 @@ def main():
               name=f"{hu['id']} · {hu['titulo']}",
               desc=texto,
               idLabels=",".join(etiquetas[e] for e in hu["etiquetas"]),
-              idMembers=miembro,
+              idMembers=",".join(quienes),
               pos=orden(hu["id"]))
         creadas += 1
         print(f"  + {hu['id']} · {hu['titulo'][:58]}")

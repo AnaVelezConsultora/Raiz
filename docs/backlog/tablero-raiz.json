@@ -7,7 +7,71 @@
     "listas_trello": "Cada hito es una lista. Las historias se ordenan por su numeral dentro de la lista.",
     "asignacion": "Las 15 personas del equipo son contribuyentes. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
     "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta.",
-    "responsable": "El campo asignado es la persona responsable en Trello y se asigna de verdad al miembro del tablero. El campo sugerido son handles de GitHub de quienes pueden apoyar, y es un punto de partida que se confirma en el grupo."
+    "responsable": "El campo asignado es la persona responsable en Trello y se asigna de verdad al miembro del tablero. El campo sugerido son handles de GitHub de quienes pueden apoyar, y es un punto de partida que se confirma en el grupo.",
+    "personas": "El bloque `personas` cruza handle de GitHub con cuenta de Trello. Quien tenga cuenta queda asignado de verdad a la tarjeta; quien no, figura por nombre en la descripcion."
+  },
+  "personas": {
+    "_nota": "Cruce entre el handle de GitHub (que es como el equipo se nombra en el repo) y la cuenta de Trello (que es lo unico que Trello sabe asignar). Con `trello` presente, la persona se asigna de verdad a la tarjeta; con `trello` en null queda como texto en la descripcion hasta que acepte la invitacion al tablero.",
+    "DdeDiegoA": {
+      "nombre": "Diego Arenas",
+      "trello": "diegoarenas111"
+    },
+    "johan1113": {
+      "nombre": "Johan Medina",
+      "trello": "johanmedina1"
+    },
+    "HKevinH": {
+      "nombre": "Kevin Lopez",
+      "trello": "kl31967041"
+    },
+    "lDavidSantiago": {
+      "nombre": "David Santiago Velasco",
+      "trello": "davidsantiagovelascotriana"
+    },
+    "diegof59": {
+      "nombre": "Diego Botero",
+      "trello": "diegobotero"
+    },
+    "oramirez1512-CO": {
+      "nombre": "Oscar Ramirez",
+      "trello": "oscarramirez279"
+    },
+    "davidf9265": {
+      "nombre": "David Franco",
+      "trello": null
+    },
+    "skLuan": {
+      "nombre": "David Luan Erazo",
+      "trello": null
+    },
+    "EdwarMontano": {
+      "nombre": "Edwar Montano",
+      "trello": null
+    },
+    "Frank-Apotheosis": {
+      "nombre": "Francesco Garcia",
+      "trello": null
+    },
+    "Clavijo110": {
+      "nombre": "Alejandro Clavijo",
+      "trello": null
+    },
+    "kvinstuard": {
+      "nombre": "Kevin Marin",
+      "trello": null
+    },
+    "Inmemorialake": {
+      "nombre": "Gerardo Gonzalez",
+      "trello": null
+    },
+    "pkill2913": {
+      "nombre": "Oscar",
+      "trello": null
+    },
+    "Herreran903": {
+      "nombre": "(por confirmar)",
+      "trello": null
+    }
   },
   "etiquetas": [
     {
