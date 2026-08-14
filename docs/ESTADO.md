@@ -138,6 +138,10 @@ creara la base.
 | F7 Datos y cumplimiento | Abierto | — |
 | F8 Multi-municipio | Abierto | — |
 
+El estándar de confiabilidad que debe cumplir la información está en
+[ESTANDAR-PROBATORIO.md](ESTANDAR-PROBATORIO.md), con nueve brechas identificadas y su
+prioridad.
+
 Detalle de cada frente en [FRENTES.md](FRENTES.md). Roles, estimación e hitos en
 [ROLES-Y-ESFUERZO.md](ROLES-Y-ESFUERZO.md). Las historias de usuario dentro de cada
 hito, en [backlog/](backlog/).

@@ -74,8 +74,9 @@ de eso es inventada.
 | F8 Multi-municipio | 8 | Pendiente | Hito 1 cerrado |
 | F9 Despliegue e integración continua | 3 | Pendiente | — |
 | **Defectos** de la revisión independiente | 5 | H14 y H11 corregidos; quedan **3** | — |
+| **Estándar de confiabilidad** (9 brechas) | 8 | Especificado, sin empezar | F3 y F7 |
 
-**Terminado: 23 puntos. Pendiente: 52 puntos.**
+**Terminado: 23 puntos. Pendiente: 60 puntos.**
 
 Los defectos no se estiman como frente sino aparte, porque no agregan capacidad: hacen
 que lo que ya existe cumpla lo que la documentación afirma. Aun así se cuentan, porque
