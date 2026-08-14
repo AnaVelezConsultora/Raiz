@@ -138,6 +138,14 @@
   .capa .v { color: var(--tinta-2); font-size: 0.95rem; }
   @media (max-width: 700px) { .capa { grid-template-columns: 1fr; } }
 
+  /* etapa actual de la ruta */
+  .capa.aqui { background: var(--acento-2); }
+  .capa.aqui .k { color: #fff; }
+  .capa.aqui .v { color: #eaf6f6; }
+  .capa.hecha .k { color: var(--ok); }
+  .capa.futura .k { color: var(--tinta-3); }
+  .capa.futura .v { color: var(--tinta-3); }
+
   /* ---------- consola ---------- */
   .consola {
     background: #050907; border: 1px solid var(--linea); border-radius: 6px;
@@ -416,30 +424,35 @@
 <!-- 13 --------------------------------------------------------------------->
 <section class="slide">
   <div class="interior">
-    <p class="eyebrow">Estado</p>
-    <h2>Qué está listo y qué falta</h2>
-    <div class="duo" style="align-items:start;margin-top:1.2rem">
-      <div>
-        <h3>Funcionando y verificado</h3>
-        <ul class="limpia" style="margin-top:0.8rem">
-          <li>Captura sin conexión con fotos y coordenada</li>
-          <li>Envío que nunca duplica registros</li>
-          <li>Identidad y control de acceso por rol</li>
-          <li>Modelo de datos, auditoría y vista pública</li>
-        </ul>
+    <p class="eyebrow">Ruta</p>
+    <h2>Dónde estamos</h2>
+    <p class="lead">El instrumento está construido. No está probado en campo, y esa es la diferencia que importa.</p>
+
+    <div class="capas">
+      <div class="capa hecha">
+        <span class="k">1 · Construido</span>
+        <span class="v">Formulario, captura sin conexión con fotos y coordenada, modelo de datos, control de acceso y registro de remisiones. <strong>Probado en laboratorio</strong>: navegador emulando un celular, con ubicación simulada.</span>
       </div>
-      <div style="max-width:none">
-        <h3>Pendiente</h3>
-        <ul class="limpia" style="margin-top:0.8rem">
-          <li>Prueba en celulares reales de gama baja</li>
-          <li>Servidor y despliegue</li>
-          <li>Tablero y mapa en vivo</li>
-          <li>Remisiones con radicado y seguimiento</li>
-        </ul>
+      <div class="capa aqui">
+        <span class="k">2 · Aquí estamos</span>
+        <span class="v"><strong>Prueba en celulares reales, con líderes reales.</strong> Gama baja, poca memoria, pantalla bajo el sol, un pulgar de verdad. Es lo único que puede decir si sirve, y todavía no ha ocurrido.</span>
+      </div>
+      <div class="capa futura">
+        <span class="k">3 · Sigue</span>
+        <span class="v">Servidor y sincronización real. Hoy el dato nunca ha viajado del celular a una base central, porque esa base todavía no existe.</span>
+      </div>
+      <div class="capa futura">
+        <span class="k">4 · Después</span>
+        <span class="v">Tablero y mapa en vivo. Remisión con radicado, respuesta registrada y mora medida.</span>
+      </div>
+      <div class="capa futura">
+        <span class="k">5 · Escala</span>
+        <span class="v">Otro municipio lo usa sin tocar código.</span>
       </div>
     </div>
+
     <div class="nota alerta">
-      <p style="margin:0"><strong>El levantamiento masivo aún no comienza.</strong> Lo que se presenta es el método y el instrumento, no un resultado. Las cifras se reportarán cuando existan y estén verificadas.</p>
+      <p style="margin:0"><strong>Ningún líder ha registrado todavía a una familia real con esta herramienta.</strong> Lo que se presenta es el método y el instrumento, no un resultado. Las cifras se reportarán cuando existan y estén verificadas.</p>
     </div>
   </div>
 </section>

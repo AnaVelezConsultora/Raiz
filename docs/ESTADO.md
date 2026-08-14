@@ -49,7 +49,11 @@ Están cerradas. Si alguien quiere reabrir una, que traiga argumentos nuevos.
 
 ## 3. Dónde estamos
 
-### Funcionando y verificado
+### Construido y probado en laboratorio
+
+Probado significa aqui: navegador de escritorio emulando un celular, con ubicacion
+simulada. **Nada de esto se ha ejecutado en un telefono real ni contra un servidor**,
+porque el servidor todavia no existe.
 
 **Captura sin conexión.** Formulario de cuatro pasos con guardado incremental: si se
 cierra la aplicación en el paso 3, al volver el registro sigue ahí. Fotos comprimidas
