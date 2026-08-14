@@ -122,12 +122,18 @@ def descripcion(hu, apartado):
             + "\n".join(f"- {c}" for c in hu["criterios"])
         )
 
+    personas = []
+    if hu.get("asignado"):
+        personas.append(f"**Responsable:** {hu['asignado']}")
     if hu.get("sugerido"):
         gente = ", ".join(f"@{p}" for p in hu["sugerido"])
-        partes.append(
-            f"**Responsable sugerido:** {gente} _(handle de GitHub)_\n"
-            "Es un punto de partida, no una asignación cerrada: se confirma en el grupo."
+        etiqueta = "Apoyan" if hu.get("asignado") else "Responsable sugerido"
+        personas.append(
+            f"**{etiqueta}:** {gente} _(handle de GitHub)_\n"
+            "Punto de partida, no asignación cerrada: se confirma en el grupo."
         )
+    if personas:
+        partes.append("\n\n".join(personas))
 
     referencias = [
         (etiqueta, hu[campo])
@@ -206,25 +212,46 @@ def main():
         etiquetas[etiqueta["nombre"]] = creada["id"]
         print(f"  + {etiqueta['nombre']} ({etiqueta['color']})")
 
+    # --- miembros ------------------------------------------------------------
+    # Trello asigna por cuenta de Trello. Los handles de GitHub del campo `sugerido`
+    # no se pueden asignar: van en el texto hasta que esa persona este en el tablero.
+    miembros = {m["username"]: m["id"]
+                for m in consultar(f"/boards/{id_tablero}/members", fields="username")}
+
+    def ids_de(hu):
+        usuario = hu.get("asignado")
+        if not usuario:
+            return ""
+        if usuario not in miembros:
+            print(f"  ! {hu['id']}: {usuario} no esta en el tablero, no se asigna")
+            return ""
+        return miembros[usuario]
+
     # --- historias -----------------------------------------------------------
     print("\nHistorias")
     ya_estan = {}
     for id_lista in listas.values():
-        for tarjeta in consultar(f"/lists/{id_lista}/cards", fields="name,desc"):
+        for tarjeta in consultar(f"/lists/{id_lista}/cards", fields="name,desc,idMembers"):
             ya_estan[tarjeta["name"].split(" · ")[0]] = tarjeta
 
     creadas = actualizadas = iguales = 0
     for hito, apartado, hu in sorted(todas, key=lambda t: orden(t[2]["id"])):
         texto = descripcion(hu, apartado)
+        miembro = ids_de(hu)
 
         if hu["id"] in ya_estan:
             existente = ya_estan[hu["id"]]
-            if existente.get("desc") == texto:
+            actuales = existente.get("idMembers", [])
+            cambia_miembro = bool(miembro) and miembro not in actuales
+            if existente.get("desc") == texto and not cambia_miembro:
                 iguales += 1
             else:
-                pedir("PUT", f"/cards/{existente['id']}", desc=texto)
+                cambios = {"desc": texto}
+                if cambia_miembro:
+                    cambios["idMembers"] = ",".join(sorted(set(actuales + [miembro])))
+                pedir("PUT", f"/cards/{existente['id']}", **cambios)
                 actualizadas += 1
-                print(f"  ~ {hu['id']} · descripción actualizada")
+                print(f"  ~ {hu['id']}{'  → asignada' if cambia_miembro else '  descripción'}")
             continue
 
         pedir("POST", "/cards",
@@ -232,6 +259,7 @@ def main():
               name=f"{hu['id']} · {hu['titulo']}",
               desc=texto,
               idLabels=",".join(etiquetas[e] for e in hu["etiquetas"]),
+              idMembers=miembro,
               pos=orden(hu["id"]))
         creadas += 1
         print(f"  + {hu['id']} · {hu['titulo'][:58]}")

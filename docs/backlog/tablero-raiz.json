@@ -6,7 +6,8 @@
     "numeracion": "HU <hito>.<apartado>.<historia>. El numeral lleva la jerarquía: HU 1.2.4 es la cuarta historia del segundo apartado del hito 1.",
     "listas_trello": "Cada hito es una lista. Las historias se ordenan por su numeral dentro de la lista.",
     "asignacion": "Las 15 personas del equipo son contribuyentes. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
-    "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta."
+    "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta.",
+    "responsable": "El campo asignado es la persona responsable en Trello y se asigna de verdad al miembro del tablero. El campo sugerido son handles de GitHub de quienes pueden apoyar, y es un punto de partida que se confirma en el grupo."
   },
   "etiquetas": [
     {
@@ -115,7 +116,8 @@
                 "Infra",
                 "hecha"
               ],
-              "origen": "entorno/README.md, ADR 004"
+              "origen": "entorno/README.md, ADR 004",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 0.3.2",
@@ -133,7 +135,8 @@
                 "BackEnd",
                 "hecha"
               ],
-              "origen": "entorno/pruebas/seguridad.sql, SEGURIDAD.md"
+              "origen": "entorno/pruebas/seguridad.sql, SEGURIDAD.md",
+              "asignado": "yonathangutierrez"
             }
           ]
         }
@@ -169,7 +172,8 @@
               "sugerido": [
                 "pkill2913",
                 "Frank-Apotheosis"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.1.2",
@@ -188,7 +192,8 @@
               "origen": "ADR 004",
               "sugerido": [
                 "Inmemorialake"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.1.3",
@@ -209,7 +214,8 @@
               "origen": "ADR 004",
               "sugerido": [
                 "EdwarMontano"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.1.4",
@@ -228,7 +234,8 @@
               "origen": "ADR 002",
               "sugerido": [
                 "pkill2913"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -255,7 +262,8 @@
               "desbloquea": "casi todo el apartado 1.2 y la HU 1.3.4",
               "sugerido": [
                 "davidf9265"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.2.2",
@@ -297,7 +305,8 @@
               "depende_de": "HU 1.2.2",
               "sugerido": [
                 "Clavijo110"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.2.4",
@@ -381,7 +390,8 @@
               "origen": "ADR 002, schema.sql §10.b",
               "sugerido": [
                 "EdwarMontano"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -468,7 +478,8 @@
               "depende_de": "HU 1.2.1",
               "sugerido": [
                 "Herreran903"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.3.5",
@@ -488,7 +499,8 @@
               "origen": "hallazgos-revision.md H13",
               "sugerido": [
                 "johan1113"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -536,7 +548,8 @@
               "desbloquea": "HU 1.4.1",
               "sugerido": [
                 "kvinstuard"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -563,7 +576,8 @@
               ],
               "origen": "hallazgos-revision.md H7",
               "depende_de": "que la custodia de datos resuelva",
-              "desbloquea": "HU 1.5.2 (alcance)"
+              "desbloquea": "HU 1.5.2 (alcance)",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.5.2",
@@ -584,7 +598,8 @@
               "depende_de": "HU 1.5.1 sólo para el alcance del teléfono",
               "sugerido": [
                 "Clavijo110"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.5.3",
@@ -604,7 +619,8 @@
               "origen": "hallazgos-revision.md H8",
               "sugerido": [
                 "Herreran903"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -627,7 +643,8 @@
               "etiquetas": [
                 "sin código"
               ],
-              "origen": "ADR 004, capacidades del equipo"
+              "origen": "ADR 004, capacidades del equipo",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.6.2",
@@ -646,7 +663,8 @@
               "origen": "hallazgos-revision.md, desajustes menores",
               "sugerido": [
                 "davidf9265"
-              ]
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         }
@@ -680,7 +698,8 @@
               ],
               "origen": "hallazgos-revision.md H12",
               "depende_de": "que la custodia de datos resuelva",
-              "desbloquea": "HU 2.1.2"
+              "desbloquea": "HU 2.1.2",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 2.1.2",
@@ -714,7 +733,8 @@
                 "Infra",
                 "BackEnd"
               ],
-              "origen": "ADR 002"
+              "origen": "ADR 002",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -738,7 +758,8 @@
                 "decisión F7",
                 "sin código"
               ],
-              "origen": "cumplimiento/README.md"
+              "origen": "cumplimiento/README.md",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 2.2.2",
@@ -756,7 +777,8 @@
                 "decisión F7"
               ],
               "origen": "cumplimiento/README.md §3, ADR 003",
-              "depende_de": "HU 2.2.1 define el plazo"
+              "depende_de": "HU 2.2.1 define el plazo",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -780,7 +802,8 @@
               "etiquetas": [
                 "Infra"
               ],
-              "origen": "ADR 004"
+              "origen": "ADR 004",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 2.3.2",
@@ -797,7 +820,8 @@
               "etiquetas": [
                 "Infra"
               ],
-              "origen": "SEGURIDAD.md punto 6, entorno/pruebas/flujo-completo.sh"
+              "origen": "SEGURIDAD.md punto 6, entorno/pruebas/flujo-completo.sh",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -974,7 +998,8 @@
                 "Infra"
               ],
               "origen": "FRENTES.md F8",
-              "depende_de": "HU 4.1.1"
+              "depende_de": "HU 4.1.1",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
