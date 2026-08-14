@@ -1,0 +1,810 @@
+{
+  "tablero": "Raíz — Backlog",
+  "descripcion": "Caracterización y seguimiento de familias afectadas por el sismo en Sevilla, Valle del Cauca. Estructura: hitos numerados → apartados → historias de usuario. Derivado de docs/FRENTES.md, docs/ROLES-Y-ESFUERZO.md, docs/hallazgos-revision.md y los ADR 002, 003 y 004.",
+  "corte": "2026-08-13",
+  "convenciones": {
+    "numeracion": "HU <hito>.<apartado>.<historia>. El numeral lleva la jerarquía: HU 1.2.4 es la cuarta historia del segundo apartado del hito 1.",
+    "listas_trello": "Cada hito es una lista. Las historias se ordenan por su numeral dentro de la lista.",
+    "asignacion": "Las 15 personas del equipo son contribuyentes. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
+    "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta."
+  },
+  "etiquetas": [
+    { "nombre": "FrontEnd", "color": "sky" },
+    { "nombre": "BackEnd", "color": "purple" },
+    { "nombre": "Infra", "color": "black" },
+    { "nombre": "sin código", "color": "pink" },
+    { "nombre": "defecto", "color": "red" },
+    { "nombre": "decisión F7", "color": "orange" },
+    { "nombre": "bloqueada", "color": "yellow" },
+    { "nombre": "hecha", "color": "green" }
+  ],
+
+  "hitos": [
+    {
+      "numero": 0,
+      "nombre": "Base construida",
+      "objetivo": "Lo que ya funciona y no se reescribe. Está aquí para que quien llegue vea de dónde parte y no lo rehaga.",
+      "apartados": [
+        {
+          "numero": "0.1",
+          "nombre": "Captura sin conexión",
+          "hus": [
+            {
+              "id": "HU 0.1.1",
+              "titulo": "Capturar un caso en la vereda sin señal",
+              "como": "líder territorial",
+              "quiero": "registrar a una familia con el celular que ya tengo, sin conexión",
+              "para": "no perder el viaje hasta la vereda ni la jornada de trabajo",
+              "criterios": [
+                "Formulario de cuatro pasos con guardado incremental: si se cierra la aplicación en el paso 3, al volver el registro sigue ahí",
+                "Fotografías comprimidas en el dispositivo a unos 200 KB",
+                "Coordenada por satélite, que no requiere internet",
+                "Verificado en navegador real con la red apagada"
+              ],
+              "etiquetas": ["FrontEnd", "hecha"],
+              "origen": "FRENTES.md F1"
+            }
+          ]
+        },
+        {
+          "numero": "0.2",
+          "nombre": "Integridad del esquema",
+          "hus": [
+            {
+              "id": "HU 0.2.1",
+              "titulo": "El esquema se crea completo",
+              "como": "equipo",
+              "quiero": "que schema.sql se pueda ejecutar de principio a fin",
+              "para": "que exista la base sobre la que se construye todo lo demás",
+              "criterios": [
+                "dias_sin_respuesta deja de ser columna generada sobre current_date, que PostgreSQL rechaza",
+                "La mora se calcula al consultar, así que crece cada día que la entidad no responde",
+                "12 tablas, 5 vistas, 19 políticas y PostGIS, verificado"
+              ],
+              "etiquetas": ["BackEnd", "defecto", "hecha"],
+              "origen": "hallazgos-revision.md H14"
+            }
+          ]
+        },
+        {
+          "numero": "0.3",
+          "nombre": "Entorno de trabajo",
+          "hus": [
+            {
+              "id": "HU 0.3.1",
+              "titulo": "Empezar a contribuir sin credenciales ni infraestructura",
+              "como": "voluntario que aporta dos horas por semana",
+              "quiero": "clonar, instalar y arrancar sin pedirle acceso a nadie",
+              "para": "que las dos horas se me vayan en aportar y no en preparar la máquina",
+              "criterios": [
+                "npm start levanta la PWA completa en modo local, sin backend",
+                "Quien trabaje formulario, listado, tablero o mapa no necesita Docker",
+                "Quien trabaje contra la base levanta el entorno con un comando"
+              ],
+              "etiquetas": ["Infra", "hecha"],
+              "origen": "entorno/README.md, ADR 004"
+            },
+            {
+              "id": "HU 0.3.2",
+              "titulo": "Verificar el control de acceso en cada cambio",
+              "como": "equipo",
+              "quiero": "que las seis verificaciones de SEGURIDAD.md corran solas",
+              "para": "que dejen de depender de que alguien se acuerde de hacerlas a mano",
+              "criterios": [
+                "Suite ejecutable contra el mismo esquema que va al servidor",
+                "Falla al primer error y devuelve código distinto de cero",
+                "Verificada en negativo: detecta la regresión que busca"
+              ],
+              "etiquetas": ["Infra", "BackEnd", "hecha"],
+              "origen": "entorno/pruebas/seguridad.sql, SEGURIDAD.md"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "numero": 1,
+      "nombre": "Captura real",
+      "objetivo": "El líder captura en la vereda sin señal, baja al pueblo, sincroniza, y el dato llega a la base central. Es el ciclo completo de la herramienta. Sin esto, todo lo demás es teoría.",
+      "apartados": [
+        {
+          "numero": "1.1",
+          "nombre": "Plataforma base",
+          "hus": [
+            {
+              "id": "HU 1.1.1",
+              "titulo": "Infraestructura reproducible desde código",
+              "como": "responsable de plataforma",
+              "quiero": "levantar y destruir el entorno completo desde código",
+              "para": "que el sistema no quede irreproducible el día que quien lo montó no esté",
+              "criterios": [
+                "RDS PostgreSQL con PostGIS habilitado",
+                "Bucket privado con los cuatro bloqueos de acceso público",
+                "Cognito con refresh token largo: capturar no puede exigir sesión vigente",
+                "Sin puerta de enlace NAT: se usan endpoints de VPC",
+                "Se levanta y se destruye completo desde cero"
+              ],
+              "etiquetas": ["Infra"],
+              "origen": "ADR 002, ADR 004",
+              "desbloquea": "todo el hito 1"
+            },
+            {
+              "id": "HU 1.1.2",
+              "titulo": "Desplegar sin llaves de larga vida",
+              "como": "responsable de plataforma",
+              "quiero": "que el pipeline se autentique por identidad federada",
+              "para": "que no haya un secreto de nube guardado en el repositorio",
+              "criterios": [
+                "Un rol por entorno, con confianza limitada al repositorio y la rama",
+                "Ningún secreto de AWS en la configuración del repositorio",
+                "Los devs no reciben consola de la nube; quien depure recibe lectura de registros"
+              ],
+              "etiquetas": ["Infra"],
+              "origen": "ADR 004"
+            },
+            {
+              "id": "HU 1.1.3",
+              "titulo": "Cambiar el esquema sin coordinar con nadie",
+              "como": "desarrollador",
+              "quiero": "proponer un cambio de esquema como archivo numerado en mi PR",
+              "para": "que el despliegue lo aplique solo y yo no tenga que tocar la base",
+              "criterios": [
+                "Migraciones numeradas, aplicadas una sola vez y antes de que la versión nueva reciba tráfico",
+                "Sólo aditivas: ninguna columna se elimina en la misma entrega en que deja de usarse",
+                "Nunca se asume que todos los clientes están actualizados: un celular puede correr la versión de la semana pasada durante días",
+                "Los catálogos NO son migraciones"
+              ],
+              "etiquetas": ["Infra", "BackEnd"],
+              "origen": "ADR 004"
+            },
+            {
+              "id": "HU 1.1.4",
+              "titulo": "Que no llegue una factura sorpresa",
+              "como": "responsable del proyecto",
+              "quiero": "presupuesto con alerta desde el primer recurso",
+              "para": "que una infraestructura financiada por donación no se vuelva un problema de confianza",
+              "criterios": [
+                "Alerta de presupuesto configurada antes del primer despliegue",
+                "Sin puerta de enlace NAT, sin intermediario de conexiones, sin base sin servidor con mínimo de capacidad",
+                "Costo mensual verificado dentro del rango del ADR 002"
+              ],
+              "etiquetas": ["Infra"],
+              "origen": "ADR 002"
+            }
+          ]
+        },
+        {
+          "numero": "1.2",
+          "nombre": "API de sincronización",
+          "hus": [
+            {
+              "id": "HU 1.2.1",
+              "titulo": "Contrato de la API antes de repartir el trabajo",
+              "como": "equipo de backend",
+              "quiero": "un contrato escrito de rutas, formas y errores",
+              "para": "que diez personas puedan construir en paralelo sin colisionar",
+              "criterios": [
+                "Documento OpenAPI versionado en el repositorio",
+                "Cubre alta y actualización de caso, URL prefirmada de fotografía, consulta de casos propios y gestión de remisiones",
+                "Los errores se clasifican en transporte, sesión y rechazo, según ADR 003",
+                "Acepta cargas de clientes viejos: ningún campo nuevo es obligatorio"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "ADR 003, ADR 002",
+              "desbloquea": "casi todo el apartado 1.2 y la HU 1.3.4"
+            },
+            {
+              "id": "HU 1.2.2",
+              "titulo": "Servicio que arranca igual en cualquier entorno",
+              "como": "desarrollador",
+              "quiero": "un servicio que lea toda su configuración del entorno",
+              "para": "que la plataforma pueda cambiar de motor o de región sin que yo me entere",
+              "criterios": [
+                "Los nombres de las variables son los mismos en local y en la nube; sólo cambian los valores",
+                "Escucha en el puerto indicado y expone salud y disponibilidad",
+                "Se construye con un comando estándar, sin argumentos especiales",
+                "Corre contra el entorno local sin tocar la nube"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "ADR 002, ADR 004",
+              "depende_de": "HU 1.2.1"
+            },
+            {
+              "id": "HU 1.2.3",
+              "titulo": "Que el líder siga viendo sólo lo suyo",
+              "como": "líder territorial",
+              "quiero": "que nadie más vea los casos que yo reporté",
+              "para": "proteger a las familias que confiaron sus datos",
+              "criterios": [
+                "La API fija la identidad y cambia de rol DENTRO de cada transacción, así que las 19 políticas siguen corriendo",
+                "Se conecta con un rol sin privilegios propios, nunca como superusuario ni dueño de las tablas",
+                "La identidad es local a la transacción: una conexión reutilizada del pool no arrastra al usuario anterior",
+                "Ninguna autorización se decide en código de la aplicación"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "ADR 002, entorno/postgres/00-shim-auth.sql",
+              "depende_de": "HU 1.2.2"
+            },
+            {
+              "id": "HU 1.2.4",
+              "titulo": "Que un corte de señal no duplique a una familia",
+              "como": "líder territorial",
+              "quiero": "poder reintentar el envío sin miedo",
+              "para": "que el censo no cuente dos veces a la misma familia",
+              "criterios": [
+                "Reintento con el mismo origen_id actualiza la misma fila y devuelve el mismo código",
+                "El servidor asigna el consecutivo institucional RZ-AAAA-NNNNNN",
+                "El registrador no puede firmar un caso a nombre de otro",
+                "Prueba automática del reintento tras respuesta perdida"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "ADR 003",
+              "depende_de": "HU 1.2.3"
+            },
+            {
+              "id": "HU 1.2.5",
+              "titulo": "Subir la fotografía sin gastar el plan de datos de más",
+              "como": "líder territorial",
+              "quiero": "que la fotografía vaya directo al almacenamiento",
+              "para": "que la subida sea lo más liviana y rápida posible",
+              "criterios": [
+                "URL de subida de vida corta, limitada a la ruta del caso",
+                "La fotografía no atraviesa la API en ningún momento",
+                "Sin consentimiento no se emite URL: la regla en el borde, no en la interfaz",
+                "El objeto no queda legible sin firma"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "ADR 003",
+              "depende_de": "HU 1.2.3"
+            },
+            {
+              "id": "HU 1.2.6",
+              "titulo": "Que un token vencido no me cueste la jornada",
+              "como": "líder territorial",
+              "quiero": "seguir capturando aunque mi sesión haya expirado en el monte",
+              "para": "no perder el trabajo de un día por algo que no puedo resolver sin señal",
+              "criterios": [
+                "Verificación de tokens detrás de una interfaz, con implementación de nube y local",
+                "El rol NO se lee del token: se lee de perfiles, así el custodio puede cambiarlo sin esperar a que caduque nada",
+                "Un token vencido devuelve clase sesión, nunca clase rechazo",
+                "Iniciar sesión exige conexión; capturar, no"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "ADR 002, ADR 003",
+              "depende_de": "HU 1.2.2"
+            },
+            {
+              "id": "HU 1.2.7",
+              "titulo": "Entrar y encontrar mi perfil ya creado",
+              "como": "voluntario recién dado de alta",
+              "quiero": "que mi perfil exista la primera vez que entro",
+              "para": "no quedar sin rol, sin poder hacer nada y sin mensaje que lo explique",
+              "criterios": [
+                "Al confirmar la cuenta se refleja el usuario en la base y el disparador crea el perfil",
+                "El rol por defecto es el menos privilegiado: ascender es una acción deliberada del custodio",
+                "Es idempotente: los reintentos no duplican",
+                "El disparador existente no se modifica"
+              ],
+              "etiquetas": ["Infra", "BackEnd"],
+              "origen": "ADR 002, schema.sql §10.b"
+            }
+          ]
+        },
+        {
+          "numero": "1.3",
+          "nombre": "Cliente en el dispositivo",
+          "hus": [
+            {
+              "id": "HU 1.3.1",
+              "titulo": "Que el sistema no me borre lo capturado",
+              "como": "líder territorial",
+              "quiero": "que lo que guardo en el celular no lo borre el teléfono para liberar espacio",
+              "para": "no perder casos que todavía no he podido sincronizar",
+              "criterios": [
+                "Se solicita cuota persistente al arrancar y se registra el resultado",
+                "Se vigila el espacio disponible y se avisa ANTES de que falle una captura",
+                "Prueba automática de la solicitud"
+              ],
+              "etiquetas": ["FrontEnd", "defecto"],
+              "origen": "hallazgos-revision.md H11, ADR 003"
+            },
+            {
+              "id": "HU 1.3.2",
+              "titulo": "Que la aplicación me diga la verdad sobre lo pendiente",
+              "como": "líder territorial",
+              "quiero": "que el botón de sincronizar no diga que hay pendientes si ya no va a enviarlos",
+              "para": "no creer que mi trabajo está a salvo cuando no lo está",
+              "criterios": [
+                "La sesión se verifica ANTES de empezar la pasada, no error por error",
+                "401 y 403 detienen la pasada y NO consumen intentos",
+                "El contador distingue pendiente de agotó reintentos",
+                "Espera con retroceso entre pasadas",
+                "Pruebas: sesión vencida, red caída a la mitad, reintento idempotente"
+              ],
+              "etiquetas": ["FrontEnd", "defecto"],
+              "origen": "hallazgos-revision.md H10, ADR 003"
+            },
+            {
+              "id": "HU 1.3.3",
+              "titulo": "Decidir yo cuándo se gastan mis datos",
+              "como": "líder territorial",
+              "quiero": "que en datos móviles se manden sólo los casos y las fotos esperen al wifi",
+              "para": "que sincronizar no me consuma el plan del mes",
+              "criterios": [
+                "En datos móviles sólo casos; en wifi casos y fotografías; con ahorro de datos, nada sin pedirlo",
+                "El botón dice qué va a mandar y cuánto pesa antes de mandarlo",
+                "Nada de sincronización automática en segundo plano"
+              ],
+              "etiquetas": ["FrontEnd"],
+              "origen": "ADR 003"
+            },
+            {
+              "id": "HU 1.3.4",
+              "titulo": "Cambiar de backend sin tocar la aplicación",
+              "como": "equipo",
+              "quiero": "reemplazar sólo los adaptadores",
+              "para": "comprobar que la frontera de puertos era real y no una promesa",
+              "criterios": [
+                "Sólo cambian los adaptadores y una línea de composición",
+                "Ningún componente ni servicio de dominio se modifica",
+                "La aplicación sigue corriendo completa en modo local sin backend"
+              ],
+              "etiquetas": ["FrontEnd"],
+              "origen": "ADR 002",
+              "depende_de": "HU 1.2.1"
+            },
+            {
+              "id": "HU 1.3.5",
+              "titulo": "Que un cambio no rompa la protección de datos en silencio",
+              "como": "custodia de datos",
+              "quiero": "pruebas que fallen si la identidad empieza a viajar sin autorización",
+              "para": "no depender de que alguien revise a mano en cada cambio",
+              "criterios": [
+                "La construcción de la fila que va al servidor, con y sin consentimiento",
+                "El comportamiento de la cola ante sesión vencida y red caída",
+                "Corren en el pipeline de cada PR"
+              ],
+              "etiquetas": ["FrontEnd", "defecto"],
+              "origen": "hallazgos-revision.md H13"
+            }
+          ]
+        },
+        {
+          "numero": "1.4",
+          "nombre": "Prueba en campo",
+          "hus": [
+            {
+              "id": "HU 1.4.1",
+              "titulo": "Probar la aplicación en un Android de verdad",
+              "como": "equipo",
+              "quiero": "saber qué se siente usar esto de pie, bajo el sol, con la familia esperando",
+              "para": "corregir lo que ninguna prueba automática detecta",
+              "criterios": [
+                "Al menos tres teléfonos distintos, alguno de gama baja y poca memoria",
+                "Un caso completo capturado en modo avión y sincronizado después",
+                "Reporte con qué se intentó, qué pasó y qué incomodó",
+                "Los hallazgos entran como historias nuevas"
+              ],
+              "etiquetas": ["sin código"],
+              "origen": "FRENTES.md F6, ESTADO.md §5"
+            },
+            {
+              "id": "HU 1.4.2",
+              "titulo": "Probar un cambio desde el celular antes de integrarlo",
+              "como": "persona que prueba en campo",
+              "quiero": "abrir un enlace en mi Android y probar lo que alguien propuso",
+              "para": "poder opinar sin instalar nada ni saber programar",
+              "criterios": [
+                "URL propia por cada propuesta de cambio, publicada automáticamente",
+                "La vista previa funciona sin backend, en modo local",
+                "Se retira al cerrar la propuesta"
+              ],
+              "etiquetas": ["Infra"],
+              "origen": "ADR 004, FRENTES.md F6",
+              "desbloquea": "HU 1.4.1"
+            }
+          ]
+        },
+        {
+          "numero": "1.5",
+          "nombre": "Protección de datos mínima",
+          "hus": [
+            {
+              "id": "HU 1.5.1",
+              "titulo": "DECISIÓN · Si el teléfono viaja sin autorización de la familia",
+              "como": "custodia de datos",
+              "quiero": "decidir si el número de contacto entra en la regla de consentimiento",
+              "para": "que lo que el sistema hace y lo que la documentación promete sean lo mismo",
+              "criterios": [
+                "Tres documentos afirman que sin autorización el registro es agregado y sin identidad; el teléfono viaja igual y además es obligatorio",
+                "Tensión legítima: sin teléfono no se puede verificar el caso ni avisarle a la familia",
+                "Escoger una de tres: que el teléfono entre en la regla; mantenerlo y CORREGIR la documentación; o pedir autorización específica para el contacto",
+                "La decisión queda escrita en docs/cumplimiento/"
+              ],
+              "etiquetas": ["decisión F7", "sin código", "bloqueada"],
+              "origen": "hallazgos-revision.md H7",
+              "depende_de": "que la custodia de datos resuelva",
+              "desbloquea": "HU 1.5.2 (alcance)"
+            },
+            {
+              "id": "HU 1.5.2",
+              "titulo": "Que ninguna ruta pueda guardar identidad sin autorización",
+              "como": "custodia de datos",
+              "quiero": "que la regla la imponga la base y no sólo el cliente",
+              "para": "que una carga desde Kobo o un script de la mesa no puedan saltársela",
+              "criterios": [
+                "Restricción en el esquema que rechaza identidad cuando no hay consentimiento",
+                "Se aplica ANTES de que haya datos: después es una migración con filas adentro",
+                "Prueba automática que verifica el rechazo"
+              ],
+              "etiquetas": ["BackEnd", "defecto"],
+              "origen": "hallazgos-revision.md H9",
+              "depende_de": "HU 1.5.1 sólo para el alcance del teléfono"
+            },
+            {
+              "id": "HU 1.5.3",
+              "titulo": "Que retractarse borre también las fotografías",
+              "como": "familia afectada",
+              "quiero": "que si retiro mi autorización no quede ninguna imagen de mi vivienda",
+              "para": "que retirar el consentimiento sirva de algo",
+              "criterios": [
+                "El consentimiento se evalúa al persistir y al enviar la fotografía, no sólo en la pantalla",
+                "Al desmarcar la autorización, las fotografías del caso se descartan",
+                "Prueba automática del escenario: se autoriza, se toman fotos, se retracta"
+              ],
+              "etiquetas": ["FrontEnd", "defecto"],
+              "origen": "hallazgos-revision.md H8"
+            }
+          ]
+        },
+        {
+          "numero": "1.6",
+          "nombre": "Documentación y coordinación",
+          "hus": [
+            {
+              "id": "HU 1.6.1",
+              "titulo": "Recalcular el plan con el equipo real",
+              "como": "coordinación",
+              "quiero": "que el documento de roles refleje 15 contribuyentes y no 3",
+              "para": "que el plan no siga calculado sobre una capacidad que ya no es la nuestra",
+              "criterios": [
+                "Escenario recalculado con la capacidad actual",
+                "Rol de plataforma agregado, con su carácter permanente explícito frente a un frente que termina",
+                "Varios revisores por capacidad: con 15 contribuyentes el cuello de botella es la revisión, no la capacidad",
+                "La plataforma va ANTES de los frentes que dependen de ella"
+              ],
+              "etiquetas": ["sin código"],
+              "origen": "ADR 004, capacidades del equipo"
+            },
+            {
+              "id": "HU 1.6.2",
+              "titulo": "Que la documentación no contradiga al código",
+              "como": "persona que llega al proyecto",
+              "quiero": "que lo que leo sea lo que el sistema hace",
+              "para": "no tomar decisiones sobre afirmaciones que ya no son ciertas",
+              "criterios": [
+                "El conteo de tablas, el número de frentes y el de preguntas del formulario",
+                "El prefijo de código del tablero estático frente al del esquema",
+                "Política de seguridad de contenido en las cabeceras de despliegue"
+              ],
+              "etiquetas": ["sin código"],
+              "origen": "hallazgos-revision.md, desajustes menores"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "numero": 2,
+      "nombre": "Evidencia",
+      "objetivo": "Cifras y mapa que se le pueden mostrar a una entidad para sustentar una petición, con el marco de protección de datos en regla y despliegue controlado.",
+      "apartados": [
+        {
+          "numero": "2.1",
+          "nombre": "Tablero y mapa",
+          "hus": [
+            {
+              "id": "HU 2.1.1",
+              "titulo": "DECISIÓN · Qué puede mostrar el mapa público",
+              "como": "custodia de datos",
+              "quiero": "definir el nivel de agregación de la vista pública",
+              "para": "que el mapa ubique la afectación sin señalar la casa de una familia",
+              "criterios": [
+                "Tres documentos dicen que toda vista pública es agregada; el mapa no lo es: es una fila por familia con vereda, personas, menores y coordenada a 110 m",
+                "En una vereda con pocos hogares eso puede identificar a una familia",
+                "Escoger: umbral de anonimato por vereda, retirar código y desglose, o agregar por vereda",
+                "Confirmar si el archivo del tablero estático contiene dato inventado o real"
+              ],
+              "etiquetas": ["decisión F7", "sin código", "bloqueada"],
+              "origen": "hallazgos-revision.md H12",
+              "depende_de": "que la custodia de datos resuelva",
+              "desbloquea": "HU 2.1.2"
+            },
+            {
+              "id": "HU 2.1.2",
+              "titulo": "Sustentar una petición ante una entidad con cifras y mapa",
+              "como": "mesa de sistematización",
+              "quiero": "mostrar cuántas familias, dónde y con qué prioridad",
+              "para": "tener con qué negociar ante la entidad competente",
+              "criterios": [
+                "Consume la vista pública, nunca la tabla con identidad",
+                "Funciona con los datos inventados del entorno local",
+                "Las cifras cuadran con el total consolidado: si no cuadran, se pierde la palanca"
+              ],
+              "etiquetas": ["FrontEnd"],
+              "origen": "FRENTES.md F4",
+              "depende_de": "HU 2.1.1"
+            },
+            {
+              "id": "HU 2.1.3",
+              "titulo": "Que el mapa público no toque la base",
+              "como": "responsable de plataforma",
+              "quiero": "servir el mapa como archivo regenerado periódicamente",
+              "para": "eliminar la superficie anónima contra la base de datos",
+              "criterios": [
+                "Regeneración programada, sin acceso anónimo a la base",
+                "Se revoca el permiso del rol anónimo cuando el archivo esté en uso",
+                "Coordenada degradada y sin identidad, verificado en la generación"
+              ],
+              "etiquetas": ["Infra", "BackEnd"],
+              "origen": "ADR 002"
+            }
+          ]
+        },
+        {
+          "numero": "2.2",
+          "nombre": "Datos y cumplimiento",
+          "hus": [
+            {
+              "id": "HU 2.2.1",
+              "titulo": "Marco de tratamiento de datos que se pueda aplicar",
+              "como": "custodia de datos",
+              "quiero": "política, autorización, retención y procedimiento de supresión escritos",
+              "para": "que el listado sea admisible y ninguna familia quede expuesta",
+              "criterios": [
+                "Los cuatro documentos en Markdown, versionados y revisados jurídicamente",
+                "Resuelve la tensión entre el derecho de supresión y la auditoría, que hoy conserva identidad",
+                "Nombra explícitamente el paso de borrar las fotografías del almacenamiento y quién lo ejecuta",
+                "Define qué pasa con la base cuando la emergencia se cierre y quién la custodia"
+              ],
+              "etiquetas": ["decisión F7", "sin código"],
+              "origen": "cumplimiento/README.md"
+            },
+            {
+              "id": "HU 2.2.2",
+              "titulo": "Que el celular no acumule datos de familias para siempre",
+              "como": "custodia de datos",
+              "quiero": "que la base local se purgue de lo ya confirmado",
+              "para": "que un teléfono perdido no sea una filtración",
+              "criterios": [
+                "Plazo definido por el marco de tratamiento y cableado en la aplicación",
+                "Sólo se borra lo confirmado por el servidor",
+                "Procedimiento escrito para cuando un voluntario se retira o pierde el teléfono"
+              ],
+              "etiquetas": ["FrontEnd", "decisión F7"],
+              "origen": "cumplimiento/README.md §3, ADR 003",
+              "depende_de": "HU 2.2.1 define el plazo"
+            }
+          ]
+        },
+        {
+          "numero": "2.3",
+          "nombre": "Entrega controlada",
+          "hus": [
+            {
+              "id": "HU 2.3.1",
+              "titulo": "Que nada llegue a producción sin que alguien lo apruebe",
+              "como": "custodia de datos",
+              "quiero": "aprobar los cambios que tocan datos de familias antes de que salgan",
+              "para": "que mi veto exista en el camino de la entrega y no sólo en el chat",
+              "criterios": [
+                "Automático hasta preproducción; el paso a producción lo aprueba una persona",
+                "Se promueve la misma imagen, no se reconstruye",
+                "Volver atrás es desplegar la versión anterior",
+                "Un cambio que toque exportación nominal, vistas públicas o políticas requiere aprobación de la custodia",
+                "Preproducción NUNCA recibe datos reales: garantía del pipeline, no disciplina de las personas"
+              ],
+              "etiquetas": ["Infra"],
+              "origen": "ADR 004"
+            },
+            {
+              "id": "HU 2.3.2",
+              "titulo": "Comprobar que las fotografías no son públicas",
+              "como": "custodia de datos",
+              "quiero": "verificar contra la nube real que nadie puede abrir una foto por URL",
+              "para": "cerrar el único control que el entorno local no puede sostener",
+              "criterios": [
+                "Una petición anónima a una fotografía devuelve error en la nube real",
+                "Bloqueo de acceso público activo a nivel de CUENTA, no sólo de bucket",
+                "El asesor de seguridad no reporta advertencias",
+                "Las seis verificaciones de SEGURIDAD.md corren contra el proyecto real"
+              ],
+              "etiquetas": ["Infra"],
+              "origen": "SEGURIDAD.md punto 6, entorno/pruebas/flujo-completo.sh"
+            }
+          ]
+        },
+        {
+          "numero": "2.4",
+          "nombre": "Vía paralela de Kobo",
+          "hus": [
+            {
+              "id": "HU 2.4.1",
+              "titulo": "Traer lo capturado en Kobo sin duplicar nada",
+              "como": "mesa de sistematización",
+              "quiero": "cargar todos los días lo que entró por el formulario de Kobo",
+              "para": "que la vía paralela no se detenga mientras se construye la aplicación propia",
+              "criterios": [
+                "Idempotente: repetir el proceso completo no duplica un solo registro",
+                "Los campos de selección múltiple llegan separados por espacio y se convierten correctamente",
+                "Se puede correr sin supervisión"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "schema.sql §11, ESTADO.md"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "numero": 3,
+      "nombre": "Exigibilidad",
+      "objetivo": "Registro de a qué entidad se remitió cada familia, con radicado, respuesta y días sin responder. Es lo que convierte una base de datos en un instrumento de presión.",
+      "apartados": [
+        {
+          "numero": "3.1",
+          "nombre": "Remisiones y seguimiento",
+          "hus": [
+            {
+              "id": "HU 3.1.1",
+              "titulo": "Remitir un caso a la entidad competente con radicado",
+              "como": "mesa de sistematización",
+              "quiero": "registrar a qué entidad remití cada familia y con qué número de radicado",
+              "para": "que la solicitud sea exigible y no una gestión de palabra",
+              "criterios": [
+                "Registrar entidad, asunto, fecha y radicado",
+                "Sin radicado la remisión no es exigible: la interfaz lo refleja",
+                "El destinatario cambia según el tipo de afectación, sobre el mismo registro único"
+              ],
+              "etiquetas": ["FrontEnd", "BackEnd"],
+              "origen": "FRENTES.md F5"
+            },
+            {
+              "id": "HU 3.1.2",
+              "titulo": "Ver cuánto lleva una entidad sin responder",
+              "como": "mesa de sistematización",
+              "quiero": "un tablero de mora por entidad que crezca cada día",
+              "para": "poder sustentar la presión con un número que nadie pueda discutir",
+              "criterios": [
+                "La mora se calcula al consultar y aumenta cada día sin respuesta",
+                "Ordenado por entidad con más casos sin responder",
+                "Verificado de punta a punta en la prueba funcional del entorno"
+              ],
+              "etiquetas": ["FrontEnd"],
+              "origen": "FRENTES.md F5, entorno/pruebas/flujo-completo.sh"
+            },
+            {
+              "id": "HU 3.1.3",
+              "titulo": "Registrar la respuesta y cerrar el caso",
+              "como": "mesa de sistematización",
+              "quiero": "anotar qué respondió la entidad y qué pasó con la familia",
+              "para": "acompañar cada caso hasta que alguien responda por él",
+              "criterios": [
+                "Registrar respuesta, fecha y estado",
+                "Al responder, el caso sale de la mora",
+                "Queda el rastro completo: quién remitió, cuándo, qué contestaron"
+              ],
+              "etiquetas": ["FrontEnd", "BackEnd"],
+              "origen": "FRENTES.md F5, ESTADO.md §1"
+            }
+          ]
+        },
+        {
+          "numero": "3.2",
+          "nombre": "Entrega formal a entidades",
+          "hus": [
+            {
+              "id": "HU 3.2.1",
+              "titulo": "Entregar el listado nominal por canal formal y dejar rastro",
+              "como": "custodia de datos",
+              "quiero": "ser la única que puede exportar datos con identidad, y que quede registrado",
+              "para": "poder responder por dónde está cada copia del listado",
+              "criterios": [
+                "Restringido al rol de custodia",
+                "Cada exportación registra quién, cuándo, con qué filtro y cuántas filas",
+                "Se entrega por enlace de vida corta, no como adjunto abierto",
+                "Incluye la cláusula de finalidad: la entidad pasa a ser responsable y no se autoriza uso secundario"
+              ],
+              "etiquetas": ["BackEnd"],
+              "origen": "README.md, cumplimiento/README.md §7"
+            },
+            {
+              "id": "HU 3.2.2",
+              "titulo": "Nombres exactos de las dependencias destinatarias",
+              "como": "mesa de sistematización",
+              "quiero": "el nombre exacto de cada dependencia a la que se radica",
+              "para": "que el oficio no se devuelva por estar mal dirigido",
+              "criterios": [
+                "Dependencia responsable de vivienda urbana, con nombre exacto",
+                "Entidades y contactos confirmados y cargados en el catálogo",
+                "Sigla y nombre completo de la organización internacional de representación",
+                "Formato oficial de censo del consejo municipal de gestión del riesgo"
+              ],
+              "etiquetas": ["sin código", "bloqueada"],
+              "origen": "ESTADO.md §4, FRENTES.md",
+              "depende_de": "gestión ante las entidades",
+              "bloquea": "radicar el primer reporte"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "numero": 4,
+      "nombre": "Escala",
+      "objetivo": "Otro municipio puede usar Raíz sin tocar código. Es lo que convierte esto en una herramienta reutilizable en vez de un proyecto de una sola emergencia.",
+      "apartados": [
+        {
+          "numero": "4.1",
+          "nombre": "Multi-municipio",
+          "hus": [
+            {
+              "id": "HU 4.1.1",
+              "titulo": "Listado oficial de veredas",
+              "como": "mesa de sistematización",
+              "quiero": "el listado oficial de veredas del municipio",
+              "para": "que la misma vereda no entre escrita de cuatro formas y las cifras se sostengan",
+              "criterios": [
+                "Listado oficial obtenido y versionado como catálogo",
+                "Criterio de normalización de nombres definido"
+              ],
+              "etiquetas": ["sin código", "bloqueada"],
+              "origen": "ESTADO.md §4",
+              "depende_de": "gestión ante la alcaldía",
+              "bloquea": "HU 4.1.2 y las cifras por vereda"
+            },
+            {
+              "id": "HU 4.1.2",
+              "titulo": "Usar Raíz en otro municipio sin tocar código",
+              "como": "equipo de otro municipio",
+              "quiero": "configurar mi municipio y mis veredas",
+              "para": "aprovechar lo construido sin volver a levantar todo desde cero",
+              "criterios": [
+                "Municipio y departamento son configuración, no constantes",
+                "Catálogo de veredas por municipio",
+                "Un municipio nuevo no requiere desplegar código"
+              ],
+              "etiquetas": ["BackEnd", "Infra"],
+              "origen": "FRENTES.md F8",
+              "depende_de": "HU 4.1.1"
+            }
+          ]
+        },
+        {
+          "numero": "4.2",
+          "nombre": "Catálogos administrables",
+          "hus": [
+            {
+              "id": "HU 4.2.1",
+              "titulo": "Agregar una vereda sin pedirle nada a un programador",
+              "como": "mesa de sistematización",
+              "quiero": "administrar veredas, organizaciones y entidades desde una pantalla",
+              "para": "que cada dato nuevo no se convierta en una propuesta de cambio y un despliegue",
+              "criterios": [
+                "Alta y edición de veredas, organizaciones y entidades destinatarias",
+                "Restringido a la mesa",
+                "Los cambios quedan auditados"
+              ],
+              "etiquetas": ["FrontEnd", "BackEnd"],
+              "origen": "ADR 004"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
