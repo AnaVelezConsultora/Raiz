@@ -193,6 +193,12 @@ def main():
     if modelo["tablero"] in existentes:
         tablero = existentes[modelo["tablero"]]
         print(f"\nReutilizando tablero existente: {tablero['id']}")
+        # La descripcion tambien se mantiene desde el modelo: es donde el tablero
+        # explica como se lee, y si solo se escribiera al crearlo quedaria congelada.
+        actual = consultar(f"/boards/{tablero['id']}", fields="desc").get("desc")
+        if actual != modelo["descripcion"]:
+            pedir("PUT", f"/boards/{tablero['id']}", desc=modelo["descripcion"])
+            print("  ~ descripción del tablero actualizada")
     else:
         print("\nCreando tablero")
         tablero = pedir(

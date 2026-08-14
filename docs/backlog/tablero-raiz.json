@@ -1,11 +1,12 @@
 {
   "tablero": "Raíz — Backlog",
-  "descripcion": "Caracterización y seguimiento de familias afectadas por el sismo en Sevilla, Valle del Cauca. Estructura: hitos numerados → apartados → historias de usuario. Derivado de docs/FRENTES.md, docs/ROLES-Y-ESFUERZO.md, docs/hallazgos-revision.md y los ADR 002, 003 y 004.",
+  "descripcion": "Caracterización y seguimiento de familias afectadas por el sismo en Sevilla, Valle del Cauca. Estructura: hitos numerados → apartados → historias de usuario. No hay sprints: los hitos son estados del producto, no iteraciones con fecha. Se toma la siguiente historia sin bloquear del hito más bajo. Derivado de docs/FRENTES.md, docs/ROLES-Y-ESFUERZO.md, docs/hallazgos-revision.md y los ADR 002, 003 y 004.",
   "corte": "2026-08-13",
   "convenciones": {
     "numeracion": "HU <hito>.<apartado>.<historia>. El numeral lleva la jerarquía: HU 1.2.4 es la cuarta historia del segundo apartado del hito 1.",
     "listas_trello": "Cada hito es una lista. Las historias se ordenan por su numeral dentro de la lista.",
-    "asignacion": "Las 14 personas del equipo son contribuyentes. Solo se listan quienes coinciden en el organigrama de GitHub y en el tablero de Trello. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
+    "ritmo": "NO HAY SPRINTS. Los hitos son estados a los que llega el producto, no iteraciones con fecha: el hito 1 no dura dos semanas, termina cuando sus historias estan hechas. Esto atiende una emergencia y se trabaja contra reloj, asi que no hay ceremonia de planeacion ni espera de corte: quien queda libre toma la siguiente historia sin bloquear del hito mas bajo y avisa en el grupo que la tomo. Una historia con etiqueta 'bloqueada' no se toma; su campo depende_de dice que falta.",
+    "asignacion": "Las 15 personas del equipo son contribuyentes. Solo se listan quienes coinciden en el organigrama de GitHub y en el tablero de Trello. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
     "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta.",
     "responsable": "El campo asignado es la persona responsable en Trello y se asigna de verdad al miembro del tablero. El campo sugerido son handles de GitHub de quienes pueden apoyar, y es un punto de partida que se confirma en el grupo.",
     "personas": "El bloque `personas` cruza handle de GitHub con cuenta de Trello. Quien tenga cuenta queda asignado de verdad a la tarjeta; quien no, figura por nombre en la descripcion."
@@ -35,6 +36,10 @@
     "oramirez1512-CO": {
       "nombre": "Oscar Ramirez",
       "trello": "oscarramirez279"
+    },
+    "pkill2913": {
+      "nombre": "Oscar Castillo",
+      "trello": "oscareduardocastillo"
     },
     "davidf9265": {
       "nombre": "David Franco",
@@ -230,6 +235,7 @@
               "origen": "ADR 002, ADR 004",
               "desbloquea": "todo el hito 1",
               "sugerido": [
+                "pkill2913",
                 "Frank-Apotheosis"
               ],
               "asignado": "yonathangutierrez"
@@ -291,7 +297,10 @@
                 "Infra"
               ],
               "origen": "ADR 002",
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "sugerido": [
+                "pkill2913"
+              ]
             }
           ]
         },
