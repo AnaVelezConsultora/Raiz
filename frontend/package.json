@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "servir": "ng build && node tools/servidor-estatico.mjs",
+    "verificar": "tsc --noEmit -p tsconfig.app.json && ng build"
   },
   "private": true,
   "packageManager": "npm@11.2.0",

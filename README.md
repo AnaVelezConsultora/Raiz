@@ -80,5 +80,9 @@ Datos personales y sensibles de poblacion vulnerable, sujetos a la Ley 1581 de 2
 ```bash
 cd frontend
 npm install
-npm start
+npm start      # desarrollo en http://localhost:4200
+npm run servir # compila y sirve en 4300 PARA PROBAR EL MODO SIN CONEXION
 ```
+
+`npm start` NO activa el service worker, asi que ahi no se puede verificar el modo sin
+conexion. Guia completa en **[docs/DESARROLLO.md](docs/DESARROLLO.md)**.
