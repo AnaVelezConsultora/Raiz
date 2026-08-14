@@ -111,11 +111,19 @@ def orden(hu_id):
 
 
 def rotular(handle, personas):
-    """'davidf9265' -> 'David Franco (@davidf9265)'. Sin ficha, deja el handle solo."""
+    """
+    'davidf9265' -> 'David Franco (`@davidf9265`)'. Sin ficha, deja el handle solo.
+
+    Van entre acentos graves a proposito: Trello trata un @algo suelto como mencion,
+    lo pasa a minusculas al guardarlo y entonces la descripcion nunca coincide con la
+    calculada, de modo que el script reescribe las mismas tarjetas en cada corrida.
+    Como codigo se guarda tal cual, y de paso los handles de GitHub distinguen
+    mayusculas.
+    """
     ficha = personas.get(handle)
     if not isinstance(ficha, dict) or not ficha.get("nombre"):
-        return f"@{handle}"
-    return f"{ficha['nombre']} (@{handle})"
+        return f"`@{handle}`"
+    return f"{ficha['nombre']} (`@{handle}`)"
 
 
 def descripcion(hu, apartado, personas):

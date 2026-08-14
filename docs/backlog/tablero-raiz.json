@@ -5,7 +5,7 @@
   "convenciones": {
     "numeracion": "HU <hito>.<apartado>.<historia>. El numeral lleva la jerarquía: HU 1.2.4 es la cuarta historia del segundo apartado del hito 1.",
     "listas_trello": "Cada hito es una lista. Las historias se ordenan por su numeral dentro de la lista.",
-    "asignacion": "Las 15 personas del equipo son contribuyentes. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
+    "asignacion": "Las 14 personas del equipo son contribuyentes. Solo se listan quienes coinciden en el organigrama de GitHub y en el tablero de Trello. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
     "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta.",
     "responsable": "El campo asignado es la persona responsable en Trello y se asigna de verdad al miembro del tablero. El campo sugerido son handles de GitHub de quienes pueden apoyar, y es un punto de partida que se confirma en el grupo.",
     "personas": "El bloque `personas` cruza handle de GitHub con cuenta de Trello. Quien tenga cuenta queda asignado de verdad a la tarjeta; quien no, figura por nombre en la descripcion."
@@ -64,12 +64,8 @@
       "nombre": "Gerardo Gonzalez",
       "trello": null
     },
-    "pkill2913": {
-      "nombre": "Oscar",
-      "trello": null
-    },
-    "Herreran903": {
-      "nombre": "(por confirmar)",
+    "luigiands-tech": {
+      "nombre": "Gabriel Rojas",
       "trello": null
     }
   },
@@ -234,7 +230,6 @@
               "origen": "ADR 002, ADR 004",
               "desbloquea": "todo el hito 1",
               "sugerido": [
-                "pkill2913",
                 "Frank-Apotheosis"
               ],
               "asignado": "yonathangutierrez"
@@ -296,9 +291,6 @@
                 "Infra"
               ],
               "origen": "ADR 002",
-              "sugerido": [
-                "pkill2913"
-              ],
               "asignado": "yonathangutierrez"
             }
           ]
@@ -541,7 +533,7 @@
               "origen": "ADR 002",
               "depende_de": "HU 1.2.1",
               "sugerido": [
-                "Herreran903"
+                "luigiands-tech"
               ],
               "asignado": "yonathangutierrez"
             },
@@ -682,7 +674,7 @@
               ],
               "origen": "hallazgos-revision.md H8",
               "sugerido": [
-                "Herreran903"
+                "luigiands-tech"
               ],
               "asignado": "yonathangutierrez"
             }
