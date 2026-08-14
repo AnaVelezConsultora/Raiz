@@ -1,0 +1,178 @@
+# =============================================================================
+# ENTORNO LOCAL DE RAIZ
+#
+# Emula la forma que va a tener AWS, para que un dev no tenga que imaginarsela:
+# los mismos servicios, los mismos nombres de variable, el mismo orden de arranque.
+#
+#   db        PostgreSQL 16 + PostGIS   ->  RDS PostgreSQL
+#   aws       LocalStack (S3)           ->  S3
+#   cognito   cognito-local             ->  Cognito User Pool
+#   bootstrap aws-cli                   ->  Terraform + Lambda Post-Confirmation
+#   siembra   psql                      ->  (solo local: datos de prueba)
+#
+# NO hace falta para trabajar en la PWA. `npm start` en frontend/ funciona sin
+# nada de esto y seguira funcionando: el ciclo de desarrollo no depende de que
+# haya infraestructura levantada. Si algun dia deja de ser cierto, se rompio la
+# propiedad que hace viable el proyecto con voluntarios de dos horas semanales.
+#
+#   docker compose up -d      levanta todo y siembra
+#   docker compose down       apaga conservando los datos
+#   docker compose down -v    borra los datos y fuerza reinicializacion
+#
+# Los scripts de /docker-entrypoint-initdb.d SOLO corren con el volumen vacio.
+# Si cambias el esquema o el shim, hace falta `down -v`.
+# =============================================================================
+
+name: raiz-local
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Base de datos. Es el sistema de registro y la pieza que mas importa.
+  #
+  # No se emula: es PostgreSQL de verdad, con PostGIS de verdad. RDS es esto
+  # mismo administrado, asi que lo que pasa aqui pasa alla. El unico archivo que
+  # traduce entre proveedores es 00-shim-auth.sql.
+  #
+  # Orden de inicializacion (alfabetico, lo impone la imagen):
+  #   00 shim de identidad   -> lo que Supabase daba y AWS no
+  #   01 roles               -> anon / authenticated / raiz_api
+  #   50 schema.sql          -> EL MISMO ARCHIVO QUE VA A RDS, sin modificar
+  #   60 grants              -> permisos de tabla
+  #   70 catalogos           -> organizaciones ficticias
+  # Las semillas de usuarios y casos NO van aqui: dependen de Cognito.
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: raiz-db
+    environment:
+      POSTGRES_DB: raiz
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/00-shim-auth.sql:/docker-entrypoint-initdb.d/00-shim-auth.sql:ro
+      - ./postgres/01-roles.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
+      - ../supabase/schema.sql:/docker-entrypoint-initdb.d/50-schema.sql:ro
+      - ./postgres/60-grants.sql:/docker-entrypoint-initdb.d/60-grants.sql:ro
+      - ./postgres/70-semillas-catalogos.sql:/docker-entrypoint-initdb.d/70-semillas-catalogos.sql:ro
+      - ./pruebas:/pruebas:ro
+      - datos-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d raiz"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  # ---------------------------------------------------------------------------
+  # S3 via LocalStack.
+  #
+  # Solo S3 esta habilitado. Se agrega otro servicio el dia que el diseno lo
+  # necesite, no antes: cada servicio levantado es memoria del portatil de un
+  # voluntario.
+  #
+  # ADVERTENCIA: LocalStack no aplica IAM con el rigor de AWS. Que una politica
+  # de bucket "funcione" aqui NO significa que este bien en AWS. El punto 6 de
+  # SEGURIDAD.md -el bucket publico- se verifica en preproduccion, nunca aqui.
+  # ---------------------------------------------------------------------------
+  aws:
+    image: localstack/localstack:3
+    container_name: raiz-aws
+    environment:
+      SERVICES: s3
+      AWS_DEFAULT_REGION: us-east-1
+      DEBUG: "0"
+    ports:
+      - "4566:4566"
+    volumes:
+      - datos-aws:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # ---------------------------------------------------------------------------
+  # Cognito.
+  #
+  # LocalStack solo trae Cognito en su plan pago, asi que se usa cognito-local,
+  # que es libre y cubre lo que hace falta: crear usuarios, autenticar y emitir
+  # tokens firmados con un JWKS consultable.
+  #
+  # El ROL del usuario NO vive aqui. Vive en `perfiles.rol`, en PostgreSQL, y lo
+  # lee mi_rol(). Es deliberado: asi el custodio asciende o degrada a alguien y
+  # surte efecto en la consulta siguiente, sin tocar el proveedor de identidad y
+  # sin esperar a que caduque un token.
+  # ---------------------------------------------------------------------------
+  cognito:
+    image: jagregory/cognito-local:latest
+    container_name: raiz-cognito
+    ports:
+      - "9229:9229"
+    volumes:
+      - datos-cognito:/app/.cognito
+
+  # ---------------------------------------------------------------------------
+  # Bootstrap: crea el bucket y el User Pool con la CLI de AWS.
+  #
+  # Se usa la CLI a proposito, y no un script en Node: lo que el dev ve en el log
+  # son los comandos reales de AWS. En produccion los ejecuta Terraform, pero las
+  # llamadas son las mismas.
+  #
+  # Escribe dos archivos en el volumen `generado`:
+  #   usuarios.sql            los INSERT en auth.users con el `sub` real
+  #   entorno.generado.env    los identificadores del pool para el .env
+  # ---------------------------------------------------------------------------
+  bootstrap:
+    image: amazon/aws-cli:latest
+    container_name: raiz-bootstrap
+    depends_on:
+      aws:
+        condition: service_healthy
+      cognito:
+        condition: service_started
+    environment:
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_DEFAULT_REGION: us-east-1
+      S3_ENDPOINT: http://aws:4566
+      COGNITO_ENDPOINT: http://cognito:9229
+      S3_BUCKET_FOTOS: raiz-fotos
+      ORIGEN_PWA: http://localhost:4200
+    entrypoint: ["/bin/bash", "/bootstrap/bootstrap.sh"]
+    volumes:
+      - ./aws:/bootstrap:ro
+      - generado:/generado
+
+  # ---------------------------------------------------------------------------
+  # Siembra: mete en la base los usuarios que Cognito acaba de crear.
+  #
+  # Este servicio ES el Lambda de Post-Confirmation, en miniatura. En AWS, cuando
+  # alguien confirma su cuenta, el Lambda inserta en auth.users; esa insercion
+  # dispara tr_crear_perfil y nace el perfil con rol 'lider'.
+  #
+  # Aqui pasa exactamente lo mismo. Por eso el orden importa y por eso las
+  # semillas no traen UUID escritos a mano: el `sub` lo manda Cognito, igual que
+  # en produccion.
+  # ---------------------------------------------------------------------------
+  siembra:
+    image: postgres:16-alpine
+    container_name: raiz-siembra
+    depends_on:
+      db:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    environment:
+      PGPASSWORD: postgres
+    entrypoint: ["/bin/sh", "/siembra/siembra.sh"]
+    volumes:
+      - ./postgres:/siembra:ro
+      - generado:/generado
+
+volumes:
+  datos-db:
+  datos-aws:
+  datos-cognito:
+  generado:

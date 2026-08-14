@@ -276,11 +276,20 @@ create table remisiones (
   responsable      text,
   respuesta        text,
   fecha_respuesta  date,
-  dias_sin_respuesta integer
-                     generated always as (
-                       case when fecha_respuesta is null
-                         then (current_date - fecha_envio) end
-                     ) stored,
+  -- Los dias sin respuesta NO se almacenan: se calculan al consultar.
+  --
+  -- Antes esto era una columna generada `stored` sobre current_date, y tenia dos
+  -- problemas. El primero es que PostgreSQL la rechaza: una expresion generada
+  -- debe ser inmutable y current_date no lo es, asi que el esquema completo
+  -- fallaba al crearse.
+  --
+  -- El segundo importa mas. Aunque se hubiera podido almacenar, el valor habria
+  -- quedado congelado el dia de la insercion, y el sentido de este dato es
+  -- exactamente el contrario: mide cuanto lleva una entidad SIN responder, asi
+  -- que tiene que crecer cada dia que pasa. Congelado en cero, la vista de
+  -- presion institucional habria mostrado siempre cero dias de mora.
+  --
+  -- El calculo vive ahora en v_estado_gestion.
   creado_en        timestamptz not null default now()
 );
 create index idx_remisiones_familia on remisiones (familia_id);
@@ -407,7 +416,10 @@ select
   count(r.id)                                          as casos_remitidos,
   count(r.id) filter (where r.estado = 'atendido')     as atendidos,
   count(r.id) filter (where r.fecha_respuesta is null) as sin_respuesta,
-  max(r.dias_sin_respuesta)                            as dias_max_sin_respuesta
+  -- Se calcula al consultar, no al escribir: la mora crece cada dia que la
+  -- entidad no responde. Ver el comentario en la tabla remisiones.
+  max(case when r.fecha_respuesta is null
+           then current_date - r.fecha_envio end)      as dias_max_sin_respuesta
 from entidades e
 left join remisiones r on r.entidad_id = e.id
 group by e.nombre
