@@ -132,6 +132,11 @@ def descripcion(hu, apartado, personas):
         f"**Como** {hu['como']}\n**quiero** {hu['quiero']}\n**para** {hu['para']}.",
     ]
 
+    # Va antes de los criterios: si dice que la historia se puede tomar ya, esa es la
+    # primera cosa que necesita saber quien abre la tarjeta buscando en que ayudar.
+    if hu.get("nota"):
+        partes.append(f"> {hu['nota']}")
+
     if hu.get("criterios"):
         partes.append(
             "**Criterios de aceptación**\n"
