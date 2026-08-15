@@ -81,6 +81,13 @@ else
   exit 1
 fi
 
+# La version que va a quedar publicada, para que quede en el registro de la entrega.
+# Sale del mismo sitio que el pie de la aplicacion, asi que lo que se lee aqui es
+# exactamente lo que va a leer el voluntario en el celular.
+VERSION="$(node -p "require('$RAIZ_REPO/frontend/package.json').version")"
+echo ""
+echo "==> publicando la version $VERSION"
+
 # -----------------------------------------------------------------------------
 # 1. Primero lo inmutable
 # -----------------------------------------------------------------------------
@@ -158,4 +165,4 @@ echo "    completada"
 
 echo ""
 echo "==> listo"
-echo "    $RAIZ_FRONT_URL"
+echo "    $RAIZ_FRONT_URL   (version $VERSION)"

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { VERSION } from '../environments/version';
 import { Rol } from './core/domain/enums';
 import { ActualizacionService } from './core/services/actualizacion.service';
 import { AlmacenamientoService } from './core/services/almacenamiento.service';
@@ -82,9 +83,26 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
     <main>
       <router-outlet />
     </main>
+
+    <!--
+      El numero de version, discreto y siempre visible.
+
+      No es adorno: cuando alguien reporta desde la vereda que "no guarda", lo
+      primero que hay que saber es que version tiene en la mano. Un service worker
+      puede tener a dos voluntarios en versiones distintas el mismo dia, y sin este
+      numero eso se descubre despues de una hora de preguntas.
+    -->
+    <footer class="contenedor" style="padding:1.5rem 1rem 2rem">
+      <p class="mono tenue" style="margin:0;font-size:.68rem">
+        Raíz v{{ version }}
+      </p>
+    </footer>
   `
 })
 export class App implements OnInit {
+  /** Se estampa desde frontend/package.json. Ver tools/estampar-version.mjs. */
+  readonly version = VERSION;
+
   private readonly router = inject(Router);
 
   readonly sync = inject(SincronizacionService);
