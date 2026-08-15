@@ -32,6 +32,22 @@ create type rol_t               as enum ('coordinador', 'custodio', 'validador',
 create type estado_remision_t   as enum ('borrador', 'enviado', 'radicado', 'en_tramite', 'atendido', 'rechazado', 'sin_respuesta');
 create type estado_ayuda_t      as enum ('identificada', 'gestionada', 'programada', 'entregada', 'no_procede');
 
+-- Vocabularios cerrados de dos campos que se AGREGAN en los reportes.
+--
+-- Con texto libre, "agua", "agua potable" y "Agua Potable" son tres necesidades
+-- distintas, y el consolidado deja de ser sumable justo cuando hay que sustentar una
+-- peticion ante una entidad. Lo mismo con el origen de la coordenada: distinguir el
+-- dato medido del aproximado es lo que permite ponderar la fuente, y no sirve si cada
+-- cliente escribe el valor a su manera.
+--
+-- Los valores replican los codigos del XLSForm y del paquete @raiz/dominio, que es el
+-- mismo contrato de siempre: un solo vocabulario para Kobo, la PWA, la API y la base.
+create type gps_fuente_t as enum ('sitio', 'compartida', 'aprox', 'no_disp');
+
+create type necesidad_t  as enum ('alimentos', 'agua_potable', 'aseo', 'cocina', 'dormir',
+                                  'carpa', 'ropa', 'medicamentos', 'panales', 'psicosocial',
+                                  'transporte', 'documentos');
+
 -- =============================================================================
 -- 2. CATALOGOS Y USUARIOS
 -- =============================================================================
@@ -117,7 +133,7 @@ create table familias (
                                then st_setsrid(st_makepoint(lon, lat), 4326)::geography
                              end
                            ) stored,
-  gps_fuente             text,
+  gps_fuente             gps_fuente_t,
 
   -- bloque 2: hogar. Identidad solo si consentimiento = true.
   jefe_nombres           text,
@@ -153,7 +169,7 @@ create table familias (
 
   -- bloque 7: triaje
   prioridad              prioridad_t not null,
-  necesidades_inmediatas text[],
+  necesidades_inmediatas necesidad_t[] not null default '{}',
   ya_recibio_ayuda       boolean,
   ayuda_cual             text,
   ayuda_quien            text,
