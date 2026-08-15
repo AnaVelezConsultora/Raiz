@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ResumenCaso } from '../../core/domain/caso.model';
 import { EstadoSync, Prioridad, Zona } from '../../core/domain/enums';
 import { CASO_STORAGE } from '../../core/domain/ports';
@@ -204,6 +204,8 @@ export class ListaCasosComponent implements OnInit {
   readonly sync = inject(SincronizacionService);
   readonly almacenamiento = inject(AlmacenamientoService);
   readonly red = inject(RedService);
+  private readonly rutaActual = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly casos = signal<ResumenCaso[]>([]);
   readonly mensaje = signal<string>('');
@@ -226,6 +228,39 @@ export class ListaCasosComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.recargar();
     await this.sync.refrescarContadores();
+    this.confirmarGuardado();
+  }
+
+  /**
+   * Dice, al llegar del formulario, que el caso quedo guardado.
+   *
+   * Sin esto la aplicacion volvia a la lista en silencio y quien acababa de guardar
+   * no tenia como saber si su registro entro: lo abria otra vez y lo guardaba de
+   * nuevo por si acaso. Nunca se duplico nada —el caso conserva su identificador—
+   * pero la duda cuesta minutos frente a una familia que espera, y en campo eso es
+   * lo caro.
+   *
+   * Se nombra ademas lo que TODAVIA falta. Un caso con fotografias pendientes no
+   * esta entregado, y el boton que las manda es una decision del voluntario porque
+   * gastan su plan de datos: si nadie se lo dice, no lo toca.
+   */
+  private confirmarGuardado(): void {
+    const codigo = this.rutaActual.snapshot.queryParamMap.get('guardado');
+    if (!codigo) return;
+
+    const caso = this.casos().find((c) => c.codigo === codigo);
+    const pendientes = caso?.fotosPendientes ?? 0;
+
+    this.mensaje.set(
+      `Caso ${codigo} guardado en este celular.` +
+        (pendientes > 0
+          ? ` Sus ${pendientes} fotografia(s) esperan a que toque «Enviar las fotografias».`
+          : ' Se envia solo cuando haya senal.')
+    );
+
+    // Se limpia la direccion para que el mensaje no reaparezca al recargar la
+    // pantalla horas despues, cuando ya no significa nada.
+    void this.router.navigate([], { queryParams: {}, replaceUrl: true });
   }
 
   async sincronizar(): Promise<void> {

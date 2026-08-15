@@ -41,6 +41,20 @@ export interface MetaSync {
  * conexion rural puede alcanzar para el registro de texto y no para tres imagenes.
  * Registro y fotos sincronizan de forma independiente.
  */
+/**
+ * Los bytes de una fotografia, guardados aparte de su registro.
+ *
+ * Como ArrayBuffer y no como Blob: WebKit falla al volver a guardar un Blob que ya
+ * habia leido de IndexedDB, y eso rompia la aplicacion en iPhone justo al anotar que
+ * la foto se envio. Ver raiz.db.ts.
+ */
+export interface ImagenLocal {
+  /** El mismo identificador de la fotografia. */
+  id: string;
+  datos: ArrayBuffer;
+  tipoMime: string;
+}
+
 export interface FotoLocal {
   id: string;
   casoId: string;

@@ -106,7 +106,12 @@ export class DexieCasoStorageService implements CasoStoragePort {
    * prestado o perdido.
    */
   async eliminar(casoId: string): Promise<void> {
-    await db.transaction('rw', db.casos, db.fotos, async () => {
+    await db.transaction('rw', db.casos, db.fotos, db.imagenes, async () => {
+      const fotos = await db.fotos.where('casoId').equals(casoId).primaryKeys();
+      // Los bytes viven en su propia tabla desde la version 2 del esquema: borrar
+      // solo la fila de la fotografia dejaria la imagen ocupando el celular sin
+      // ningun registro que la explique.
+      await db.imagenes.bulkDelete(fotos);
       await db.fotos.where('casoId').equals(casoId).delete();
       await db.casos.delete(casoId);
     });
@@ -129,7 +134,7 @@ export class DexieCasoStorageService implements CasoStoragePort {
    * justo lo que no puede pasar.
    */
   async eliminarSincronizadosAntesDe(fechaIso: string): Promise<number> {
-    return db.transaction('rw', db.casos, db.fotos, async () => {
+    return db.transaction('rw', db.casos, db.fotos, db.imagenes, async () => {
       const candidatos = await db.casos
         .filter(
           (c) =>
@@ -150,6 +155,8 @@ export class DexieCasoStorageService implements CasoStoragePort {
       const obsoletos = (candidatos as string[]).filter((id) => !conFotosPendientes.has(id));
       if (obsoletos.length === 0) return 0;
 
+      const fotos = await db.fotos.where('casoId').anyOf(obsoletos).primaryKeys();
+      await db.imagenes.bulkDelete(fotos);
       await db.fotos.where('casoId').anyOf(obsoletos).delete();
       await db.casos.bulkDelete(obsoletos);
       return obsoletos.length;

@@ -188,7 +188,11 @@ export class SincronizacionService {
 
       await this.refrescarContadores();
       this._ultimaSincronizacion.set(new Date().toISOString());
-      this._estado.set(resultadoCasos.interrumpida ? 'error' : 'inactiva');
+      // El estado mira las dos colas. Con solo la de casos, una pasada donde
+      // fallaron todas las fotografias terminaba en verde.
+      this._estado.set(
+        resultadoCasos.interrumpida || resultadoFotos.fallidas > 0 ? 'error' : 'inactiva'
+      );
 
       return {
         casosEnviados: resultadoCasos.enviados,
@@ -286,8 +290,31 @@ export class SincronizacionService {
         continue;
       }
 
-      await this.fotos.marcarSync({ fotoId: foto.id, error: resultado.error });
       fallidas++;
+
+      // EL ERROR SE DICE. Antes solo los casos escribian aqui, asi que una
+      // fotografia que no subia dejaba la pantalla igual que si no hubiera pasado
+      // nada: el voluntario tocaba el boton, veia el mismo contador y no tenia como
+      // saber si era la senal, el permiso o su telefono. Se descubrio probando en un
+      // iPhone contra la nube, que es donde tenia que descubrirse.
+      const viajo =
+        resultado.bytesEnviados && resultado.bytesEnviados > 0
+          ? ` Alcanzaron a viajar ${Math.round(resultado.bytesEnviados / 1024)} KB, que no hay que repetir.`
+          : '';
+      this._ultimoError.set(
+        `No se pudo enviar una fotografia: ${resultado.error ?? 'fallo desconocido'}.${viajo}`
+      );
+
+      // Se anota DESPUES de poner el mensaje, y sin dejar que tumbe la pasada: si el
+      // propio almacenamiento del telefono falla al escribir, el voluntario tiene que
+      // ver igual por que no subio la foto.
+      try {
+        await this.fotos.marcarSync({ fotoId: foto.id, error: resultado.error });
+      } catch (e) {
+        this._ultimoError.update(
+          (previo) => `${previo ?? ''} Ademas, este celular no pudo anotarlo: ${this.mensajeDeError(e)}`
+        );
+      }
 
       if (resultado.reintentable) {
         // El avance NO se limpia al fallar, y esa es la diferencia que se ve en la
