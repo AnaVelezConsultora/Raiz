@@ -520,13 +520,14 @@
                 "Nada de sincronizacion automatica en segundo plano: solo con la aplicacion abierta"
               ],
               "etiquetas": [
-                "FrontEnd"
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "ADR 003",
               "sugerido": [
                 "johan1113"
               ],
-              "nota": "PARCIAL. Los casos ya salen solos al reconectar y al abrir, y las fotografias siguen pidiendo el boton. Falta detectar wifi y respetar el ahorro de datos. Esto REEMPLAZA la decision anterior de que la sincronizacion nunca es automatica: el corte estaba en el lugar equivocado, porque trataba igual un caso de 3 KB y una foto de 200 KB, y el costo de olvidar el boton lo pagaba la familia, no el voluntario. Hay que corregir ESTADO.md y la lamina 10 del pitch, que dicen lo contrario."
+              "nota": "HECHA. Los casos salen solos al reconectar y al abrir; las fotografias siguen pidiendo el boton. Se agrego RedService, que lee la API de informacion de red: en wifi la tarjeta invita a mandar las fotos, y con ahorro de datos activo no sale NADA sin que lo pidan, ni siquiera los casos. La tarjeta dice cuanto pesa lo pendiente antes de gastarlo.\n\nLimite conocido y aceptado: navigator.connection solo existe en navegadores Chromium. En iOS y Firefox el tipo queda 'desconocida' y se aplica la regla conservadora, que es la de datos moviles. Se prefiere un boton de mas a un consumo que el voluntario descubre despues.\n\nREEMPLAZA la decision anterior de que la sincronizacion nunca es automatica: el corte trataba igual un caso de 3 KB y una foto de 200 KB, y el costo de olvidar el boton lo pagaba la familia, no el voluntario. ESTADO.md ya corregido; falta la lamina 10 del pitch."
             },
             {
               "id": "HU 1.3.4",
