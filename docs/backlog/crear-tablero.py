@@ -11,7 +11,8 @@ Las credenciales se leen del entorno y NUNCA se escriben en ningun archivo:
     export TRELLO_TOKEN=...    # el enlace "Token" al lado de la clave
     ./crear-tablero.py
 
-    ./crear-tablero.py --simular    # muestra que haria, sin tocar Trello
+    ./crear-tablero.py --simular      # muestra que haria, sin credenciales ni red
+    ./crear-tablero.py --verificar    # lee el tablero real y dice que difiere, sin escribir
 
 Solo usa la biblioteca estandar: no hay que instalar nada.
 
@@ -31,6 +32,9 @@ import urllib.request
 API = "https://api.trello.com/1"
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SIMULAR = "--simular" in sys.argv
+# Lee el tablero y dice que difiere, sin escribir una sola vez. Sirve para revisar
+# antes de tocar algo compartido, que es donde una escritura de mas cuesta explicaciones.
+VERIFICAR = "--verificar" in sys.argv
 
 
 def credenciales():
@@ -69,6 +73,14 @@ def pedir(metodo, ruta, **parametros):
     if SIMULAR:
         print(f"    [simulado] {metodo} {ruta} {str(parametros.get('name', ''))[:60]}")
         return {"id": f"sim-{abs(hash(str(parametros))) % 10**8}"}
+
+    # La garantia de --verificar se hace cumplir AQUI, en el unico punto por donde
+    # pasa toda escritura. Comprobarla en cada sitio que llama seria confiar en que
+    # nadie olvide una, y el dia que alguien olvide una, el modo que promete no
+    # escribir escribe.
+    if VERIFICAR:
+        print(f"    [no se escribe] {metodo} {ruta}")
+        return {"id": "verificacion"}
 
     parametros.update(AUTH)
     datos = urllib.parse.urlencode(parametros).encode()
@@ -294,6 +306,11 @@ def main():
                 ids.append(cuentas[handle])
         return list(dict.fromkeys(ids))
 
+    # Etiquetas cuyo dueno es el tablero y no el modelo. Ver el comentario de mas
+    # abajo, donde se decide que se conserva.
+    ESTADO_LO_MANDA_TRELLO = {etiquetas[n] for n in ("hecha",) if n in etiquetas}
+    nombre_de_etiqueta = {v: k for k, v in etiquetas.items()}
+
     # --- historias -----------------------------------------------------------
     print("\nHistorias")
     ya_estan = {}
@@ -313,16 +330,56 @@ def main():
             # Union, no reemplazo: si alguien se asigno a mano en Trello, no se le quita.
             faltan = [i for i in quienes if i not in actuales]
 
-            # Las etiquetas SI se reemplazan por las del modelo: son el estado de la
-            # historia, y el modelo manda. Marcar una como hecha aqui tiene que verse
-            # en el tablero, que es donde el equipo mira.
-            deseadas = [etiquetas[e] for e in hu["etiquetas"] if e in etiquetas]
-            cambia_etiquetas = sorted(deseadas) != sorted(existente.get("idLabels", []))
+            # QUIEN MANDA SOBRE CADA ETIQUETA
+            #
+            # Las de CLASIFICACION (FrontEnd, BackEnd, defecto, bloqueada...) las manda
+            # el modelo: describen la historia y viven en el repositorio.
+            #
+            # Las de ESTADO —hoy solo `hecha`— las manda quien hace el trabajo, y ese
+            # trabajo se marca en Trello, que es donde el equipo mira. Por eso NUNCA se
+            # quitan desde aqui.
+            #
+            # Antes se reemplazaban todas, y eso significaba que si alguien marcaba su
+            # historia como hecha en el tablero, la siguiente corrida se lo borraba sin
+            # decir nada. Casi pasa el 15 de agosto de 2026 con las historias de la API.
+            deseadas = {etiquetas[e] for e in hu["etiquetas"] if e in etiquetas}
+            puestas = set(existente.get("idLabels", []))
 
-            if existente.get("desc") == texto and not faltan and not cambia_etiquetas:
+            conservadas = {i for i in puestas if i in ESTADO_LO_MANDA_TRELLO}
+            objetivo = deseadas | conservadas
+
+            # Si el tablero dice hecha y el modelo no, el modelo se quedo atras: se
+            # avisa para que alguien lo ponga al dia, en vez de corregirlo por la fuerza.
+            atrasadas = conservadas - deseadas
+            if atrasadas:
+                nombres = ", ".join(sorted(nombre_de_etiqueta[i] for i in atrasadas))
+                print(f"  ! {hu['id']}: el tablero dice '{nombres}' y el modelo no. Se conserva.")
+
+            cambia_etiquetas = objetivo != puestas
+            deseadas = list(objetivo)
+
+            # Se mide la igualdad campo por campo y SOLO se manda lo que difiere. Una
+            # escritura que no cambia nada igual queda en el historial del tablero, y
+            # cuando dos personas revisan quien toco que, ese ruido cuesta.
+            cambia_desc = existente.get("desc") != texto
+
+            if not cambia_desc and not faltan and not cambia_etiquetas:
                 iguales += 1
+            elif VERIFICAR:
+                difiere = []
+                if cambia_desc:
+                    difiere.append("descripción")
+                if faltan:
+                    difiere.append(f"+{len(faltan)} miembro(s)")
+                if cambia_etiquetas:
+                    difiere.append("etiquetas")
+                print(f"  ~ {hu['id']}  diferiría en: {', '.join(difiere)}")
+                actualizadas += 1
+                continue
             else:
-                cambios = {"desc": texto}
+                cambios = {}
+                if cambia_desc:
+                    cambios["desc"] = texto
                 if faltan:
                     cambios["idMembers"] = ",".join(actuales + faltan)
                 if cambia_etiquetas:

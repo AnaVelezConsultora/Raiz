@@ -461,6 +461,29 @@
                 "EdwarMontano"
               ],
               "asignado": "yonathangutierrez"
+            },
+            {
+              "id": "HU 1.2.8",
+              "titulo": "Entrar desde el celular sin que el navegador hable con el proveedor",
+              "como": "lider territorial",
+              "quiero": "entrar con mi correo y mi clave contra la API de Raiz",
+              "para": "no depender de una pantalla de un tercero ni de que mi celular sepa hablarle",
+              "criterios": [
+                "POST /sesion valida contra el proveedor y devuelve token, vencimiento, correo y perfil",
+                "El perfil viaja resuelto en la MISMA respuesta, no en una segunda llamada",
+                "GET /sesion responde 200 si el token sirve para enviar y 401 si no",
+                "DELETE /sesion cierra del lado del servidor y responde 204",
+                "El rol se lee de perfiles en cada peticion, nunca del token",
+                "Un usuario con activo en false no entra aunque la clave sea correcta",
+                "401 es respuesta legitima y se traduce a clase sesion, nunca a clase rechazo"
+              ],
+              "etiquetas": [
+                "BackEnd",
+                "bloqueada"
+              ],
+              "origen": "ADR 003 seccion 8, ampliada el 15 de agosto de 2026",
+              "depende_de": "HU 1.2.6 (verificacion de token) y HU 1.2.7 (perfil creado al alta)",
+              "nota": "EL CLIENTE YA LAS LLAMA. El adaptador de identidad del frontend (api-auth.adapter.ts) esta escrito contra estas tres rutas y hoy no existe ninguna: la aplicacion opera en modo local porque apiUrl esta vacio, y el dia que se llene, entrar falla.\n\nEl contrato completo, con el porque de cada decision, quedo en el ADR 003 seccion 8. Dos puntos que no son detalle: el perfil viaja en la misma respuesta porque un corte de senal entre dos llamadas deja a alguien autenticado y sin perfil; y el rol se lee de perfiles y no del token porque si no, retirar a un voluntario no surte efecto hasta que su token caduque.\n\nOJO DE COORDINACION: api/src lo esta construyendo la rama feature/paridad-dominio-compartido, que ya tiene el verificador de token. Acordar quien toma esta antes de empezar."
             }
           ]
         },
