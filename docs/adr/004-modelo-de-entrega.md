@@ -76,10 +76,24 @@ permite que alguien de **F6 abra un enlace en su Android y pruebe el cambio ante
 del merge**, sin instalar nada. El frente más urgente del proyecto, que no
 requiere programar, se vuelve accionable con esto.
 
-**No todo se muda.** La PWA es estática y su despliegue actual ya funciona y ya da
-vistas previas por PR. Se migra el plano de datos —API, base, almacenamiento,
-identidad—; el estático se queda donde está. Es una cosa menos que construir antes
-de que los devs puedan trabajar.
+> [Sin cumplir desde el 15 de agosto de 2026. Estas vistas previas las daba
+> Netlify, y Netlify se retiró al consolidar la publicación en CloudFront. Lo que
+> este ADR pide sigue siendo lo correcto y no se reabre: lo que falta es volver a
+> proveerlo, y hoy no está. Queda registrado como deuda D5 en
+> [DEUDA-TECNICA.md](../DEUDA-TECNICA.md), con la vía para pagarlo sobre la
+> distribución que ya existe. Decirlo aquí, y no solo allá, porque este párrafo es
+> el que alguien lee cuando pregunta por qué no puede probar antes del merge.]
+
+**No todo se muda.** La PWA es estática y su despliegue ya funcionaba. Se migra
+primero el plano de datos —API, base, almacenamiento, identidad—; el estático se
+queda donde está. Es una cosa menos que construir antes de que los devs puedan
+trabajar.
+
+> [El estático sí se mudó, el 15 de agosto de 2026, y esta frase se conserva para
+> que se entienda el orden: la API iba primero, y así fue. Una vez que existían la
+> zona de Route 53 y el certificado, publicar la PWA en CloudFront costaba un
+> guion, y tener el frente y la API bajo el mismo dominio y la misma custodia vale
+> más que el ahorro de no mudarla.]
 
 ## Migraciones
 

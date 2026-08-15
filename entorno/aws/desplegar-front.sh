@@ -170,7 +170,9 @@ fi
 # -----------------------------------------------------------------------------
 # 4. Cabeceras de respuesta
 # -----------------------------------------------------------------------------
-# Es la traduccion de lo que netlify.toml ya declaraba, con dos cambios.
+# Es la traduccion de lo que netlify.toml declaraba, con dos cambios. Ese archivo se
+# retiro al salir Netlify; las cabeceras estaban bien pensadas y se conservan aqui,
+# que ahora es el unico sitio donde viven.
 #
 # connect-src SE CIERRA. Decia `https:` con este comentario: "la direccion de la
 # API todavia no esta decidida. Cuando lo este, se reemplaza por ese origen y nada

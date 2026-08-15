@@ -141,10 +141,11 @@ el navegador; sin esto, recargar en `/casos` da error, y en campo eso se lee com
 «la aplicación se dañó». Se atienden los dos códigos porque con el control de
 acceso de origen S3 responde 403 —y no 404— a una clave que no existe.
 
-**Netlify sigue vivo, pero solo para vistas previas por propuesta de cambio.** Es
-lo que permite que alguien de F6 abra un enlace en su Android y pruebe antes del
-merge, que el ADR 004 considera importante y CloudFront no da. Si el sitio de
-Netlify está conectado a `main`, hay que desconectarlo: serían dos producciones.
+**Este es el único sitio publicado.** Netlify se retiró el 15 de agosto de 2026;
+queda en los registros preliminares de la solución y nada más. La consecuencia está
+anotada como deuda [D5](../../docs/DEUDA-TECNICA.md): con Netlify se van las vistas
+previas por propuesta de cambio, que es lo que permitía a alguien de F6 abrir un
+enlace en su Android y probar antes del merge.
 
 ## El primer custodio
 
