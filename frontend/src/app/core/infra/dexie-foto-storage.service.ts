@@ -74,6 +74,31 @@ export class DexieFotoStorageService implements FotoStoragePort {
       .count();
   }
 
+  /**
+   * Cuanto pesa lo que falta por subir, en bytes.
+   *
+   * Sirve para decirle al voluntario cuanto va a gastar ANTES de que lo gaste, que es
+   * la unica forma de que la decision sea suya de verdad.
+   *
+   * Recorre los pendientes en vez de sumar un indice porque IndexedDB no suma: no hay
+   * forma de agregar sin leer los registros. Se acepta porque los pendientes son pocos
+   * —se suben y desaparecen— y porque esto solo se llama al pintar la tarjeta de
+   * envio, no en un bucle.
+   */
+  async bytesPendientes(): Promise<number> {
+    let total = 0;
+    await db.fotos
+      .filter(
+        (f) =>
+          f.meta.estadoSync === EstadoSync.Pendiente ||
+          f.meta.estadoSync === EstadoSync.Error
+      )
+      .each((f) => {
+        total += f.bytes;
+      });
+    return total;
+  }
+
   async eliminar(fotoId: string): Promise<void> {
     await db.fotos.delete(fotoId);
   }
