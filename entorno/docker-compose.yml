@@ -39,6 +39,7 @@ services:
   #   01 roles               -> anon / authenticated / raiz_api
   #   50 schema.sql          -> EL MISMO ARCHIVO QUE VA A RDS, sin modificar
   #   55 fotos               -> la subida por partes, sobre la tabla que ya existe
+  #   56 perfiles            -> la cedula y quien puede crear a quien
   #   60 grants              -> permisos de tabla
   #   65 acceso de la API    -> lo que raiz_api necesita antes de haber sesion
   #   70 catalogos           -> organizaciones ficticias
@@ -61,6 +62,7 @@ services:
       - ./postgres/01-roles.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
       - ../supabase/schema.sql:/docker-entrypoint-initdb.d/50-schema.sql:ro
       - ./postgres/55-fotos-subida.sql:/docker-entrypoint-initdb.d/55-fotos-subida.sql:ro
+      - ./postgres/56-perfiles-alta.sql:/docker-entrypoint-initdb.d/56-perfiles-alta.sql:ro
       - ./postgres/60-grants.sql:/docker-entrypoint-initdb.d/60-grants.sql:ro
       - ./postgres/65-acceso-api.sql:/docker-entrypoint-initdb.d/65-acceso-api.sql:ro
       - ./postgres/70-semillas-catalogos.sql:/docker-entrypoint-initdb.d/70-semillas-catalogos.sql:ro

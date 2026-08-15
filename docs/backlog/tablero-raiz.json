@@ -789,22 +789,22 @@
             },
             {
               "id": "HU 1.3.15",
-              "titulo": "Que las fotografias suban solas cuando la red es gratis",
+              "titulo": "Que las fotografias suban solas apenas haya red",
               "como": "lider territorial",
               "quiero": "no tener que acordarme de tocar un boton para que las fotos viajen",
               "para": "dedicar el tiempo a atender a la familia y no a manejar la aplicacion",
               "criterios": [
-                "En wifi las fotografias salen solas, sin pedir nada",
-                "En datos moviles se sigue preguntando: ese plan lo paga el voluntario",
-                "Con el ahorro de datos activo no sale nada sin pedirlo",
+                "Apenas hay conexion, las fotografias salen: no se distingue wifi de datos moviles",
+                "Con el ahorro de datos activo sigue sin salir nada sin pedirlo: es la valvula del voluntario",
                 "Nunca hay envio en segundo plano con la aplicacion cerrada",
+                "Se avisa cuanto se va a gastar, pero no se pide permiso cada vez",
                 "El caso completo —texto y fotos— deja de aparecer como pendiente sin que nadie toque nada"
               ],
               "etiquetas": [
                 "FrontEnd"
               ],
               "origen": "prueba en iPhone del 15 de agosto de 2026; enmienda a ESTADO.md seccion 2",
-              "nota": "CAMBIA UNA DECISION ESCRITA, y por eso es una historia y no un ajuste. ESTADO.md dice «el caso viaja solo; la fotografia espera el boton», y la razon sigue en pie: un caso son 3 KB y veinte fotografias son 4 MB del plan de datos de alguien.\n\nLo que cambia es el corte. La aplicacion ya sabe distinguir una red gratuita —es el «buen momento» que hoy solo se ANUNCIA en la tarjeta de envio— asi que se puede quitar la tarea sin gastarle el plan a nadie: en wifi suben solas, en datos moviles se pregunta.\n\nPedido en campo con estas palabras: «la carga de las imagenes deberia ser desatendida y no por medio de un boton, para quitarle tareas al voluntario»."
+              "nota": "CAMBIA UNA DECISION ESCRITA, y por eso es una historia y no un ajuste. ESTADO.md dice «el caso viaja solo; la fotografia espera el boton», con un argumento que no era malo: un caso son 3 KB y veinte fotografias son 4 MB del plan de datos de alguien.\n\nLa decision se revisa con lo aprendido en campo: el boton no protege al voluntario, le pasa una tarea. Y una fotografia que se queda en el celular no es un ahorro, es evidencia del dano que no llega. APENAS HAYA RED, SUBEN — sin distinguir wifi de datos moviles.\n\nLo que se conserva es la valvula: con el ahorro de datos activo no sale nada sin pedirlo, y nunca hay envio en segundo plano con la aplicacion cerrada.\n\nPedido en campo con estas palabras: «quitarle tareas al voluntario, que esta buscando atender y entregar ayudas a quienes realmente las necesitan»."
             }
           ]
         },
@@ -1042,15 +1042,15 @@
             },
             {
               "id": "HU 2.1.4",
-              "titulo": "Ver la fotografia del dano desde el caso",
-              "como": "integrante de la mesa",
-              "quiero": "abrir las fotografias de una familia desde su caso",
-              "para": "sustentar la remision ante la entidad con la prueba del dano",
+              "titulo": "Tablero de administracion para quien destina los recursos",
+              "como": "coordinador o custodio",
+              "quiero": "una vista de administracion donde ver los casos con su evidencia",
+              "para": "decidir a donde van los recursos con la prueba del dano a la vista",
               "criterios": [
-                "Una ruta de lectura devuelve enlaces firmados de vida corta, nunca la imagen por la API",
-                "Las politicas de acceso mandan: un lider ve las suyas y la mesa las de su alcance",
+                "La vista es de administracion: coordinador, custodio y quien destina recursos",
+                "Cada rol ve lo que le corresponde; el listado y la fotografia obedecen las mismas politicas",
+                "La fotografia se abre con enlace firmado de vida corta, nunca servida por la API",
                 "El bucket sigue sin lectura anonima, verificado contra la nube real",
-                "El enlace caduca y no sirve reenviado horas despues",
                 "Queda registro de quien pidio ver que fotografia"
               ],
               "etiquetas": [
@@ -1059,7 +1059,7 @@
               ],
               "origen": "HU 1.2.5: la subida quedo hecha y la lectura no existe",
               "depende_de": "HU 1.2.5 (hecha)",
-              "nota": "HOY LA FOTOGRAFIA ENTRA Y NO SE PUEDE VOLVER A VER. El bucket es privado y sin lectura anonima —comprobado contra AWS— y la API solo tiene rutas de escritura: autorizar, confirmar y cancelar.\n\nLa relacion con el caso ya esta: `fotos.familia_id` apunta a la familia, `fotos.url` guarda la ruta del objeto y el prefijo es el consecutivo institucional, de modo que todas las imagenes de un hogar se encuentran por `casos/RZ-2026-000014/`. La politica `hija_fotos` hace que hereden el permiso de la familia.\n\nLo que falta es una ruta de lectura que firme enlaces temporales. La necesitan el tablero (F4) y, sobre todo, el paquete de la remision (F5): una entidad que recibe un caso pide ver el dano."
+              "nota": "SE TRAZA MAS ADELANTE, con los roles y permisos delante. Esta tarjeta guarda el problema, no el diseno: no se empieza a construir sin definir que ve cada rol.\n\nEl hueco concreto que la origina: HOY LA FOTOGRAFIA ENTRA Y NO SE PUEDE VOLVER A VER. El bucket es privado y sin lectura anonima —comprobado contra AWS— y la API solo tiene rutas de escritura.\n\nLa relacion con el caso ya esta hecha: `fotos.familia_id` apunta a la familia, `fotos.url` guarda la ruta y el prefijo es el consecutivo institucional, de modo que las imagenes de un hogar se encuentran por `casos/RZ-2026-000014/`. La politica `hija_fotos` hace que hereden su permiso.\n\nAlimenta el paquete de la remision (F5): una entidad que recibe un caso pide ver el dano."
             }
           ]
         },

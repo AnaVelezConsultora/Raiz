@@ -1,12 +1,13 @@
 import { Rol } from '@raiz/dominio';
 import { Injectable } from '@nestjs/common';
-import { Perfil, PerfilRepositorioPort, UsuarioNuevo } from '../../dominio/puertos';
+import { Identidad, Perfil, PerfilRepositorioPort, UsuarioNuevo } from '../../dominio/puertos';
 import { PostgresPool } from './pool';
 
 /** Fila de `perfiles` tal como sale de la consulta. */
 interface Fila {
   id: string;
   nombre: string;
+  documento: string | null;
   rol: Rol;
   organizacion_id: string | number | null;
   telefono: string | null;
@@ -53,16 +54,69 @@ export class PerfilRepositorioPostgres implements PerfilRepositorioPort {
         [
           usuario.sub,
           usuario.correo,
-          JSON.stringify({ nombre: usuario.nombre, telefono: usuario.telefono })
+          JSON.stringify({
+            nombre: usuario.nombre,
+            telefono: usuario.telefono,
+            documento: usuario.documento
+          })
         ]
       );
+    });
+  }
+
+  /**
+   * Los perfiles que quien pide puede ver. Lo decide la politica, no este metodo.
+   *
+   * `perfil_lee` concede la fila propia a cualquiera y todas a la mesa —coordinacion,
+   * custodia y validacion—. Un lider que llame a esto se ve a si mismo, y ya.
+   */
+  async listar(identidad: Identidad, soloInactivos: boolean): Promise<Perfil[]> {
+    return this.pool.comoUsuario({ sub: identidad.sub }, async (cliente) => {
+      const { rows } = await cliente.query<Fila>(
+        `select id, nombre, documento, rol, organizacion_id, telefono, activo
+           from perfiles
+          where activo = $1
+          order by activo desc, nombre`,
+        [!soloInactivos]
+      );
+      return rows.map((f) => this.aPerfil(f));
+    });
+  }
+
+  /**
+   * Cambia rol o acceso A NOMBRE DE QUIEN PIDE.
+   *
+   * Aqui no se comprueba ningun permiso, y esa ausencia es el diseno: la consulta
+   * corre con la identidad de quien pide y son las politicas las que deciden si esa
+   * fila se puede tocar y en que estado se puede dejar. Si no se puede, no se
+   * actualiza ninguna fila y se devuelve null.
+   *
+   * Asi «un coordinador no puede ascender a nadie por encima de si mismo» es una
+   * propiedad de la base y no una linea de codigo que alguien pueda olvidar manana
+   * al escribir otra ruta.
+   */
+  async cambiar(
+    id: string,
+    cambio: { rol?: Rol; activo?: boolean },
+    identidad: Identidad
+  ): Promise<Perfil | null> {
+    return this.pool.comoUsuario({ sub: identidad.sub }, async (cliente) => {
+      const { rows } = await cliente.query<Fila>(
+        `update perfiles
+            set rol    = coalesce($2::rol_t, rol),
+                activo = coalesce($3::boolean, activo)
+          where id = $1
+        returning id, nombre, documento, rol, organizacion_id, telefono, activo`,
+        [id, cambio.rol ?? null, cambio.activo ?? null]
+      );
+      return rows[0] ? this.aPerfil(rows[0]) : null;
     });
   }
 
   async porSub(sub: string): Promise<Perfil | null> {
     return this.pool.sinIdentidad(async (cliente) => {
       const { rows } = await cliente.query<Fila>(
-        `select id, nombre, rol, organizacion_id, telefono, activo
+        `select id, nombre, documento, rol, organizacion_id, telefono, activo
            from perfiles
           where id = $1`,
         [sub]
@@ -71,15 +125,21 @@ export class PerfilRepositorioPostgres implements PerfilRepositorioPort {
       const fila = rows[0];
       if (!fila) return null;
 
-      return {
-        id: fila.id,
-        nombre: fila.nombre,
-        rol: fila.rol,
-        // PostgreSQL devuelve bigint como texto para no perder precision en JavaScript.
-        organizacionId: fila.organizacion_id === null ? null : Number(fila.organizacion_id),
-        telefono: fila.telefono,
-        activo: fila.activo
-      };
+      return this.aPerfil(fila);
     });
+  }
+
+  /** Fila a perfil, en un solo sitio: tres consultas devuelven lo mismo. */
+  private aPerfil(fila: Fila): Perfil {
+    return {
+      id: fila.id,
+      nombre: fila.nombre,
+      documento: fila.documento,
+      rol: fila.rol,
+      // PostgreSQL devuelve bigint como texto para no perder precision en JavaScript.
+      organizacionId: fila.organizacion_id === null ? null : Number(fila.organizacion_id),
+      telefono: fila.telefono,
+      activo: fila.activo
+    };
   }
 }

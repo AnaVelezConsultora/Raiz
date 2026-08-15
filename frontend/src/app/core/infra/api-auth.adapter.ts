@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import {
+  AltaVoluntario,
   AuthPort,
   CambioPerfil,
   CredencialesAcceso,
@@ -100,6 +101,16 @@ export class ApiAuthAdapter implements AuthPort {
 
     if (!r.ok) throw new Error(await this.detalle(r));
     return (await r.json()) as PerfilAdministrable[];
+  }
+
+  async crearVoluntario(alta: AltaVoluntario): Promise<PerfilAdministrable> {
+    if (!environment.apiUrl) {
+      throw new Error('El servidor no esta configurado.');
+    }
+
+    const r = await this.pedir('POST', '/voluntarios', alta);
+    if (!r.ok) throw new Error(await this.detalle(r));
+    return (await r.json()) as PerfilAdministrable;
   }
 
   async cambiarVoluntario(id: string, cambio: CambioPerfil): Promise<PerfilAdministrable> {

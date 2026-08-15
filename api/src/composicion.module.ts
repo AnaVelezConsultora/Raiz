@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { AdministrarPerfilesService } from './aplicacion/administrar-perfiles.service';
 import { RegistrarCasoService } from './aplicacion/registrar-caso.service';
 import { RegistrarVoluntarioService } from './aplicacion/registrar-voluntario.service';
 import { SesionService } from './aplicacion/sesion.service';
@@ -16,6 +17,7 @@ import {
 } from './dominio/puertos';
 import { CasosController } from './entrada/casos.controller';
 import { FotosController } from './entrada/fotos.controller';
+import { PerfilesController } from './entrada/perfiles.controller';
 import { SaludController } from './entrada/salud.controller';
 import { SesionController } from './entrada/sesion.controller';
 import { SesionGuard } from './entrada/sesion.guard';
@@ -41,6 +43,7 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
   controllers: [
     CasosController,
     FotosController,
+    PerfilesController,
     SaludController,
     SesionController,
     VoluntariosController
@@ -50,6 +53,7 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
     RegistrarCasoService,
     SesionService,
     RegistrarVoluntarioService,
+    AdministrarPerfilesService,
     SubidaFotoService,
     { provide: CASO_REPOSITORIO, useClass: CasoRepositorioPostgres },
     { provide: FOTO_REPOSITORIO, useClass: FotoRepositorioPostgres },

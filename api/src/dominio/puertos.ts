@@ -188,6 +188,8 @@ export interface ProveedorIdentidadPort {
 export interface Perfil {
   id: string;
   nombre: string;
+  /** Cedula. Puede faltar en las cuentas creadas antes de que se exigiera. */
+  documento: string | null;
   /**
    * Se usa el enum compartido y no una lista repetida aqui: los cinco roles ya estan
    * definidos una sola vez en @raiz/dominio, con los mismos valores que el tipo rol_t
@@ -213,6 +215,23 @@ export interface Perfil {
 export interface PerfilRepositorioPort {
   porSub(sub: string): Promise<Perfil | null>;
 
+  /** Todos los perfiles que quien pide tenga permiso de ver. Lo decide la base. */
+  listar(identidad: Identidad, soloInactivos: boolean): Promise<Perfil[]>;
+
+  /**
+   * Cambia el rol o el acceso de alguien, A NOMBRE DE QUIEN LO PIDE.
+   *
+   * Corre con la identidad de quien pide, no con la de la API, para que las
+   * politicas de acceso decidan. Si la base no deja tocar esa fila, la operacion no
+   * afecta ninguna y se responde que no se pudo — que es lo correcto: la regla de
+   * quien administra a quien no puede vivir solo en el codigo de la API.
+   */
+  cambiar(
+    id: string,
+    cambio: { rol?: Rol; activo?: boolean },
+    identidad: Identidad
+  ): Promise<Perfil | null>;
+
   /**
    * Refleja en la base un usuario que acaba de crearse en el proveedor.
    *
@@ -233,6 +252,14 @@ export interface UsuarioNuevo {
   correo: string;
   nombre: string;
   telefono: string | null;
+  /**
+   * Cedula de quien registra.
+   *
+   * No es un dato administrativo: cuando una entidad devuelva un caso preguntando
+   * quien lo levanto, la respuesta tiene que ser una persona identificable y no un
+   * correo electronico.
+   */
+  documento: string;
 }
 
 /**
