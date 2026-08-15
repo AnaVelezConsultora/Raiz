@@ -76,13 +76,53 @@ deja los casos fuera del envío **sin decírselo a nadie**. El botón muestra
 pendientes y no manda nada. En campo eso se lee como "la aplicación perdió mi
 trabajo".
 
-### 5. Fotografías por URL prefirmada
+### 5. Fotografías por política de subida firmada
 
-El dispositivo pide una URL, sube **directo al almacenamiento de objetos** y luego
-confirma. Las fotografías no atraviesan la API.
+El dispositivo pide autorización, sube **directo al almacenamiento de objetos** y
+luego **confirma contra la API**. Las fotografías no atraviesan la API.
 
 Con 15.000 fotos previstas a 200 KB, hacerlas pasar por el servidor es pagar
 cómputo y transferencia por mover bytes que no se procesan.
+
+**Son tres pasos, no dos.** El tercero no es opcional:
+
+| | Quién | Qué |
+|---|---|---|
+| 1 | Dispositivo → API | Declara `fotoId`, `casoOrigenId`, `tipo`, `bytes` y `tipoMime` |
+| 2 | Dispositivo → almacenamiento | `POST` multiparte con los campos firmados; el archivo va **de último** |
+| 3 | Dispositivo → API | Confirma; **la API verifica contra el almacenamiento** y responde la ruta definitiva |
+
+**Por qué se firma una política y no una URL simple.** La política lleva
+`content-length-range`, de modo que el tamaño que el dispositivo declaró en el paso 1
+es el que el almacenamiento acepta en el paso 2. Sin eso, la autorización para subir
+una foto de 200 KB sirve para subir un archivo de cualquier tamaño, y quien paga esa
+factura es el proyecto. También fija tipo de contenido y ruta.
+
+El archivo va de último en el formulario porque el almacenamiento evalúa la política
+con lo que ya leyó: si va primero, el rechazo llega **después** de haber transmitido
+los bytes, que en una conexión rural es exactamente lo que no se puede permitir.
+
+**Por qué el paso 3 existe.** Que el almacenamiento responda 204 no es que el objeto
+esté ahí y esté completo. La única afirmación que vale es la de la API, que lo
+verifica. Sin ese paso el dispositivo podría liberar la fotografía de su memoria
+creyendo que ya viajó, y la evidencia de una familia desaparecería sin que nadie se
+entere. Confirmar es **idempotente**: repetirlo no sube nada de nuevo, así que el
+dispositivo puede reintentarlo sin miedo cuando se le cae la señal a mitad.
+
+**Consistencia eventual.** La escritura de un objeto nuevo es de lectura inmediata,
+pero el listado no. Por eso la confirmación se hace contra el objeto concreto y no
+listando un prefijo, y por eso el estado de una fotografía lo dicta la API y no lo
+infiere el dispositivo.
+
+> **Lo que NO se usa: subida multiparte de objetos grandes.** Está pensada para
+> archivos de varios megabytes y su tamaño mínimo de parte es de 5 MB. Una fotografía
+> de 200 KB sería una sola parte, con dos viajes de red adicionales para iniciarla y
+> cerrarla. Si algún día se suben videos, se revisa.
+
+**Lo que el dispositivo sí calcula, y por qué.** Cuánto pesa lo que está **por subir**
+sale del dispositivo, porque esos bytes todavía no existen en ninguna otra parte: es
+el número que se le muestra al voluntario antes de gastarle el plan. Lo que el
+dispositivo **no** decide es si algo ya llegó; eso lo dice la API.
 
 ### 6. Persistencia local, explícita
 

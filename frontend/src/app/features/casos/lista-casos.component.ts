@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ResumenCaso } from '../../core/domain/caso.model';
 import { EstadoSync, Prioridad, Zona } from '../../core/domain/enums';
 import { CASO_STORAGE } from '../../core/domain/ports';
+import { RedService } from '../../core/services/red.service';
 import { SincronizacionService } from '../../core/services/sincronizacion.service';
 
 /**
@@ -38,20 +39,55 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
         <p class="aviso">Enviando los casos...</p>
       }
 
+      <!-- Con ahorro de datos no sale nada solo, ni siquiera los casos: quien lo
+           activo esta cuidando su plan y esa peticion pesa mas que nuestros 3 KB. -->
+      @if (red.ahorroDeDatos() && sync.totalPendientes() > 0 && sync.enLinea()) {
+        <div class="tarjeta pila-sm">
+          <strong>{{ sync.totalPendientes() }} elemento(s) sin enviar</strong>
+          <span class="tenue">
+            Tiene el ahorro de datos activo, asi que no se envia nada sin que usted lo
+            pida.
+          </span>
+          <button type="button" class="btn-primario btn-ancho btn-grande"
+                  [disabled]="sync.estado() === 'en_curso'"
+                  (click)="sincronizar()">
+            {{ sync.estado() === 'en_curso' ? 'Enviando...' : 'Enviar de todos modos' }}
+          </button>
+        </div>
+      }
+
       <!-- Los casos salen solos al haber senal. Aqui solo se pide decision para las
            fotografias, que son lo unico que pesa en el plan de datos del voluntario. -->
-      @if (sync.fotosPendientes() > 0 && sync.enLinea()) {
+      @if (!red.ahorroDeDatos() && sync.fotosPendientes() > 0 && sync.enLinea()) {
         <div class="tarjeta pila-sm">
-          <strong>{{ sync.fotosPendientes() }} fotografia(s) por enviar</strong>
-          <span class="tenue">
-            Los casos ya se enviaron solos. Las fotos esperan porque pesan.
-          </span>
+          <strong>
+            {{ sync.fotosPendientes() }} fotografia(s) por enviar
+            @if (sync.pesoFotosPendientes()) { · {{ sync.pesoFotosPendientes() }} }
+          </strong>
+
+          @if (sync.buenMomentoParaFotos()) {
+            <span class="tenue">
+              Buen momento: {{ red.descripcion() }}. Los casos ya se enviaron solos.
+            </span>
+          } @else {
+            <span class="tenue">
+              Los casos ya se enviaron solos. Las fotos esperan porque pesan.
+            </span>
+          }
+
           <button type="button" class="btn-primario btn-ancho btn-grande"
                   [disabled]="sync.estado() === 'en_curso'"
                   (click)="sincronizar()">
             {{ sync.estado() === 'en_curso' ? 'Enviando...' : 'Enviar las fotografias' }}
           </button>
-          <span class="pista">Consume datos moviles. Mejor con wifi.</span>
+
+          @if (!sync.buenMomentoParaFotos()) {
+            <span class="pista">
+              {{ red.tipo() === 'movil'
+                  ? 'Va a gastar de sus datos moviles. Si puede, espere al wifi.'
+                  : 'Si esta en datos moviles, esto le gasta del plan.' }}
+            </span>
+          }
         </div>
       }
 
@@ -148,6 +184,7 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
 export class ListaCasosComponent implements OnInit {
   private readonly almacen = inject(CASO_STORAGE);
   readonly sync = inject(SincronizacionService);
+  readonly red = inject(RedService);
 
   readonly casos = signal<ResumenCaso[]>([]);
   readonly mensaje = signal<string>('');
