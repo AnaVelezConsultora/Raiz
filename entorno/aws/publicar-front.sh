@@ -117,20 +117,23 @@ for archivo in index.html ngsw.json ngsw-worker.js safety-worker.js worker-basic
 done
 
 # -----------------------------------------------------------------------------
-# 3. Retirar lo que ya no existe
+# 3. LO VIEJO NO SE BORRA, Y ES DELIBERADO
 # -----------------------------------------------------------------------------
-# Un `sync --delete` habria borrado el index viejo ANTES de subir el nuevo, que es
-# la ventana rota al reves. Se hace al final y solo sobre lo inmutable: en ese
-# punto el index ya nombra los paquetes nuevos y lo que sobra no lo pide nadie.
-echo ""
-echo "==> retirando lo que quedo de la version anterior"
-aws_ s3 sync "$DIST" "s3://$RAIZ_FRONT_BUCKET/" \
-  --exclude "index.html" \
-  --exclude "ngsw*" \
-  --delete \
-  --cache-control "public, max-age=31536000, immutable" \
-  --only-show-errors
-echo "    limpio"
+# Aqui habia un `sync --delete` que retiraba los paquetes de la version anterior.
+# Se quito, porque hacia dano justo a quien peor lo pasa.
+#
+# Un celular que quedo abierto en la vereda sigue corriendo la version anterior.
+# Si pide un fragmento que ya se borro, recibe un 404 —que nuestra regla convierte
+# en index.html con codigo 200— y el navegador intenta interpretar HTML como
+# JavaScript. La aplicacion se rompe en la mano del voluntario por una limpieza
+# que no le hacia falta a nadie.
+#
+# Conservarlos cuesta unos cientos de kilobytes por entrega. El bucket puede
+# acumular cien versiones y seguir siendo irrelevante frente a los 50 USD del
+# presupuesto. El dia que estorbe, se retiran las de hace meses a mano, mirando.
+#
+# Que los nombres lleven hash es lo que hace esto seguro: nada se pisa, todo
+# convive.
 
 # -----------------------------------------------------------------------------
 # 4. Invalidar
