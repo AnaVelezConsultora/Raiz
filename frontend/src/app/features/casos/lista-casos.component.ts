@@ -125,8 +125,8 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
                     {{ c.prioridad.toUpperCase() }}
                   </span>
                 }
-                <span class="chip" [class]="'chip ' + claseSync(c.estadoSync)">
-                  {{ textoSync(c.estadoSync) }}
+                <span class="chip" [class]="'chip ' + claseSync(c)">
+                  {{ textoSync(c) }}
                 </span>
               </span>
             </div>
@@ -135,7 +135,12 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
               {{ c.lugar }} · {{ c.zona === zonaRural ? 'Rural' : 'Urbana' }} ·
               {{ c.personasTotal }} persona(s)
               @if (!c.tieneCoordenada) { · sin coordenada }
-              @if (c.nFotos > 0) { · {{ c.nFotos }} foto(s) }
+              @if (c.nFotos > 0) {
+                · {{ c.nFotos }} foto(s)
+                @if (c.fotosPendientes > 0) {
+                  <span class="error"> · {{ c.fotosPendientes }} sin enviar</span>
+                }
+              }
             </span>
             @if (porBorrar() === c.id) {
               <!-- Confirmacion en la misma tarjeta, no en un dialogo del navegador:
@@ -235,16 +240,26 @@ export class ListaCasosComponent implements OnInit {
     );
   }
 
-  claseSync(estado: EstadoSync): string {
-    if (estado === EstadoSync.Sincronizado) return 'sincronizado';
-    if (estado === EstadoSync.Error) return 'error';
+  /**
+   * El estado se mira sobre el CASO COMPLETO, fotografias incluidas.
+   *
+   * Un caso cuyo texto viajo pero cuyas fotos siguen en el celular NO esta enviado. La
+   * imagen del dano es parte del registro —es la prueba con la que se sustenta la
+   * peticion ante la entidad—, y pintarlo en verde le diria al voluntario que puede
+   * dejar de preocuparse por algo que todavia depende de que vuelva a haber senal.
+   */
+  claseSync(caso: ResumenCaso): string {
+    if (caso.estadoSync === EstadoSync.Sincronizado) {
+      return caso.fotosPendientes > 0 ? 'pendiente' : 'sincronizado';
+    }
+    if (caso.estadoSync === EstadoSync.Error) return 'error';
     return 'pendiente';
   }
 
-  textoSync(estado: EstadoSync): string {
-    switch (estado) {
+  textoSync(caso: ResumenCaso): string {
+    switch (caso.estadoSync) {
       case EstadoSync.Sincronizado:
-        return 'ENVIADO';
+        return caso.fotosPendientes > 0 ? 'FALTAN FOTOS' : 'ENVIADO';
       case EstadoSync.Error:
         return 'FALLO';
       case EstadoSync.EnProceso:

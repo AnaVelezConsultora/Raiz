@@ -425,6 +425,61 @@ begin;
   end $$;
 rollback;
 
+-- =============================================================================
+-- P8. Las fotografias heredan el permiso de su familia
+--
+-- La fotografia del dano no es un adjunto: es parte del registro de la familia, y
+-- por lo tanto es dato personal de esa familia. La politica `hija_fotos` lo dice
+-- —cuelga de `familias`— y esto lo comprueba, porque una politica que nadie
+-- ejercita es una intencion.
+--
+-- Importa por una razon concreta: la API firma permisos de subida contra la fila
+-- que esta consulta puede ver. Si un lider alcanzara la familia de otro, tambien
+-- alcanzaria a pedir permiso para escribir fotografias en el caso ajeno.
+-- =============================================================================
+begin;
+  do $$ begin perform set_config('app.user_id',
+    (select id::text from auth.users where email = 'ana@ejemplo.test'), true); end $$;
+  set local role authenticated;
+
+  do $$
+  declare
+    familia_de_beto bigint;
+    rechazado boolean := false;
+    visibles int;
+  begin
+    -- Se busca ANTES de bajar privilegios seria trampa; aqui se busca como Ana, y
+    -- justamente por eso no la encuentra: RLS la esconde.
+    select id into familia_de_beto from familias where registrador_nombre like 'Beto%';
+    if familia_de_beto is not null then
+      raise exception 'FALLO P8: Ana alcanza la familia de Beto y no deberia';
+    end if;
+
+    -- Con el identificador en la mano —que es el escenario real de un cliente
+    -- modificado— tampoco puede colgarle una fotografia.
+    begin
+      insert into fotos (familia_id, origen_id, tipo, url, bytes, tipo_mime, estado, autorizada_en)
+      select f.id, '00000000-0000-4000-8000-00000000f101', 'fachada',
+             'casos/ajeno/robada.jpg', 1024, 'image/jpeg', 'autorizada', now()
+        from familias f where f.registrador_nombre like 'Beto%';
+      -- Si RLS hizo su trabajo, el SELECT no devuelve filas y no se inserta nada.
+      if found then rechazado := false; else rechazado := true; end if;
+    exception when insufficient_privilege then rechazado := true;
+    end;
+
+    if not rechazado then
+      raise exception 'FALLO P8: Ana le colgo una fotografia al caso de Beto';
+    end if;
+    raise notice 'OK  P8a  un lider no puede colgar fotografias en el caso de otro';
+
+    select count(*) into visibles from fotos;
+    if visibles <> 0 then
+      raise exception 'FALLO P8: Ana ve % fotografia(s) que no son de sus casos', visibles;
+    end if;
+    raise notice 'OK  P8b  un lider no ve las fotografias de casos ajenos';
+  end $$;
+rollback;
+
 \echo ''
 \echo '=============================================='
 \echo ' Todas las pruebas de acceso pasaron'

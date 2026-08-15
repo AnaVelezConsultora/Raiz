@@ -47,6 +47,17 @@ export interface FotoLocal {
   tipo: TipoFoto;
   blob: Blob;
   bytes: number;
+  /**
+   * SHA-256 de la imagen, en hexadecimal, calculado al capturarla.
+   *
+   * Viaja con la solicitud de subida y la API lo vuelve a calcular sobre lo que unio.
+   * Es lo que distingue «llegaron todos los bloques» de «la imagen guardada es la que
+   * se tomo»: una foto corrupta y una buena pesan lo mismo.
+   *
+   * Opcional porque en el dispositivo puede haber fotografias guardadas por una version
+   * anterior, y una foto vieja sin suma tiene que poder subir igual.
+   */
+  sha256?: string;
   ancho: number;
   alto: number;
   capturadaEn: string;
@@ -106,5 +117,13 @@ export interface ResumenCaso {
   estadoSync: EstadoSync;
   tieneCoordenada: boolean;
   nFotos: number;
+  /**
+   * De esas fotografias, cuantas siguen sin llegar al servidor.
+   *
+   * Va en el resumen y no se calcula en la pantalla porque cambia lo que el caso ES:
+   * un registro cuya evidencia de dano todavia esta en el celular no esta entregado,
+   * por mas que su parte de texto si haya viajado.
+   */
+  fotosPendientes: number;
   actualizadoEn: string;
 }

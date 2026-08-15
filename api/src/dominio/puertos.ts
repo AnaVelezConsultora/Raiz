@@ -37,6 +37,126 @@ export interface SaludPort {
   baseAlcanzable(): Promise<boolean>;
 }
 
+// =============================================================================
+// Fotografias
+// =============================================================================
+
+/** Lo que la base sabe de una fotografia mientras viaja. */
+export interface FotoRegistrada {
+  /** UUID que genero el dispositivo. */
+  origenId: string;
+  /** Ruta del objeto ya completo. */
+  ruta: string;
+  bytes: number;
+  tipoMime: string;
+  /** SHA-256 que declaro el dispositivo. Es contra esto que se verifica lo unido. */
+  suma: string;
+  /** Donde viven los bloques mientras la imagen esta a medias. Nulo si ya se unieron. */
+  partesPrefijo: string | null;
+  tamanoBloque: number;
+  confirmada: boolean;
+}
+
+/** Datos con los que se autoriza una fotografia nueva. */
+export interface FotoParaAutorizar {
+  origenId: string;
+  casoOrigenId: string;
+  tipo: string;
+  bytes: number;
+  tipoMime: string;
+  suma: string;
+  tamanoBloque: number;
+}
+
+/** Lo que hace falta saber del caso para decidir donde va la fotografia. */
+export interface CasoDeLaFoto {
+  /** Consecutivo institucional. Es el prefijo bajo el que se guarda. */
+  codigo: string;
+}
+
+/**
+ * Persistencia de fotografias.
+ *
+ * Todo pasa por las politicas de acceso por fila: la fotografia cuelga de la familia y
+ * hereda su permiso, de modo que un lider no puede colgarle una imagen al caso de otro
+ * ni siquiera con un cliente modificado.
+ */
+export interface FotoRepositorioPort {
+  /**
+   * Reserva el lugar de la fotografia y devuelve donde va.
+   *
+   * Es idempotente por `origenId`. Falla con {@link ErrorRechazo} si el caso no existe,
+   * no es visible para quien pide, o la familia no autorizo el tratamiento.
+   *
+   * `rutas` recibe el consecutivo del caso y devuelve las dos rutas, porque quien sabe
+   * como se nombran los objetos es la capa de aplicacion, no el repositorio.
+   */
+  autorizar(
+    foto: FotoParaAutorizar,
+    identidad: Identidad,
+    rutas: (caso: CasoDeLaFoto) => { ruta: string; partesPrefijo: string }
+  ): Promise<FotoRegistrada>;
+
+  buscar(origenId: string, identidad: Identidad): Promise<FotoRegistrada | null>;
+
+  /** Marca la fotografia como verificada y olvida los bloques. Idempotente. */
+  confirmar(origenId: string, bytes: number, identidad: Identidad): Promise<void>;
+
+  /** Borra la fila de una subida que nunca se completo. No toca las confirmadas. */
+  descartar(origenId: string, identidad: Identidad): Promise<void>;
+}
+
+/**
+ * Almacenamiento de objetos.
+ *
+ * LA IMAGEN NO VIAJA POR LA API. El celular escribe cada bloque directo contra el
+ * almacenamiento con un permiso firmado; lo unico que la API mueve es la union final,
+ * que ocurre dentro de la nube y no sobre la red del voluntario.
+ */
+export interface AlmacenamientoObjetosPort {
+  /**
+   * Permiso de vida corta para escribir UN objeto de UN tamano exacto.
+   *
+   * El tamano va dentro de la firma: un permiso emitido para 64 KiB no sirve para
+   * escribir un archivo de un giga. Sin eso, una autorizacion filtrada seria espacio
+   * ilimitado a cargo del proyecto.
+   */
+  firmarEscritura(params: {
+    clave: string;
+    bytes: number;
+  }): Promise<{ url: string; expiraEn: string }>;
+
+  /**
+   * Tamano del objeto, o null si no esta.
+   *
+   * Consulta el objeto CONCRETO. No se lista un prefijo, y no es un detalle: el listado
+   * es de consistencia eventual, de modo que preguntando asi la respuesta puede omitir
+   * un bloque que si llego. Lo dice el ADR 003.
+   */
+  tamano(clave: string): Promise<number | null>;
+
+  /**
+   * Une los objetos, en el orden dado, en uno solo, y devuelve la suma de lo unido.
+   *
+   * Es lo unico que hace pasar bytes por la API, y ocurre dentro de la nube, una vez
+   * por fotografia y sobre unos cientos de kilobytes. Lo que nunca pasa por la API es
+   * la subida desde el celular, que es la parte lenta y la que costaria de verdad.
+   *
+   * La suma se calcula EN LA MISMA PASADA en que se transmite. Volver a leer el objeto
+   * despues para verificarlo costaria el doble de trafico y de tiempo, y ademas
+   * verificaria una lectura distinta de la que se escribio.
+   */
+  unir(params: {
+    claves: string[];
+    destino: string;
+    tipoMime: string;
+    bytes: number;
+  }): Promise<{ suma: string }>;
+
+  /** Borra el objeto. Borrar lo que no existe no es un error. */
+  borrar(clave: string): Promise<void>;
+}
+
 /** Credenciales que el voluntario escribe en la pantalla de acceso. */
 export interface Credenciales {
   correo: string;
@@ -197,6 +317,8 @@ export class ErrorTransporte extends Error {
 
 /** Simbolos de inyeccion. El unico lugar que los asocia a una clase es composicion.module.ts. */
 export const CASO_REPOSITORIO = Symbol('CASO_REPOSITORIO');
+export const FOTO_REPOSITORIO = Symbol('FOTO_REPOSITORIO');
+export const ALMACENAMIENTO = Symbol('ALMACENAMIENTO');
 export const VERIFICADOR_TOKEN = Symbol('VERIFICADOR_TOKEN');
 export const SALUD = Symbol('SALUD');
 export const PROVEEDOR_IDENTIDAD = Symbol('PROVEEDOR_IDENTIDAD');

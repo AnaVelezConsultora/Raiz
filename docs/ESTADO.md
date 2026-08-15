@@ -71,6 +71,29 @@ llega al servidor pero la respuesta se pierde por corte de señal, el reintento
 actualiza la misma fila en lugar de crear un duplicado. Los dos lados están escritos y
 el reintento está verificado contra la API y la base reales.
 
+**Fotografías por bloques, con reanudación (HU 1.2.5).** Toda fotografía se parte
+—también una de 200 KB— y cada bloque viaja con su propio permiso firmado, directo al
+almacenamiento. Si la señal se cae en el bloque 3 de 4, lo transmitido **se queda**: al
+volver, la API dice exactamente cuál falta, porque se lo pregunta al almacenamiento y
+no al celular. Un teléfono que se quedó sin batería, o al que le reinstalaron la
+aplicación, retoma donde iba.
+
+La API une los bloques al confirmar y **verifica la imagen completa contra el SHA-256
+que declaró el dispositivo**. Contar bloques no bastaba: una imagen corrupta, unos
+bloques pegados en desorden y la imagen buena pesan lo mismo. Si no coincide, se
+descarta y se vuelve a subir, en vez de quedar guardada una foto que nadie puede abrir
+el día que la entidad pida la evidencia.
+
+No se usa la subida multiparte de S3 y el ADR 003 §5 se reescribió explicando por qué:
+exige partes de 5 MiB mínimo, así que con ella una foto de 200 KB no se puede partir.
+
+Y la fotografía dejó de tratarse como un adjunto: **no se envía una foto cuyo caso
+todavía no llegó** —antes se gastaban datos y reintentos para recibir un rechazo, y esa
+foto ya no volvía a subir—, un caso con fotos pendientes **no se muestra como enviado**
+ni lo borra la limpieza por retención, y sin autorización de la familia no se emite
+permiso de subida. Verificado con `entorno/pruebas/ciclo-api.mjs` contra la API, la base
+y el almacenamiento reales, incluida la corrupción de un bloque del tamaño correcto.
+
 **Servicio de sincronización.** Recibe el caso, fija la identidad del usuario dentro de
 la transacción para que las políticas de acceso sigan corriendo, asigna el consecutivo
 institucional y traduce cualquier fallo a las tres clases del contrato: transporte,
@@ -97,8 +120,9 @@ credenciales de AWS y sin tocar nada compartido**, que era el bloqueo anterior.
 
 **Pruebas de control de acceso.** `make pruebas` comprueba sobre la base que ninguna
 tabla quede sin políticas, que las vistas no las salten, que un líder no vea los casos
-de otro y que nadie pueda escribir en la auditoría, y falla si alguien lo rompe. Antes
-eran una lista para revisar a mano.
+de otro —ni **sus fotografías**, ni pueda colgarle una imagen a un caso ajeno— y que
+nadie pueda escribir en la auditoría, y falla si alguien lo rompe. Antes eran una lista
+para revisar a mano.
 
 **Prueba de punta a punta.** `make e2e` recorre el camino completo en diez pasos con
 veintiún asertos —entrar, sincronizar, reintentar tras un corte, subir la fotografía,

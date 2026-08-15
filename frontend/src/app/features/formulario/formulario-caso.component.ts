@@ -437,6 +437,9 @@ export class FormularioCasoComponent implements OnInit {
   }
 
   async quitarFoto(fotoId: string): Promise<void> {
+    // Primero afuera y despues adentro. Si la fotografia ya habia empezado a subir por
+    // bloques, lo transmitido sigue en el servidor aunque aqui desaparezca.
+    await this.sync.cancelarFoto(fotoId);
     await this.almacenFotos.eliminar(fotoId);
     this.fotos.update((lista) => lista.filter((f) => f.id !== fotoId));
     await this.sync.refrescarContadores();

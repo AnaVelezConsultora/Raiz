@@ -402,23 +402,28 @@
               "quiero": "que la fotografía vaya directo al almacenamiento",
               "para": "que la subida sea lo más liviana y rápida posible",
               "criterios": [
-                "Politica de subida firmada y de vida corta, limitada a la ruta del caso",
-                "La politica lleva content-length-range con el tamano que el dispositivo declaro",
-                "La fotografia no atraviesa la API en ningun momento",
+                "Toda fotografia se sube por bloques, tambien una de 200 KB: lo transmitido no se vuelve a pagar",
+                "Cada bloque lleva su tamano dentro de la firma, y el permiso caduca en 15 minutos",
+                "La imagen no atraviesa la API en su viaje desde el celular",
                 "Sin consentimiento no se emite autorizacion: la regla en el borde, no en la interfaz",
                 "El objeto no queda legible sin firma",
-                "Hay ruta de confirmacion, idempotente, que VERIFICA el objeto contra el almacenamiento",
-                "La confirmacion consulta el objeto concreto, nunca listando un prefijo"
+                "Que bloques llegaron lo dice el almacenamiento, no el dispositivo: se reanuda tras perder la bateria",
+                "La confirmacion consulta cada objeto concreto, nunca listando un prefijo",
+                "Integridad de extremo a extremo: SHA-256 declarado en el dispositivo y verificado al unir",
+                "Una fotografia no se envia si su caso todavia no llego al servidor",
+                "Ruta de cancelacion que libera los bloques a medias"
               ],
               "etiquetas": [
-                "BackEnd"
+                "BackEnd",
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "ADR 003",
               "depende_de": "HU 1.2.3",
               "sugerido": [
                 "lDavidSantiago"
               ],
-              "nota": "EL LADO DEL CLIENTE YA ESTA. El adaptador declara fotoId, casoOrigenId, tipo, bytes y tipoMime; sube por POST multiparte con los campos firmados, poniendo el archivo de ultimo; y despues llama a POST /fotos/{id}/confirmar. Falta construir esos dos endpoints.\n\nEl contrato completo quedo escrito en el ADR 003 seccion 5, reescrita el 15 de agosto de 2026. Incluye por que son tres pasos y no dos: que el almacenamiento responda 204 no es que el objeto este ahi y completo, y sin confirmacion el dispositivo podria liberar la foto de su memoria creyendo que ya viajo.\n\nNO usar subida multiparte de objetos grandes: su parte minima es de 5 MB, asi que una foto de 200 KB seria una sola parte con dos viajes de red de mas."
+              "nota": "HECHA el 15 de agosto de 2026. Rama feature/hu-1.2.5-fotos.\n\nSE CAMBIO EL MECANISMO frente a lo que decia el ADR 003, y la seccion 5 se reescribio: no se usa la subida multiparte de S3 porque exige partes de 5 MiB minimo, de modo que una foto de 200 KB no se podria partir. Cada bloque es un objeto propio bajo `partes/` y la API los une al confirmar, en flujo.\n\nVerificado contra la API, PostgreSQL y el almacenamiento reales con `entorno/pruebas/ciclo-api.mjs`: 27 comprobaciones, incluida la reanudacion —se corta la subida a la mitad y solo se vuelven a firmar los bloques que faltan— y la integridad, con un bloque danado DEL TAMANO CORRECTO que se rechaza y no queda guardado.\n\nFalta correr `entorno/aws/desplegar-fotos.sh` contra AWS y volver a desplegar la API para que reciba S3_BUCKET_FOTOS."
             },
             {
               "id": "HU 1.2.6",

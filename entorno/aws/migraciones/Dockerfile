@@ -36,6 +36,7 @@ COPY entorno/postgres/01-roles.sql      ./002-roles.sql
 COPY supabase/schema.sql                ./003-schema.sql
 COPY entorno/postgres/60-grants.sql     ./004-grants.sql
 COPY entorno/postgres/65-acceso-api.sql ./005-acceso-api.sql
+COPY entorno/postgres/55-fotos-subida.sql ./006-fotos-subida.sql
 
 # Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con
 # esas palabras. Son datos que se reconcilian en cada despliegue —el archivo usa

@@ -3,23 +3,29 @@ import { APP_GUARD } from '@nestjs/core';
 import { RegistrarCasoService } from './aplicacion/registrar-caso.service';
 import { RegistrarVoluntarioService } from './aplicacion/registrar-voluntario.service';
 import { SesionService } from './aplicacion/sesion.service';
+import { SubidaFotoService } from './aplicacion/subida-foto.service';
 import {
   ADMINISTRADOR_IDENTIDAD,
+  ALMACENAMIENTO,
   CASO_REPOSITORIO,
+  FOTO_REPOSITORIO,
   PERFIL_REPOSITORIO,
   PROVEEDOR_IDENTIDAD,
   SALUD,
   VERIFICADOR_TOKEN
 } from './dominio/puertos';
 import { CasosController } from './entrada/casos.controller';
+import { FotosController } from './entrada/fotos.controller';
 import { SaludController } from './entrada/salud.controller';
 import { SesionController } from './entrada/sesion.controller';
 import { SesionGuard } from './entrada/sesion.guard';
 import { VoluntariosController } from './entrada/voluntarios.controller';
+import { AlmacenamientoS3 } from './infra/almacenamiento/s3';
 import { CognitoAdministrador } from './infra/identidad/cognito-admin';
 import { CognitoIdentidad } from './infra/identidad/cognito';
 import { VerificadorToken } from './infra/identidad/verificador-token';
 import { CasoRepositorioPostgres } from './infra/postgres/caso-repositorio.postgres';
+import { FotoRepositorioPostgres } from './infra/postgres/foto-repositorio.postgres';
 import { PerfilRepositorioPostgres } from './infra/postgres/perfil-repositorio.postgres';
 import { PostgresPool } from './infra/postgres/pool';
 import { SaludPostgres } from './infra/postgres/salud.postgres';
@@ -32,13 +38,22 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
  * de identidad se hace en este archivo, y ningun servicio se entera.
  */
 @Module({
-  controllers: [CasosController, SaludController, SesionController, VoluntariosController],
+  controllers: [
+    CasosController,
+    FotosController,
+    SaludController,
+    SesionController,
+    VoluntariosController
+  ],
   providers: [
     PostgresPool,
     RegistrarCasoService,
     SesionService,
     RegistrarVoluntarioService,
+    SubidaFotoService,
     { provide: CASO_REPOSITORIO, useClass: CasoRepositorioPostgres },
+    { provide: FOTO_REPOSITORIO, useClass: FotoRepositorioPostgres },
+    { provide: ALMACENAMIENTO, useClass: AlmacenamientoS3 },
     { provide: VERIFICADOR_TOKEN, useClass: VerificadorToken },
     { provide: SALUD, useClass: SaludPostgres },
     { provide: PROVEEDOR_IDENTIDAD, useClass: CognitoIdentidad },
