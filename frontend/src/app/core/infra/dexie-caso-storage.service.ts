@@ -95,6 +95,22 @@ export class DexieCasoStorageService implements CasoStoragePort {
   }
 
   /**
+   * Borra un caso y sus fotografias.
+   *
+   * Va en una sola transaccion sobre las dos tablas: si se borrara el caso y fallara
+   * el borrado de las fotos, quedarian imagenes de una familia en el dispositivo sin
+   * ningun registro que las explique ni pantalla que las muestre. Datos huerfanos de
+   * poblacion vulnerable son justo lo que no puede quedar suelto en un celular
+   * prestado o perdido.
+   */
+  async eliminar(casoId: string): Promise<void> {
+    await db.transaction('rw', db.casos, db.fotos, async () => {
+      await db.fotos.where('casoId').equals(casoId).delete();
+      await db.casos.delete(casoId);
+    });
+  }
+
+  /**
    * Libera espacio borrando casos ya confirmados por el servidor.
    * Solo toca registros con estado Sincronizado: lo no confirmado nunca se borra.
    */

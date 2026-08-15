@@ -77,7 +77,7 @@ export class AccesoComponent {
 
   readonly sesion = inject(SesionService);
   readonly verClave = signal(false);
-  readonly configurado = environment.supabaseUrl !== '';
+  readonly configurado = environment.apiUrl !== '';
 
   readonly form = this.fb.nonNullable.group({
     correo: ['', [Validators.required, Validators.email]],

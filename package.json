@@ -1,0 +1,11 @@
+{
+  "name": "raiz",
+  "private": true,
+  "description": "Caracterizacion y seguimiento de familias afectadas por desastres",
+  "workspaces": ["dominio", "api"],
+  "scripts": {
+    "build": "npm run build --workspace @raiz/dominio && npm run build --workspace @raiz/api",
+    "dev:api": "npm run dev --workspace @raiz/api"
+  },
+  "engines": { "node": ">=22.12" }
+}

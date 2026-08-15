@@ -38,24 +38,29 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
       @if (almacenamiento.enRiesgoDeDesalojo() && sync.totalPendientes() > 0) {
         <p class="aviso peligro">
           El celular no garantiza conservar los casos sin enviar si se queda sin
-          espacio. Sincronice apenas tenga senal y libere espacio en el telefono.
+          espacio. Libere espacio y envie las fotografias apenas tenga senal.
         </p>
       }
 
-      @if (sync.totalPendientes() > 0 && sync.enLinea()) {
+
+      @if (sync.estado() === 'en_curso') {
+        <p class="aviso">Enviando los casos...</p>
+      }
+
+      <!-- Los casos salen solos al haber senal. Aqui solo se pide decision para las
+           fotografias, que son lo unico que pesa en el plan de datos del voluntario. -->
+      @if (sync.fotosPendientes() > 0 && sync.enLinea()) {
         <div class="tarjeta pila-sm">
-          <strong>{{ sync.totalPendientes() }} elemento(s) pendiente(s)</strong>
+          <strong>{{ sync.fotosPendientes() }} fotografia(s) por enviar</strong>
           <span class="tenue">
-            {{ sync.casosPendientes() }} caso(s) y {{ sync.fotosPendientes() }} foto(s)
+            Los casos ya se enviaron solos. Las fotos esperan porque pesan.
           </span>
           <button type="button" class="btn-primario btn-ancho btn-grande"
                   [disabled]="sync.estado() === 'en_curso'"
                   (click)="sincronizar()">
-            {{ sync.estado() === 'en_curso' ? 'Enviando...' : 'Sincronizar ahora' }}
+            {{ sync.estado() === 'en_curso' ? 'Enviando...' : 'Enviar las fotografias' }}
           </button>
-          <span class="pista">
-            Se envian primero los casos P0. Consume datos moviles.
-          </span>
+          <span class="pista">Consume datos moviles. Mejor con wifi.</span>
         </div>
       }
 
@@ -96,9 +101,34 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
               @if (!c.tieneCoordenada) { · sin coordenada }
               @if (c.nFotos > 0) { · {{ c.nFotos }} foto(s) }
             </span>
-            <a [routerLink]="['/caso', c.id]" class="pastilla" style="align-self:flex-start">
-              Abrir y completar
-            </a>
+            @if (porBorrar() === c.id) {
+              <!-- Confirmacion en la misma tarjeta, no en un dialogo del navegador:
+                   un dialogo tapa la pantalla y no deja ver CUAL caso se va a borrar. -->
+              <div class="pila-sm">
+                <span class="error">Se borrara del celular y no se podra recuperar.</span>
+                <div class="fila">
+                  <button type="button" class="btn-peligro" (click)="borrar(c.id)">
+                    Si, borrar
+                  </button>
+                  <button type="button" class="btn-secundario" (click)="porBorrar.set(null)">
+                    Conservarlo
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="fila">
+                <a [routerLink]="['/caso', c.id]" class="pastilla">Abrir y completar</a>
+                <!-- Solo lo que no ha viajado. Un caso ya sincronizado existe en el
+                     servidor y borrarlo aqui no lo borra alla. -->
+                @if (c.estadoSync !== estadoSincronizado) {
+                  <button type="button" class="pastilla" style="color:var(--p0)"
+                          [attr.aria-label]="'Borrar el caso ' + c.codigo"
+                          (click)="porBorrar.set(c.id)">
+                    Borrar
+                  </button>
+                }
+              </div>
+            }
           </li>
         }
       </ul>
@@ -131,9 +161,21 @@ export class ListaCasosComponent implements OnInit {
 
   readonly casos = signal<ResumenCaso[]>([]);
   readonly mensaje = signal<string>('');
+  /** Caso con la confirmacion de borrado abierta. Null si no hay ninguna. */
+  readonly porBorrar = signal<string | null>(null);
   readonly zonaRural = Zona.Rural;
   readonly zonaUrbana = Zona.Urbana;
   readonly prioridades = Prioridad;
+  readonly estadoSincronizado = EstadoSync.Sincronizado;
+
+  /** Borra el caso y sus fotos del dispositivo. Ya paso por confirmacion. */
+  async borrar(casoId: string): Promise<void> {
+    await this.almacen.eliminar(casoId);
+    this.porBorrar.set(null);
+    await this.recargar();
+    await this.sync.refrescarContadores();
+    this.mensaje.set('Caso borrado de este celular.');
+  }
 
   async ngOnInit(): Promise<void> {
     await this.recargar();
