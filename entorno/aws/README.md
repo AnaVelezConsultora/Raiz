@@ -27,6 +27,8 @@ Desde cero, en este orden. Cada guion escribe lo que el siguiente necesita en
 | 9 | `desplegar-tls.sh` | Certificado, redirección y `api.apoyo-colombia.com` | ~1 min |
 | 10 | `crear-custodio.sh <correo> <nombre>` | El primer custodio | ~1 min |
 | 11 | `desplegar-identidad-federada.sh` | Rol del pipeline sin llaves, y rol de solo lectura de registros | segundos |
+| 12 | `desplegar-front.sh` | Bucket privado, CloudFront y DNS de `apoyo-colombia.com` | **5 a 15 min** |
+| 13 | `publicar-front.sh` | La PWA compilada, subida e invalidada | ~2 min |
 
 **El presupuesto va primero y no es formalismo.** AWS evalúa un presupuesto desde
 que existe, así que una alerta configurada el martes no dice nada de lo que se
@@ -109,6 +111,40 @@ Está en [DEUDA-TECNICA.md](../../docs/DEUDA-TECNICA.md), cada entrada con la
 condición escrita que obliga a pagarla. En resumen: la llave de larga vida (D3, la
 urgente), el certificado de RDS sin validar (D1), las claves sin rotación
 automática (D2) y estos guiones sin código declarativo detrás (D4).
+
+## El front
+
+`desplegar-front.sh` se corre una vez; `publicar-front.sh` en cada entrega. Igual
+que con la API, construir y publicar están separados.
+
+**El bucket no es público** — lleva los cuatro bloqueos y solo lo lee CloudFront,
+identificándose con un control de acceso de origen. No es por rendimiento: sobre un
+bucket público no se pueden poner las cabeceras que esta aplicación necesita, y la
+distribución solo sirve de algo si el bucket no se puede saltar.
+
+**Dos políticas de caché, y la del service worker es la que importa.** Los paquetes
+llevan hash en el nombre y se guardan un año. `index.html`, `ngsw.json` y
+`ngsw-worker.js` van con `no-store`: si un punto de presencia guarda un `ngsw.json`
+viejo, el dispositivo del voluntario se queda en una versión anterior y **no hay
+forma de corregir un error en campo** sin que desinstale. Por eso la política de
+caché de la distribución tiene `MinTTL 0` — para que ese `no-store` sea de verdad y
+no una sugerencia.
+
+**El orden de subida no es arbitrario.** Primero lo que lleva hash, después el
+index. Al revés habría unos segundos con un index nuevo apuntando a paquetes que no
+existen todavía, y quien abra la aplicación en esa ventana recibe una página rota.
+Son segundos y casi nunca se notaría — «casi nunca» es la clase de fallo que
+aparece el día de la jornada.
+
+**403 y 404 devuelven `index.html` con código 200.** Angular resuelve las rutas en
+el navegador; sin esto, recargar en `/casos` da error, y en campo eso se lee como
+«la aplicación se dañó». Se atienden los dos códigos porque con el control de
+acceso de origen S3 responde 403 —y no 404— a una clave que no existe.
+
+**Netlify sigue vivo, pero solo para vistas previas por propuesta de cambio.** Es
+lo que permite que alguien de F6 abra un enlace en su Android y pruebe antes del
+merge, que el ADR 004 considera importante y CloudFront no da. Si el sitio de
+Netlify está conectado a `main`, hay que desconectarlo: serían dos producciones.
 
 ## El primer custodio
 

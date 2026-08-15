@@ -273,6 +273,7 @@ correr las veces que haga falta sin duplicar nada.
 | Esquema | Lo aplica una tarea efímera **dentro** de la VPC, no una persona. Migraciones numeradas con registro: aplicar dos veces no repite ninguna. |
 | API | Fargate, ARM64, una réplica de 0,25 vCPU, detrás de un balanceador. |
 | Borde | HTTPS con certificado comodín; el 80 solo redirige. Nombre propio en Route 53. |
+| PWA | CloudFront sobre bucket privado, en `apoyo-colombia.com` y `www`. |
 | Presupuesto | 50 USD/mes con cuatro avisos, configurado **antes** del primer recurso. |
 
 Verificado contra el despliegue real y sobre HTTPS, no supuesto: el custodio inicia
@@ -288,8 +289,21 @@ acabaría en una conexión rechazada sin ninguna pista; con la redirección esa 
 llega cifrada. No queda ninguna ruta por la que una clave viaje en claro.
 
 El dominio se administra en Route 53 y el certificado lo renueva ACM solo, mientras el
-registro CNAME de validación siga en la zona. El frente irá en `apoyo-colombia.com` y
-`www`, y ya están en la lista de orígenes que la API acepta.
+registro CNAME de validación siga en la zona.
+
+**La PWA está publicada en `https://apoyo-colombia.com`** (y `www`), servida por
+CloudFront desde un bucket privado con los cuatro bloqueos de acceso público. Hasta hoy
+la aplicación se compilaba con `apiUrl` vacío —modo local, captura y guarda sin enviar—
+y por eso no habría sincronizado nunca aunque estuviera publicada. Ahora la compilación
+de producción apunta a la API, y el guion de publicación **falla** si el paquete no
+lleva esa dirección adentro: una PWA publicada en modo local no da ningún error, los
+casos simplemente no llegan.
+
+La política de seguridad de contenido se cerró de paso. Decía `connect-src 'self'
+https:` con una nota que pedía reemplazarlo cuando la dirección de la API estuviera
+decidida; ahora dice `https://api.apoyo-colombia.com`. La diferencia práctica: antes
+impedía que un script inyectado robara los casos, ahora impide además que los mande a
+un servidor ajeno.
 
 Dos cosas quedaron decididas y conviene que no se reabran por error:
 

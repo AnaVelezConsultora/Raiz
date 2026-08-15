@@ -1,5 +1,27 @@
-# Despliegue de Raiz en Netlify. Plan gratuito.
-# Conectar el repositorio una sola vez; a partir de ahi cada push a main publica.
+# Netlify: VISTAS PREVIAS POR PROPUESTA DE CAMBIO. Plan gratuito.
+#
+# YA NO ES EL SITIO DE PRODUCCION. Desde el 15 de agosto de 2026 la aplicacion
+# publicada vive en CloudFront, sobre apoyo-colombia.com, y la levanta
+# entorno/aws/desplegar-front.sh. Este archivo se conserva por una sola razon, y
+# es la que el ADR 004 llama importante:
+#
+#   "La vista previa por PR es solo de la PWA. Un entorno completo por PR es caro
+#    y no hace falta. Pero la vista previa del frontend si, y no por los devs: es
+#    lo que permite que alguien de F6 abra un enlace en su Android y pruebe el
+#    cambio antes del merge."
+#
+# F6 —probar en un telefono real, en campo— es el frente mas urgente del proyecto
+# y el unico que no necesita programar. Un enlace que se abre en el celular sin
+# instalar nada es lo que lo hace accionable, y eso CloudFront no lo da.
+#
+# SI ESTE SITIO ESTA CONECTADO A main, DESCONECTELO. Publicar main aqui crearia un
+# segundo sitio de produccion, servido desde otro dominio y envejeciendo por su
+# cuenta. Solo deben publicarse las vistas previas de propuestas de cambio.
+#
+# Lo que una vista previa NO puede hacer: iniciar sesion. La API solo acepta
+# peticiones desde apoyo-colombia.com, www y localhost, asi que un dominio de
+# vista previa recibe un rechazo de CORS. Es correcto y no hay que "arreglarlo":
+# lo que se prueba aqui es la captura sin conexion, que es justo lo de F6.
 
 [build]
   base = "frontend"
@@ -64,8 +86,12 @@
     # concesion consciente de esta politica y se cierra el dia que esos estilos se
     # muevan a la hoja de estilos.
     #
-    # connect-src deja https porque la direccion de la API todavia no esta decidida.
-    # Cuando lo este, se reemplaza por ese origen y nada mas: hoy la cabecera evita
-    # el robo por script inyectado, y con el origen fijo evitaria ademas el envio a
-    # un servidor ajeno.
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    # connect-src decia `https:` porque la direccion de la API no estaba decidida.
+    # Ya lo esta. Con `https:` la politica evitaba el robo por script inyectado;
+    # con el origen fijo evita ademas que ese script MANDE los casos a un servidor
+    # ajeno, que es la mitad que faltaba.
+    #
+    # La misma politica esta en la distribucion de CloudFront
+    # (entorno/aws/desplegar-front.sh). Si se cambia una, hay que cambiar la otra:
+    # son dos sitios porque son dos servidores, no porque sean dos decisiones.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.apoyo-colombia.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"

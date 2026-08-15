@@ -16,13 +16,12 @@
  * capturar en la vereda y tambien lo que permite trabajar en la interfaz sin
  * levantar el servidor.
  */
-export interface Environment {
-  produccion: boolean;
-  /** Raiz de la API. Vacio = modo local: se captura y se guarda, no se envia. */
-  apiUrl: string;
-  municipioPorDefecto: string;
-  departamentoPorDefecto: string;
-}
+import { Environment } from './environment.model';
+
+// El tipo vive en environment.model.ts y no aqui. En la compilacion de produccion
+// este archivo entero se reemplaza por environment.prod.ts, asi que un tipo
+// declarado aqui desapareceria justo cuando el otro archivo lo necesita.
+export type { Environment };
 
 export const environment: Environment = {
   produccion: false,
