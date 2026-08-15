@@ -49,7 +49,7 @@ if [ "$ya" != "0" ]; then
 fi
 
 # Los atributos se arman como parametros posicionales y no como una cadena. Un
-# nombre lleva espacios —"Maria del Carmen"— y una cadena sin comillas se parte
+# nombre lleva espacios —"Ana Maria Ejemplo"— y una cadena sin comillas se parte
 # en pedazos ahi mismo: la CLI recibe "de" como si fuera un atributo suelto.
 set -- \
   "Name=email,Value=$CORREO" \

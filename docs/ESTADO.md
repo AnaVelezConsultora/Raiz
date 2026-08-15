@@ -42,7 +42,7 @@ Están cerradas. Si alguien quiere reabrir una, que traiga argumentos nuevos.
 | **Las familias no afiliadas se registran** | El censo se levanta por comités y asociaciones, pero la familia sin organización es la que más riesgo tiene de quedar invisible. |
 | **El código del caso lo asigna el servidor** | Dos voluntarios sin señal generarían el mismo consecutivo. En el dispositivo se usa un código local `L-XXXX-NNN` hasta que el servidor confirme. |
 | **Iniciar sesión exige conexión, capturar no** | Un token que caduca en el monte no puede costar una jornada de trabajo. Solo sincronizar exige sesión vigente. |
-| **La sincronización nunca es automática** | En zona rural la señal aparece y desaparece. Un envío automático consume los datos del voluntario sin que él lo decida. El botón es explícito. |
+| **El caso viaja solo; la fotografía espera el botón** | Un caso pesa unos 3 KB y una fotografía unos 200 KB. Retener el caso no ahorra datos y sí retrasa la atención, así que se envía al reconectar y al abrir la aplicación. La fotografía sí espera una decisión explícita, y en wifi se ofrece mandarla. Con el ahorro de datos activo no se manda nada sin pedirlo, y nunca hay envío en segundo plano con la aplicación cerrada. |
 | **KoboToolbox corre en paralelo y no se detiene** | La emergencia no espera a que terminemos. Las columnas de PostgreSQL replican los nombres del formulario de Kobo, así que migrar es una carga, no una reescritura. |
 | **La infraestructura va sobre AWS, no sobre Supabase** | [ADR 002](adr/002-infraestructura-en-aws.md). El acoplamiento a Supabase estaba contenido en cuatro puntos, de modo que las tablas, vistas y políticas se portan con un adaptador de unas cuarenta líneas. |
 | **El contrato de sincronización no depende del proveedor** | [ADR 003](adr/003-contrato-de-sincronizacion.md). Incluye la taxonomía de error —transporte, sesión, rechazo— que el cliente necesita para saber si reintentar, detenerse o marcar para revisión. |
@@ -54,9 +54,11 @@ Están cerradas. Si alguien quiere reabrir una, que traiga argumentos nuevos.
 
 ### Construido y probado en laboratorio
 
-Probado significa aqui: navegador de escritorio emulando un celular, con ubicacion
-simulada. **Nada de esto se ha ejecutado en un telefono real ni contra un servidor**,
-porque el servidor todavia no existe.
+Probado significa aqui: navegador de escritorio emulando un celular con ubicacion
+simulada, y la API corriendo contra PostgreSQL y Cognito reales dentro del entorno
+local. **Nada de esto se ha ejecutado en un telefono real ni sobre infraestructura
+desplegada en la nube.** Lo primero es lo mas urgente que hay y no depende de nadie
+mas; lo segundo es el hito 1.
 
 **Captura sin conexión.** Formulario de cuatro pasos con guardado incremental: si se
 cierra la aplicación en el paso 3, al volver el registro sigue ahí. Fotos comprimidas
@@ -66,15 +68,23 @@ internet.
 **Cola de sincronización.** Envía casos antes que fotos, prioridad de riesgo de vida
 primero, secuencial y no en paralelo, con idempotencia por `origen_id`: si el envío
 llega al servidor pero la respuesta se pierde por corte de señal, el reintento
-actualiza la misma fila en lugar de crear un duplicado. El cliente está escrito; el
-servidor que lo atiende, no.
+actualiza la misma fila en lugar de crear un duplicado. Los dos lados están escritos y
+el reintento está verificado contra la API y la base reales.
+
+**Servicio de sincronización.** Recibe el caso, fija la identidad del usuario dentro de
+la transacción para que las políticas de acceso sigan corriendo, asigna el consecutivo
+institucional y traduce cualquier fallo a las tres clases del contrato: transporte,
+sesión y rechazo. Corre contra el entorno local; no está desplegado.
 
 **Identidad y roles (F2).** Cinco roles, guardas de ruta, pantalla de acceso, permisos
 derivados del rol y disparador que crea el perfil al dar de alta un usuario, con el rol
-menos privilegiado por defecto. El código está; falta el servidor.
+menos privilegiado por defecto. Las tres rutas de sesión —entrar, comprobar y salir—
+responden contra Cognito, y el rol se lee del perfil en cada petición, nunca del token,
+para que la custodia pueda cambiarlo sin esperar a que caduque nada.
 
-**Modelo de datos.** 12 tablas, 5 vistas, políticas de acceso por fila y auditoría de
-cambios. La vista del mapa entrega la coordenada redondeada a tres decimales (~111 m).
+**Modelo de datos.** 13 tablas, 7 vistas, 19 políticas de acceso por fila y auditoría de
+cambios. Sin autorización de la familia, la identidad no entra: además del cliente y del
+servidor, la base la rechaza con una restricción propia. La vista del mapa entrega la coordenada redondeada a tres decimales (~111 m).
 Ver la salvedad importante en «Lo que la documentación decía de más».
 
 **Entorno local completo.** `cd entorno && make arriba` levanta PostgreSQL con PostGIS,
@@ -96,7 +106,8 @@ es repetible y se limpia sola.
 consentimiento viven en `dominio/` y los usan los dos lados. Cuando alguien agregue un
 campo de un solo lado, deja de compilar en vez de perder el dato en silencio.
 
-**Vía paralela operativa.** Formulario XLSForm de 125 preguntas listo para
+**Vía paralela operativa.** Formulario XLSForm de 125 filas —unas 97 preguntas
+reales; el resto son grupos, notas y campos calculados— listo para
 KoboToolbox, plantilla fija de reporte por WhatsApp y tablero estático con mapa. Eso
 permite capturar hoy mientras la aplicación propia madura.
 
@@ -115,8 +126,8 @@ Prueba de punta a punta en navegador real, resolución de celular, con geolocali
 
 ```
 lista abre: Casos en este celular
-GPS capturado: 4.3283783, -75.9029183 · precision 12 m
-caso en la lista: L-B833-001 P0 SIN ENVIAR ... El Venado - La Mirandita · Rural
+GPS capturado: 4.2712345, -75.9412345 · precision 12 m
+caso en la lista: L-B833-001 P0 SIN ENVIAR ... Vereda Ficticia Uno · Rural
 tras recargar la pagina siguen 1 caso(s) en IndexedDB
 SIN CONEXION: la app abre y muestra 1 caso(s)
 errores de consola: ninguno
@@ -132,9 +143,10 @@ escritorio emulando un celular. Un teléfono de gama baja con poca memoria, pant
 bajo el sol y un pulgar de verdad es otra cosa. Ese es el frente F6 y **es lo más
 urgente que hay**: no depende del servidor ni de la nube, y se puede empezar hoy.
 
-**El dato nunca ha viajado del celular a una base central**, porque esa base todavía no
-existe. La cola de sincronización está escrita contra un contrato, no contra un
-servidor que responda.
+**El dato nunca ha viajado desde un celular real por una red real.** Dentro del entorno
+local sí recorre el camino completo —cliente, API, base, con reintento y sin duplicar—,
+pero eso ocurre en una sola máquina. Falta el servidor desplegado y falta la señal
+intermitente de la vereda, que es donde este sistema tiene que aguantar.
 
 ### Revisión independiente
 

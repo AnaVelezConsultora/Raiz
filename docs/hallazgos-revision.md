@@ -280,14 +280,16 @@ el comportamiento de la cola.
 
 No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
 
-| Dónde | Dice | Es |
-|---|---|---|
-| ESTADO.md §3 | 11 tablas | 12 (`perfiles` llegó con F2). Las 5 vistas y el RLS sí cuadran |
-| FRENTES.md / ROLES-Y-ESFUERZO.md | ocho frentes / lista nueve | F9 no está en FRENTES.md |
-| ROLES-Y-ESFUERZO.md | F9 pendiente | El despliegue del frontend ya está configurado; falta integración continua |
-| ESTADO.md §3 | XLSForm de 125 preguntas | 125 filas de la hoja; ~97 preguntas reales, el resto son grupos, notas y calculados |
-| `tablero/datos.geojson` | código `SV-2026-000001` | El esquema genera `RZ-AAAA-NNNNNN` |
-| Configuración de despliegue | endurecimiento de cabeceras | Sin política de seguridad de contenido |
+| Dónde | Decía | Es | Estado |
+|---|---|---|---|
+| ESTADO.md §3 | 11 tablas | 13 tablas, 7 vistas, 19 políticas | Corregido, HU 1.6.2 |
+| FRENTES.md / ROLES-Y-ESFUERZO.md | ocho frentes / lista nueve | F9 no está en FRENTES.md | Pendiente |
+| ROLES-Y-ESFUERZO.md | F9 pendiente | El despliegue del frontend ya está configurado; falta integración continua | Pendiente |
+| ESTADO.md §3 | XLSForm de 125 preguntas | 125 filas de la hoja; ~97 preguntas reales, el resto son grupos, notas y calculados | Corregido, HU 1.6.2 |
+| `tablero/datos.geojson` | código `SV-2026-000001` | El esquema genera `RZ-AAAA-NNNNNN` | Corregido, HU 1.6.2 |
+| Configuración de despliegue | endurecimiento de cabeceras | Sin política de seguridad de contenido | Corregido, HU 1.6.2 |
+| ESTADO.md §2 y ADR 002 | la sincronización nunca es automática | El caso viaja solo al reconectar; la fotografía espera el botón | Corregido, HU 1.6.2 |
+| `tablero/datos.geojson` | vista pública agregada, con dato de muestra | Era una fila por familia y el dato era **real**: coordenada y vereda de un caso llegado por WhatsApp | Corregido: dato inventado y nota rehecha |
 
 ---
 

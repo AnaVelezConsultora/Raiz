@@ -54,3 +54,18 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(self), camera=(self), microphone=()"
+
+    # Politica de seguridad de contenido. HU 1.6.2: la documentacion decia
+    # "endurecimiento de cabeceras" y esta era justamente la que faltaba, que es la
+    # que impide que un script de otro origen lea los casos guardados en el
+    # dispositivo.
+    #
+    # style-src admite estilos en linea porque las pantallas los usan hoy. Es la
+    # concesion consciente de esta politica y se cierra el dia que esos estilos se
+    # muevan a la hoja de estilos.
+    #
+    # connect-src deja https porque la direccion de la API todavia no esta decidida.
+    # Cuando lo este, se reemplaza por ese origen y nada mas: hoy la cabecera evita
+    # el robo por script inyectado, y con el origen fijo evitaria ademas el envio a
+    # un servidor ajeno.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
