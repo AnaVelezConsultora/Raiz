@@ -1,0 +1,14 @@
+# Los guiones de shell y el SQL SIEMPRE con finales de linea LF.
+#
+# Sin esto, quien clone en Windows los recibe con CRLF y el contenedor falla con
+# "set: pipefail: invalid option name", porque bash lee el retorno de carro como
+# parte del argumento. El error no dice nada util y cuesta media hora encontrarlo.
+*.sh   text eol=lf
+*.sql  text eol=lf
+*.mjs  text eol=lf
+
+# Los binarios no se tocan.
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.xlsx binary

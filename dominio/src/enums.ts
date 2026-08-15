@@ -15,6 +15,31 @@ export enum Zona {
 }
 
 /**
+ * Necesidad inmediata del hogar, en las proximas 72 horas.
+ *
+ * Vocabulario cerrado, no texto libre. La razon es practica: estos valores se agregan
+ * para decirle a una entidad "37 hogares requieren agua potable". Con texto libre,
+ * "agua", "agua potable" y "Agua Potable" son tres necesidades distintas y el
+ * consolidado deja de ser sumable justo cuando hace falta.
+ *
+ * Los codigos replican los del XLSForm, igual que el resto del dominio.
+ */
+export enum Necesidad {
+  Alimentos = 'alimentos',
+  AguaPotable = 'agua_potable',
+  Aseo = 'aseo',
+  Cocina = 'cocina',
+  Dormir = 'dormir',
+  Carpa = 'carpa',
+  Ropa = 'ropa',
+  Medicamentos = 'medicamentos',
+  Panales = 'panales',
+  Psicosocial = 'psicosocial',
+  Transporte = 'transporte',
+  Documentos = 'documentos'
+}
+
+/**
  * Nivel de triaje. Determina el orden de verificacion y de entrega de ayuda.
  * P0 no espera al censo: se escala el mismo dia al organismo de socorro.
  */

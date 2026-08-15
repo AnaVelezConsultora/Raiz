@@ -2,7 +2,7 @@
   "name": "raiz",
   "private": true,
   "description": "Caracterizacion y seguimiento de familias afectadas por desastres",
-  "workspaces": ["dominio", "api"],
+  "workspaces": ["dominio", "api", "frontend"],
   "scripts": {
     "build": "npm run build --workspace @raiz/dominio && npm run build --workspace @raiz/api",
     "dev:api": "npm run dev --workspace @raiz/api"

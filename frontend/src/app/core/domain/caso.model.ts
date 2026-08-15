@@ -1,174 +1,29 @@
-import {
-  EstadoCaso,
-  EstadoSync,
-  FuenteCoordenada,
-  FuenteDato,
-  LugarPernocta,
-  NivelAfectacion,
-  Prioridad,
-  Tenencia,
-  TipoFoto,
-  Zona
-} from './enums';
+import { EstadoCaso, EstadoSync, Prioridad, TipoFoto, Zona } from './enums';
+import type {
+  AnexoConvenio,
+  AnexoRural,
+  AnexoUrbano,
+  Control,
+  Hogar,
+  Triaje,
+  Ubicacion,
+  Vivienda
+} from '@raiz/dominio';
 
 /**
- * Modelo de dominio del caso de Raíz.
+ * Los bloques que CRUZAN LA RED no se declaran aqui: vienen de `@raiz/dominio`, el
+ * paquete que comparten la PWA y la API, y se reexportan para no reescribir los
+ * imports existentes.
  *
- * La unidad de registro es el HOGAR, no la vivienda: un mismo inmueble puede alojar
- * varias familias y cada una genera un caso independiente.
+ * Control, Ubicacion, ComposicionHogar, Vulnerabilidad, Hogar, Vivienda, AnexoRural,
+ * AnexoUrbano, AnexoConvenio y Triaje son contrato. Escritos dos veces, que el cliente
+ * y el servidor coincidan es una intencion; escritos una sola vez, es una propiedad.
  *
- * Todos los bloques son interfaces separadas por responsabilidad, de modo que el
- * formulario por pasos pueda persistir un bloque a la vez sin construir el objeto
- * completo. En campo esto importa: el voluntario puede perder la aplicacion a mitad
- * del registro y no debe perder lo que ya escribio.
- *
- * @version 0.1.0
+ * Lo que sigue declarado abajo es lo que SOLO existe en el dispositivo y nunca viaja:
+ * el estado de la cola, el Blob de la fotografia, el codigo local provisional y las
+ * formas de consulta del listado.
  */
-
-/** Bloque 0. Quien registra, por que canal y con que autorizacion. */
-export interface Control {
-  registradorNombre: string;
-  registradorOrg: string | null;
-  registradorTel: string | null;
-  fuenteDato: FuenteDato;
-  /**
-   * Autorizacion de tratamiento de datos (Ley 1581 de 2012).
-   * En false, la capa de presentacion DEBE ocultar y no persistir identidad ni fotos.
-   */
-  consentimiento: boolean;
-  fechaRegistro: string;
-}
-
-/** Bloque 1. Ubicacion. La coordenada se captura por satelite y no requiere internet. */
-export interface Ubicacion {
-  departamento: string;
-  municipio: string;
-  zona: Zona;
-  vereda: string | null;
-  corregimiento: string | null;
-  barrio: string | null;
-  comuna: string | null;
-  direccionRef: string | null;
-  lat: number | null;
-  lon: number | null;
-  /** Precision reportada por el GPS, en metros. Util para decidir si se repite la toma. */
-  precisionM: number | null;
-  gpsFuente: FuenteCoordenada;
-}
-
-/**
- * Desagregado por sexo y rango etario.
- * Las entidades y la cooperacion internacional exigen este corte para asignar ayuda.
- */
-export interface ComposicionHogar {
-  h0a5: number;
-  m0a5: number;
-  h6a11: number;
-  m6a11: number;
-  h12a17: number;
-  m12a17: number;
-  h18a59: number;
-  m18a59: number;
-  h60mas: number;
-  m60mas: number;
-}
-
-/** Condiciones que elevan la vulnerabilidad del hogar. */
-export interface Vulnerabilidad {
-  gestantes: number;
-  lactantes: number;
-  discapacidadN: number;
-  discapacidadTipo: string[];
-  enfCronicaN: number;
-  requiereMedicamento: boolean | null;
-  medicamentoCual: string | null;
-  etnia: string | null;
-  victimaConflicto: boolean | null;
-}
-
-/** Bloque 2. Identidad del hogar. Los campos nominales quedan nulos sin consentimiento. */
-export interface Hogar {
-  jefeNombres: string | null;
-  jefeApellidos: string | null;
-  tipoDoc: string | null;
-  numDoc: string | null;
-  tel1: string;
-  tel1Whatsapp: boolean | null;
-  tel2: string | null;
-  personasTotal: number;
-  composicion: ComposicionHogar;
-  vulnerabilidad: Vulnerabilidad;
-  /** Incluye la opcion 'no_afiliada'. Las familias sin organizacion tambien se registran. */
-  afiliacion: string[];
-  afiliacionCual: string | null;
-}
-
-/** Bloque 3. Vivienda y dano. */
-export interface Vivienda {
-  tenencia: Tenencia;
-  arrendadorContacto: string | null;
-  /** Cuantos hogares vivian en la misma estructura. Contar viviendas subestima la emergencia. */
-  hogaresEnEstructura: number;
-  tipoVivienda: string | null;
-  materialParedes: string | null;
-  materialTecho: string | null;
-  afectacion: NivelAfectacion;
-  habitable: boolean;
-  riesgoColapso: boolean;
-  riesgoColapsoDesc: string | null;
-  dondeDuerme: LugarPernocta;
-  requiereVivienda: string[];
-  serviciosAfectados: string[];
-}
-
-/** Bloque 5. Anexo urbano. */
-export interface AnexoUrbano {
-  estrato: string | null;
-  tipoUnidad: string | null;
-  perdioMedioVida: boolean | null;
-  medioVidaDesc: string | null;
-  requiereUrbano: string[];
-}
-
-/** Bloque 4. Anexo rural: predio, cultivos, animales e infraestructura productiva. */
-export interface AnexoRural {
-  predioNombre: string | null;
-  areaHa: number | null;
-  tenenciaPredio: string | null;
-  tieneTitulo: boolean | null;
-  /** Dato operativo: define si puede entrar ayuda en vehiculo. */
-  viaAcceso: string | null;
-  cultivos: string[];
-  cultivosOtro: string | null;
-  areaCultivoAfectadaHa: number | null;
-  perdidaPct: number | null;
-  /** Dinero SIEMPRE en centavos. Nunca punto flotante para montos. */
-  perdidaEstimadaCopMinor: number | null;
-  bovinosPerdidos: number;
-  porcinosPerdidos: number;
-  avesPerdidas: number;
-  otrosAnimales: string | null;
-  infraProductiva: string[];
-  requiereAgro: string[];
-}
-
-/** Bloque 6. Anexo convenio de la federacion. */
-export interface AnexoConvenio {
-  afiliadaFederacion: boolean | null;
-  aplicaConvenio: boolean;
-  convenioLinea: string[];
-  convenioObs: string | null;
-}
-
-/** Bloque 7. Triaje y necesidad inmediata. */
-export interface Triaje {
-  prioridad: Prioridad;
-  necesidadesInmediatas: string[];
-  yaRecibioAyuda: boolean | null;
-  ayudaCual: string | null;
-  ayudaQuien: string | null;
-  observaciones: string | null;
-}
+export * from '@raiz/dominio';
 
 /** Metadatos de sincronizacion. Viven solo en el dispositivo, no viajan al servidor. */
 export interface MetaSync {
