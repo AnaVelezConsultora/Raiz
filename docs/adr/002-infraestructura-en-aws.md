@@ -85,6 +85,47 @@ Se conserva también el contrato con KoboToolbox: las columnas siguen replicando
 los nombres del XLSForm, así que la vía paralela de la fase 0 no se interrumpe y
 migrar de Kobo sigue siendo una carga, no una reescritura.
 
+### Qué tiene que traer el pool de Cognito
+
+La API ya está escrita contra Cognito, así que el pool no se puede configurar «como
+salga»: hay cuatro cosas que si no coinciden, el ingreso falla. Se dejan aquí para que
+quien monte la infraestructura (HU 1.1.1) no las adivine, y porque el entorno local ya
+las cumple y sirve de referencia — ver [`entorno/aws/bootstrap.sh`](../../entorno/aws/bootstrap.sh).
+
+| Qué | Por qué |
+|---|---|
+| Cliente con `ALLOW_USER_PASSWORD_AUTH` | Es el flujo que usa `POST /sesion`. Sin él, Cognito rechaza todo ingreso |
+| Correo como nombre de usuario | El voluntario escribe su correo, no un alias |
+| Si el cliente lleva **secreto**, hay que darle `COGNITO_CLIENT_SECRET` a la API | Con secreto, Cognito exige `SECRET_HASH`. El entorno local crea el cliente **sin** secreto, así que este es el punto donde algo funciona en la máquina de quien programa y falla en la nube |
+| Sin segundo factor, por ahora | La API detecta el desafío y responde con un mensaje claro, pero no lo resuelve |
+
+Variables que la API espera: `COGNITO_CLIENT_ID`, `COGNITO_JWKS_URI`, `COGNITO_ISSUER`,
+`AWS_REGION`, y `COGNITO_CLIENT_SECRET` solo si aplica. En local basta con
+`COGNITO_ENDPOINT` apuntando a cognito-local.
+
+### La pieza que hoy falta y bloquea el ingreso real
+
+En Supabase, crear un usuario disparaba solo la fila de `perfiles`. En AWS esa cadena
+tiene un eslabón que **todavía no está construido**:
+
+```
+usuario confirmado en Cognito
+   └─> Lambda de post-confirmación        ← NO EXISTE
+         └─> insert en auth.users
+               └─> disparador tr_crear_perfil
+                     └─> fila en perfiles, con rol lider
+```
+
+Sin ese primer paso, `perfiles` queda vacía y **todo ingreso real falla**, aunque las
+credenciales sean correctas. La API lo dice con todas las letras —«su cuenta existe
+pero todavía no tiene perfil asignado»— en vez de dejar entrar a alguien sin rol, que
+sería peor. Pero conviene saber que ese mensaje no es un caso raro: hoy es lo que
+recibiría el primer voluntario que entre en la nube.
+
+Es **HU 1.2.7**, y es requisito de HU 1.2.8. En el entorno local no se nota porque
+`bootstrap.sh` inserta los usuarios de prueba directamente en `auth.users`, que es
+justamente lo que la Lambda tendrá que hacer.
+
 ## Arquitectura
 
 ```
