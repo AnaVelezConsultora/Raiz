@@ -364,6 +364,117 @@ sigue sin `PUT` ni `PATCH`: ninguna ruta los usa.
 
 ---
 
+## H18 · Grave · La politica de seguridad impedia cargar la hoja de estilos — CORREGIDO
+
+La aplicacion publicada se veia **sin estilos**: campos delgados pegados a su
+etiqueta, botones nativos. Sin un error en pantalla y sin un error en la consola.
+
+Angular, con `inlineCritical` activo, emite la hoja asi:
+
+```html
+<link rel="stylesheet" href="styles-X.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="styles-X.css"></noscript>
+```
+
+Con JavaScript activo el `<noscript>` se ignora, de modo que el **único** enlace
+vivo es `media="print"` y depende de ese `onload` en línea para pasar a `all`. La
+política lleva `script-src 'self'` sin `'unsafe-inline'`: el navegador bloquea el
+manejador, el enlace se queda en `print` y la hoja no se aplica jamás en pantalla.
+Sobrevivía solo lo que iba en atributos `style=`, que es por lo que la cabecera se
+veía bien y el resto no.
+
+**El defecto es anterior a CloudFront.** `netlify.toml` declaraba la misma
+política, así que habría pasado igual en el despliegue anterior.
+
+Corregido apagando `inlineCritical` en la compilación de producción. **No** se
+aflojó la política: permitir scripts en línea para que cargue una hoja de estilos
+sería pagar con la defensa que impide que un script inyectado lea los casos
+guardados en el celular.
+
+---
+
+## H19 · Grave · Nadie escuchaba al service worker — CORREGIDO
+
+Es el más serio de la tanda, y solo se vio porque H18 lo destapó: se publicó la
+corrección, el servidor la servía, y el navegador seguía mostrando la versión
+anterior. Sin error, sin nada que mirar.
+
+`provideServiceWorker` estaba registrado y **no había un solo `SwUpdate` en el
+proyecto**. La versión nueva se descarga y espera a que se cierren todas las
+pestañas.
+
+En un escritorio eso es una molestia. En campo el voluntario deja la aplicación
+abierta toda la jornada, y una corrección urgente —un formulario que no guarda, un
+campo que valida mal— **no le llegaría en todo el día**. Poder corregir a distancia
+es la diferencia entre un error y una jornada perdida.
+
+Corregido con dos respuestas opuestas según el caso: si hay versión nueva se avisa
+con un botón y **no** se recarga solo —recargar por sorpresa a alguien que está
+escribiendo el nombre de una familia es hostil aunque el formulario guarde a cada
+paso—; si la versión instalada se rompió, se recarga sola sin preguntar, porque no
+hay nada que preservar.
+
+Se retiró además el `sync --delete` de la publicación, que borraba los paquetes de
+la versión anterior: un celular que seguía en ella pedía un fragmento ya borrado,
+recibía un 404 —que la regla de la distribución convierte en `index.html` con 200—
+y el navegador intentaba interpretar HTML como JavaScript.
+
+---
+
+## H20 · Medio · El primer formulario que ve un voluntario era el único sin estilo — CORREGIDO
+
+La hoja de estilos enumeraba los tipos de campo uno por uno:
+
+```css
+input[type='text'], input[type='tel'], input[type='number'], input[type='date']
+```
+
+Faltaban `email` y `password`, que son exactamente los dos de la pantalla de
+acceso. Ahora se excluye lo que **no** debe recibir esa forma —casillas, radios,
+archivos— en vez de enumerar lo que sí, para que el próximo tipo de campo no se
+caiga por la misma rendija.
+
+Con él se corrigieron tres cosas de la misma pantalla que la hacían frustrante: el
+botón «Entrar» estaba apagado hasta que el formulario fuera válido y no decía por
+qué; el teclado de iOS ponía mayúscula a la primera letra del correo —el voluntario
+escribe `Ana@…` sin notarlo y recibe «correo o clave incorrectos»—; y «Ver la
+clave» era una pastilla suelta con aspecto de otro botón de acción.
+
+---
+
+## H21 · Medio · La cabecera decia «Sevilla», escrito a mano — CORREGIDO
+
+Contradecía el frente F8 —municipio es un **campo**, no una constante— en el sitio
+más visible de la aplicación.
+
+Ahora lo resuelve el GPS contra una tabla que viaja en la aplicación, y dice
+«Colombia» cuando no logra ubicar. Se resuelve en el dispositivo y no preguntándole
+a un servicio: en la vereda no hay internet, mandar la ubicación del voluntario a un
+tercero mientras levanta un padrón de damnificados no es aceptable, y habría que
+abrir la política que impide que un script inyectado mande los casos a un servidor
+ajeno.
+
+**No decide el municipio de ningún caso.** El que se guarda lo escribe el voluntario
+en el formulario; un municipio adivinado por cercanía orienta a quien mira la
+pantalla y sería un dato falso en un padrón que va a sustentar una petición.
+
+**La primera versión se equivocó, y vale la pena que quede escrito.** Con una tabla
+de 14 municipios y radio de 15 km, alguien en el centro de Pereira leyó «Ulloa», a
+13,5 km. Pereira no estaba en la tabla. **Un municipio que falta no produce un
+error: produce una respuesta equivocada**, porque el vecino gana por cercanía y se
+muestra con la misma confianza que uno correcto.
+
+La corrección de fondo no fue el radio sino completar la tabla: los cuatro
+departamentos del Eje Cafetero enteros, 95 municipios. Se agregó además un margen
+de ambigüedad — cerca de un límite, «el más cercano» es una moneda al aire, y una
+moneda al aire mostrada como un hecho es peor que un «no sé».
+
+Queda débil por diseño y está dicho en el archivo: son coordenadas de cabecera
+escritas a mano, no polígonos, y **nada en el código detecta un error de tecleo**.
+El reemplazo correcto es el listado oficial del DANE.
+
+---
+
 ## Desajustes menores
 
 No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
@@ -392,6 +503,8 @@ No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
 | Continuo | H13 | Empieza con las pruebas de acceso ya incluidas |
 | Hecho | H15 | Sin esto no había inicio de sesión posible contra la nube |
 | Hecho | H17 | Cerrar sesión desde la PWA no habría funcionado nunca |
+| Hecho | H18, H19 | La aplicación publicada no se veía, y una corrección no llegaba al celular |
+| Hecho | H20, H21 | La pantalla de acceso y la cabecera, que es lo primero que se ve |
 | Hecho | H16 | Un alta interrumpida ya se repara repitiendola |
 
 ---

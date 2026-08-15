@@ -76,10 +76,29 @@ permite que alguien de **F6 abra un enlace en su Android y pruebe el cambio ante
 del merge**, sin instalar nada. El frente más urgente del proyecto, que no
 requiere programar, se vuelve accionable con esto.
 
-**No todo se muda.** La PWA es estática y su despliegue actual ya funciona y ya da
-vistas previas por PR. Se migra el plano de datos —API, base, almacenamiento,
-identidad—; el estático se queda donde está. Es una cosa menos que construir antes
-de que los devs puedan trabajar.
+> [**Retirado por decisión el 15 de agosto de 2026.** Estas vistas previas las daba
+> Netlify, y Netlify salió del proyecto al consolidar la publicación en CloudFront.
+> Quien responde por el proyecto decidió que no hacen falta, sabiendo lo que este
+> párrafo dice de ellas.
+>
+> La consecuencia queda escrita para que nadie la descubra después: **quien no
+> programa solo puede probar lo que ya está publicado.** El frente F6 —probar en un
+> Android real, que este documento y ESTADO.md llaman el más urgente del proyecto—
+> pierde la vía de probar antes de fusionar.
+>
+> Si algún día se reabre, no hace falta volver a Netlify: la distribución de
+> CloudFront admite un prefijo `/vista-previa/<rama>/` sobre el mismo bucket.]
+
+**No todo se muda.** La PWA es estática y su despliegue ya funcionaba. Se migra
+primero el plano de datos —API, base, almacenamiento, identidad—; el estático se
+queda donde está. Es una cosa menos que construir antes de que los devs puedan
+trabajar.
+
+> [El estático sí se mudó, el 15 de agosto de 2026, y esta frase se conserva para
+> que se entienda el orden: la API iba primero, y así fue. Una vez que existían la
+> zona de Route 53 y el certificado, publicar la PWA en CloudFront costaba un
+> guion, y tener el frente y la API bajo el mismo dominio y la misma custodia vale
+> más que el ahorro de no mudarla.]
 
 ## Migraciones
 

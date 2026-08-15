@@ -160,3 +160,18 @@ Conviene decirlo para que nadie venga a «arreglarlo»:
   pista.
 - **Sin puerta de enlace NAT.** Es una decisión de la HU 1.1.1 y del ADR 002, no
   un atajo.
+- **Sin vista previa por propuesta de cambio.** Estuvo un rato en esta tabla como
+  D5 y se retiró: quien responde por el proyecto decidió el 15 de agosto de 2026
+  que no hace falta. Un segundo sitio publicado —el de Netlify— envejecía por su
+  cuenta y se descubre el día que alguien reporta un error contra la versión
+  equivocada.
+
+  **Lo que cuesta, dicho igual.** El ADR 004 llamaba a esa vista previa la pieza
+  que vuelve accionable el frente F6: probar un cambio en un Android antes de
+  fusionarlo. Sin ella, quien no programa solo puede probar lo que ya está
+  publicado. Es una decisión tomada sabiendo el precio, no un olvido, y por eso no
+  lleva disparador: no hay nada que se esté postergando.
+
+  Si algún día se quiere, no hace falta volver a Netlify: la distribución de
+  CloudFront ya existe y admite un prefijo `/vista-previa/<rama>/` sobre el mismo
+  bucket.

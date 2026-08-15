@@ -54,8 +54,9 @@ npm run servir
 ```
 
 Compila y sirve el resultado en <http://localhost:4300>, reproduciendo lo que hace
-Netlify: reserva de ruta para que `/casos` funcione al recargar, y service worker sin
-caché para que no se quede pegada una versión vieja.
+la distribución de CloudFront que sirve la aplicación publicada: reserva de ruta para
+que `/casos` funcione al recargar, y service worker sin caché para que no se quede
+pegada una versión vieja.
 
 ### Cómo comprobar que funciona sin conexión
 
