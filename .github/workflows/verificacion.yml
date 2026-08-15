@@ -115,11 +115,18 @@ jobs:
         run: $PSQL -f supabase/schema.sql
       - name: Permisos
         run: $PSQL -f entorno/postgres/60-grants.sql
+      # Lo que raiz_api necesita ANTES de que exista sesion: leer el perfil de
+      # quien se autentica y reflejar a Cognito en auth.users. Sin este archivo el
+      # esquema de aqui deja de ser el que corre en produccion, que es justo lo que
+      # esta lista de pasos existe para evitar. Ver el hallazgo H15.
+      - name: Acceso de la API
+        run: $PSQL -f entorno/postgres/65-acceso-api.sql
       - name: Catalogos
         run: $PSQL -f entorno/postgres/70-semillas-catalogos.sql
 
       # Sin Cognito: las filas de auth.users se insertan directo y el disparador
-      # crea los perfiles igual que lo hara el Lambda en produccion.
+      # crea los perfiles igual que lo hace la API en produccion. (Decia "el
+      # Lambda"; esa Lambda se descarto al no haber registro abierto — ADR 002.)
       - name: Usuarios
         run: $PSQL -f entorno/postgres/usuarios-ci.sql
       - name: Casos de prueba
