@@ -81,6 +81,27 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
 
     <nav style="position:fixed;left:0;right:0;bottom:0;background:var(--surface);
                 border-top:1px solid var(--rule);padding:.7rem 1rem;">
+      @if (aviso()) {
+        <p class="contenedor aviso peligro" style="margin:0 0 .6rem">{{ aviso() }}</p>
+      }
+
+      @if (preguntandoAlSalir()) {
+        <div class="contenedor pila-sm">
+          <strong>Que hacemos con este registro?</strong>
+          <span class="tenue">
+            Guardarlo lo deja en el celular y se enviara cuando haya senal.
+            Descartarlo lo borra de una vez.
+          </span>
+          <div class="fila" style="flex-wrap:nowrap">
+            <button type="button" class="btn-peligro" style="flex:1"
+                    (click)="descartar()">Descartar</button>
+            <button type="button" class="btn-primario" style="flex:2"
+                    (click)="guardarYSalir()">Guardar</button>
+          </div>
+          <button type="button" class="btn-secundario btn-ancho"
+                  (click)="preguntandoAlSalir.set(false)">Seguir llenando</button>
+        </div>
+      } @else {
       <div class="contenedor fila" style="gap:.6rem;flex-wrap:nowrap">
         <button type="button" class="btn-secundario" style="flex:1"
                 (click)="paso() === 1 ? salir() : retroceder()">
@@ -96,6 +117,7 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
           </button>
         }
       </div>
+      }
     </nav>
   `
 })
@@ -138,13 +160,27 @@ export class FormularioCasoComponent implements OnInit {
     necesidades: signal<string[]>([])
   };
 
+  /**
+   * True cuando el caso ya existe en el dispositivo.
+   *
+   * Un caso recien creado vive solo en memoria hasta que haya algo que valga la pena
+   * conservar. Ver {@link salir}.
+   */
+  private readonly yaEstaGuardado = signal(false);
+
+  /** True mientras se le pregunta al voluntario si guarda o descarta. */
+  readonly preguntandoAlSalir = signal(false);
+
+  /** Mensaje para el voluntario cuando una accion no pudo hacer lo que prometia. */
+  readonly aviso = signal<string>('');
+
   async ngOnInit(): Promise<void> {
     const id = this.ruta.snapshot.paramMap.get('id');
     const zonaParam = this.ruta.snapshot.queryParamMap.get('zona');
 
-    const caso = id
-      ? ((await this.almacen.obtener(id)) ?? this.factory.crear(this.aZona(zonaParam)))
-      : this.factory.crear(this.aZona(zonaParam));
+    const existente = id ? await this.almacen.obtener(id) : undefined;
+    const caso = existente ?? this.factory.crear(this.aZona(zonaParam));
+    this.yaEstaGuardado.set(existente !== undefined);
 
     this.caso.set(caso);
     this.form.set(this.formService.construir(caso));
@@ -167,13 +203,117 @@ export class FormularioCasoComponent implements OnInit {
     window.scrollTo({ top: 0 });
   }
 
+  /**
+   * Salir del formulario.
+   *
+   * Si hay algo escrito, la decision es del voluntario y no de una heuristica mia:
+   * guardar o descartar. Antes se guardaba en silencio, y despues no habia forma de
+   * quitar un registro equivocado.
+   *
+   * Si no hay nada, no se pregunta: interrumpir a alguien para decirle que no escribio
+   * nada es hacerle perder el tiempo dos veces.
+   */
   async salir(): Promise<void> {
-    await this.persistir();
+    if (this.yaEstaGuardado() || this.tieneAlgoDelHogar()) {
+      this.preguntandoAlSalir.set(true);
+      return;
+    }
     void this.router.navigate(['/casos']);
   }
 
-  async finalizar(): Promise<void> {
+  async guardarYSalir(): Promise<void> {
+    this.preguntandoAlSalir.set(false);
     await this.persistir();
+    this.recordarPerfil();
+    await this.sync.refrescarContadores();
+    void this.router.navigate(['/casos']);
+  }
+
+  /**
+   * Recuerda el nombre y la organizacion del voluntario para el siguiente registro.
+   *
+   * En una jornada de veinte familias, volver a escribir el propio nombre veinte veces
+   * es abandono.
+   *
+   * SOLO se llama cuando el voluntario DECIDE conservar el caso, nunca en el guardado
+   * automatico. Antes se llamaba en cada guardado, y por eso lo que alguien escribia y
+   * despues descartaba seguia apareciendo rellenado en el caso siguiente: la
+   * aplicacion habia aprendido de un registro que su autor tiro a la basura.
+   */
+  private recordarPerfil(): void {
+    const caso = this.caso();
+    if (!caso || !caso.control.registradorNombre.trim()) return;
+
+    this.factory.guardarPerfil({
+      nombre: caso.control.registradorNombre,
+      organizacion: caso.control.registradorOrg,
+      telefono: caso.control.registradorTel
+    });
+  }
+
+  /**
+   * Descarta el registro y sale.
+   *
+   * Borra tambien lo que ya se hubiera escrito en el dispositivo en pasadas
+   * anteriores: descartar tiene que dejar el celular como si el caso nunca se hubiera
+   * abierto, o no es descartar.
+   */
+  async descartar(): Promise<void> {
+    this.preguntandoAlSalir.set(false);
+
+    const caso = this.caso();
+    if (caso && this.yaEstaGuardado()) {
+      await this.almacen.eliminar(caso.id);
+      await this.sync.refrescarContadores();
+    }
+
+    void this.router.navigate(['/casos']);
+  }
+
+  /**
+   * Si el voluntario alcanzo a registrar algo de ESTA familia.
+   *
+   * Deliberadamente no mira el nombre del registrador, la organizacion, el municipio,
+   * el departamento ni la zona: todos vienen rellenados de antemano —del perfil
+   * recordado o del boton que se toco— y darlos por dato del hogar convertiria de
+   * nuevo cualquier caso abandonado en un registro fantasma.
+   */
+  private tieneAlgoDelHogar(): boolean {
+    if (this.lat() !== null || this.fotos().length > 0) return true;
+
+    const form = this.form();
+    if (!form) return false;
+
+    const conTexto = (ruta: string): boolean =>
+      String(form.get(ruta)?.value ?? '').trim() !== '';
+
+    return (
+      conTexto('hogar.tel1') ||
+      conTexto('hogar.jefeNombres') ||
+      conTexto('hogar.jefeApellidos') ||
+      conTexto('hogar.numDoc') ||
+      conTexto('ubicacion.vereda') ||
+      conTexto('ubicacion.barrio') ||
+      conTexto('ubicacion.corregimiento') ||
+      conTexto('ubicacion.direccionRef') ||
+      Number(form.get('hogar.personasTotal')?.value ?? 0) > 0
+    );
+  }
+
+  async finalizar(): Promise<void> {
+    // Sin esto, tocar "Guardar caso" con el formulario en blanco no guardaba nada y
+    // tampoco decia nada: el voluntario volvia a la lista creyendo que registro algo.
+    // Un fallo silencioso en campo se descubre semanas despues, cuando falta la familia.
+    if (!this.yaEstaGuardado() && !this.tieneAlgoDelHogar()) {
+      this.aviso.set(
+        'Todavia no hay nada que guardar. Escriba al menos el celular o la vereda, o tome la coordenada.'
+      );
+      return;
+    }
+    this.aviso.set('');
+
+    await this.persistir();
+    this.recordarPerfil();
     await this.sync.refrescarContadores();
     void this.router.navigate(['/casos']);
   }
@@ -200,11 +340,27 @@ export class FormularioCasoComponent implements OnInit {
     await this.sync.refrescarContadores();
   }
 
-  /** Vuelca el formulario al caso y lo escribe en IndexedDB. */
+  /**
+   * Vuelca el formulario al caso y lo escribe en IndexedDB.
+   *
+   * NO escribe un caso nuevo que todavia no tiene nada del hogar. Antes escribia
+   * siempre, y por eso tocar "Nuevo caso" y arrepentirse —o tocar Continuar sin
+   * llenar nada— dejaba un registro fantasma en la lista: "Sin identificar · Sin
+   * ubicar · 0 personas · sin coordenada".
+   *
+   * No es cosmetico. Esos registros se cuentan como pendientes de envio, estorban en
+   * la lista donde el voluntario busca el caso que si quiere completar, y el dia que
+   * exista servidor viajan y ensucian el total consolidado, que es toda la palanca de
+   * negociacion que tiene la comunidad.
+   *
+   * Un caso que ya existe se guarda siempre, aunque quede vacio: puede que el
+   * voluntario haya entrado justamente a corregir o borrar un dato equivocado.
+   */
   private async persistir(): Promise<void> {
     const caso = this.caso();
     const form = this.form();
     if (!caso || !form) return;
+    if (!this.yaEstaGuardado() && !this.tieneAlgoDelHogar()) return;
 
     const actualizado = this.formService.aplicar(caso, form, this.leerSelecciones());
     actualizado.ubicacion.lat = this.lat();
@@ -214,15 +370,8 @@ export class FormularioCasoComponent implements OnInit {
       this.lat() === null ? FuenteCoordenada.NoDisponible : FuenteCoordenada.Sitio;
     actualizado.pasoCompletado = Math.max(caso.pasoCompletado, this.paso());
 
-    // El perfil del voluntario se recuerda para el siguiente registro: en una jornada
-    // de veinte casos, volver a escribir el propio nombre veinte veces es abandono.
-    this.factory.guardarPerfil({
-      nombre: actualizado.control.registradorNombre,
-      organizacion: actualizado.control.registradorOrg,
-      telefono: actualizado.control.registradorTel
-    });
-
     await this.almacen.guardar(actualizado);
+    this.yaEstaGuardado.set(true);
     this.caso.set(actualizado);
     this.guardadoEn.set(new Date().toLocaleTimeString('es-CO', {
       hour: '2-digit',

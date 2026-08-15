@@ -7,8 +7,8 @@ import { AUTH } from './core/domain/auth.model';
 import { CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION } from './core/domain/ports';
 import { DexieCasoStorageService } from './core/infra/dexie-caso-storage.service';
 import { DexieFotoStorageService } from './core/infra/dexie-foto-storage.service';
-import { SupabaseAuthAdapter } from './core/infra/supabase-auth.adapter';
-import { SupabaseSyncAdapter } from './core/infra/supabase-sync.adapter';
+import { ApiAuthAdapter } from './core/infra/api-auth.adapter';
+import { ApiSyncAdapter } from './core/infra/api-sync.adapter';
 
 /**
  * Composicion de la aplicacion.
@@ -32,7 +32,7 @@ export const appConfig: ApplicationConfig = {
 
     { provide: CASO_STORAGE, useExisting: DexieCasoStorageService },
     { provide: FOTO_STORAGE, useExisting: DexieFotoStorageService },
-    { provide: SINCRONIZACION, useExisting: SupabaseSyncAdapter },
-    { provide: AUTH, useExisting: SupabaseAuthAdapter }
+    { provide: SINCRONIZACION, useExisting: ApiSyncAdapter },
+    { provide: AUTH, useExisting: ApiAuthAdapter }
   ]
 };

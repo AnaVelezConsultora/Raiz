@@ -117,7 +117,6 @@ a:focus-visible {
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
-.rejilla-edades input { min-height: 42px; text-align: center; padding: 0.3rem; }
 .rejilla-edades .cab {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -126,6 +125,62 @@ a:focus-visible {
   text-align: center;
 }
 .rejilla-edades .rango { font-size: 0.85rem; color: var(--ink-soft); }
+
+/* Condiciones especiales: mismas dos columnas, sin cabecera de sexo. */
+.rejilla-condiciones {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem 0.6rem;
+  align-items: center;
+}
+.rejilla-condiciones .rango { font-size: 0.85rem; color: var(--ink-soft); }
+
+/* Contador de personas: menos, numero, mas.
+   Usa --alto-toque, la medida que ya define el resto del sistema: es lo minimo que un
+   pulgar acierta sin mirar. Los 42px que tenia la rejilla obligaban a apuntar, y aqui
+   se toca de pie, bajo el sol y a veces con la mano mojada. */
+.contador {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.contador-boton {
+  width: var(--alto-toque);
+  min-height: var(--alto-toque);
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 600;
+  cursor: pointer;
+  /* Sin resaltado azul al tocar repetido, que en un contador se toca muchas veces. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.contador-boton:disabled { color: var(--ink-faint); opacity: 0.45; cursor: default; }
+.contador-boton:active:not(:disabled) { background: var(--surface-2); }
+.contador-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.contador-valor {
+  width: 44px;
+  min-height: var(--alto-toque);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.contador-valor:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* En cero se atenua para que la vista distinga de un golpe que filas tienen dato. */
+.contador.en-cero .contador-valor { color: var(--ink-faint); font-weight: 400; }
 
 /* Opciones multiples en forma de pastillas: mas faciles de tocar que casillas. */
 .pastillas { display: flex; flex-wrap: wrap; gap: 0.4rem; }

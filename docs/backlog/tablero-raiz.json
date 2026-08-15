@@ -510,12 +510,14 @@
               "id": "HU 1.3.3",
               "titulo": "Decidir yo cuándo se gastan mis datos",
               "como": "líder territorial",
-              "quiero": "que en datos móviles se manden sólo los casos y las fotos esperen al wifi",
-              "para": "que sincronizar no me consuma el plan del mes",
+              "quiero": "que los casos salgan solos al haber senal y que las fotografias esperen mi decision",
+              "para": "que sincronizar no me consuma el plan del mes ni dependa de que yo me acuerde",
               "criterios": [
-                "En datos móviles sólo casos; en wifi casos y fotografías; con ahorro de datos, nada sin pedirlo",
-                "El botón dice qué va a mandar y cuánto pesa antes de mandarlo",
-                "Nada de sincronización automática en segundo plano"
+                "Los casos se envian solos al reconectar y al abrir la aplicacion: pesan unos 3 KB",
+                "Las fotografias, de unos 200 KB, siguen esperando el boton",
+                "En wifi se ofrece mandar tambien las fotografias",
+                "Con ahorro de datos activo no se manda nada sin pedirlo",
+                "Nada de sincronizacion automatica en segundo plano: solo con la aplicacion abierta"
               ],
               "etiquetas": [
                 "FrontEnd"
@@ -523,7 +525,8 @@
               "origen": "ADR 003",
               "sugerido": [
                 "johan1113"
-              ]
+              ],
+              "nota": "PARCIAL. Los casos ya salen solos al reconectar y al abrir, y las fotografias siguen pidiendo el boton. Falta detectar wifi y respetar el ahorro de datos. Esto REEMPLAZA la decision anterior de que la sincronizacion nunca es automatica: el corte estaba en el lugar equivocado, porque trataba igual un caso de 3 KB y una foto de 200 KB, y el costo de olvidar el boton lo pagaba la familia, no el voluntario. Hay que corregir ESTADO.md y la lamina 10 del pitch, que dicen lo contrario."
             },
             {
               "id": "HU 1.3.4",
@@ -537,14 +540,16 @@
                 "La aplicación sigue corriendo completa en modo local sin backend"
               ],
               "etiquetas": [
-                "FrontEnd"
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "ADR 002",
               "depende_de": "HU 1.2.1",
               "sugerido": [
                 "luigiands-tech"
               ],
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "nota": "HECHA. Se reemplazaron los dos adaptadores de Supabase por adaptadores contra la API propia. Costo dos lineas y dos importaciones en app.config.ts; ningun componente ni servicio de dominio se modifico, y la aplicacion sigue corriendo completa en modo local con apiUrl vacio. Se retiro @supabase/supabase-js de las dependencias. Sesion del 15 de agosto de 2026, rama del frontend."
             },
             {
               "id": "HU 1.3.5",
@@ -566,6 +571,104 @@
                 "johan1113"
               ],
               "asignado": "yonathangutierrez"
+            },
+            {
+              "id": "HU 1.3.6",
+              "titulo": "Que lo que lleno de la vivienda llegue al servidor",
+              "como": "lider territorial",
+              "quiero": "que el bloque de vivienda y los anexos rural y urbano viajen con el caso",
+              "para": "que el paso mas largo del formulario no sea trabajo descartado en silencio",
+              "criterios": [
+                "El caso viaja como un solo documento y el servidor lo reparte entre familias, viviendas y produccion",
+                "El reparto ocurre en una transaccion: no quedan hogares a medias si la senal se cae",
+                "Ningun campo que el formulario captura se queda sin enviar"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Revision del adaptador de sincronizacion, 15 de agosto de 2026",
+              "nota": "HECHA del lado del cliente. El adaptador anterior solo escribia en la tabla familias: 13 campos de vivienda, 16 del anexo rural y 5 del urbano nunca viajaban. No se habia notado porque no hay servidor. Falta el lado del servidor, que es HU 1.2.1 y HU 1.2.2. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.7",
+              "titulo": "Llenar el hogar sin pelear con el teclado",
+              "como": "lider territorial",
+              "quiero": "contar personas con botones y no con diez campos numericos",
+              "para": "no abandonar el formulario en el bloque que las entidades mas exigen",
+              "criterios": [
+                "La rejilla de edad y sexo se llena sin abrir el teclado",
+                "Se ve la rejilla completa mientras se llena, y el aviso de descuadre no queda tapado",
+                "Ningun campo numerico cambia de valor al deslizar el dedo encima",
+                "Los objetivos tactiles usan la medida del sistema, no una menor"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision de ergonomia del paso 2, 15 de agosto de 2026",
+              "nota": "HECHA. Diez campos numericos eran diez aperturas de teclado, y el teclado tapa la mitad inferior de la pantalla. Se reemplazaron por un contador de menos y mas. Se cambio type=number por texto con teclado numerico en todo el paso, porque el campo numerico cambia de valor al deslizar. El aviso de descuadre subio sobre la rejilla. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.8",
+              "titulo": "Que abrir un caso y arrepentirse no deje un registro fantasma",
+              "como": "lider territorial",
+              "quiero": "que un caso sin nada del hogar no se guarde",
+              "para": "que la lista muestre familias y no filas vacias que despues inflan el total",
+              "criterios": [
+                "Un caso nuevo no se escribe hasta que haya telefono, nombre, lugar, personas, foto o coordenada",
+                "Los datos que vienen rellenados de antemano no cuentan como dato del hogar",
+                "Un caso que ya existe se sigue guardando aunque quede vacio",
+                "Guardar caso sin nada escrito avisa que falta, en vez de no hacer nada en silencio"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Defecto encontrado en revision de flujo, 15 de agosto de 2026",
+              "nota": "HECHA. persistir() escribia en IndexedDB sin preguntar si habia algo, y lo llamaban tanto Salir como Continuar. Los fantasmas se contaban como pendientes de envio y el dia que exista servidor habrian viajado, inflando el total consolidado. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.9",
+              "titulo": "Borrar del celular un registro equivocado",
+              "como": "lider territorial",
+              "quiero": "poder decidir si guardo o descarto, y borrar despues lo que quedo mal",
+              "para": "que no viaje a la entidad un registro que se creo por error",
+              "criterios": [
+                "Al salir con algo escrito se pregunta: guardar, descartar o seguir llenando",
+                "Descartar borra tambien lo que ya se habia guardado en pasadas anteriores",
+                "La lista tiene boton de borrar en cada caso sin enviar",
+                "La confirmacion ocurre en la misma tarjeta, para ver cual caso se borra",
+                "Borrar se lleva las fotografias en la misma transaccion",
+                "Un caso ya sincronizado NO se puede borrar desde el celular"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision de flujo, 15 de agosto de 2026",
+              "nota": "HECHA. Se agrego eliminar() al puerto de almacenamiento, que no existia. Borrar un caso ya enviado es supresion de datos y va por el canal del custodio, no por un boton en el celular. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.10",
+              "titulo": "Que mi nombre no se aprenda de un caso que descarte",
+              "como": "lider territorial",
+              "quiero": "que la aplicacion recuerde quien soy, pero solo de un registro que decidi conservar",
+              "para": "no encontrar rellenado lo que escribi por error y despues borre",
+              "criterios": [
+                "El perfil se guarda al conservar un caso, nunca en el guardado automatico",
+                "El campo dice que el dato es del voluntario y no de la familia",
+                "Sigue sin pedirse el nombre en cada registro"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Defecto reportado en pruebas manuales, 15 de agosto de 2026",
+              "nota": "HECHA. guardarPerfil corria en cada persistir(), asi que un caso borrado seguia ensenandole a la aplicacion. Persistir el nombre es correcto y es buen UX: el dato es del voluntario, no del registro. Sesion del 15 de agosto de 2026, rama del frontend."
             }
           ]
         },
