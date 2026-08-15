@@ -401,10 +401,13 @@
               "quiero": "que la fotografía vaya directo al almacenamiento",
               "para": "que la subida sea lo más liviana y rápida posible",
               "criterios": [
-                "URL de subida de vida corta, limitada a la ruta del caso",
-                "La fotografía no atraviesa la API en ningún momento",
-                "Sin consentimiento no se emite URL: la regla en el borde, no en la interfaz",
-                "El objeto no queda legible sin firma"
+                "Politica de subida firmada y de vida corta, limitada a la ruta del caso",
+                "La politica lleva content-length-range con el tamano que el dispositivo declaro",
+                "La fotografia no atraviesa la API en ningun momento",
+                "Sin consentimiento no se emite autorizacion: la regla en el borde, no en la interfaz",
+                "El objeto no queda legible sin firma",
+                "Hay ruta de confirmacion, idempotente, que VERIFICA el objeto contra el almacenamiento",
+                "La confirmacion consulta el objeto concreto, nunca listando un prefijo"
               ],
               "etiquetas": [
                 "BackEnd"
@@ -413,7 +416,8 @@
               "depende_de": "HU 1.2.3",
               "sugerido": [
                 "lDavidSantiago"
-              ]
+              ],
+              "nota": "EL LADO DEL CLIENTE YA ESTA. El adaptador declara fotoId, casoOrigenId, tipo, bytes y tipoMime; sube por POST multiparte con los campos firmados, poniendo el archivo de ultimo; y despues llama a POST /fotos/{id}/confirmar. Falta construir esos dos endpoints.\n\nEl contrato completo quedo escrito en el ADR 003 seccion 5, reescrita el 15 de agosto de 2026. Incluye por que son tres pasos y no dos: que el almacenamiento responda 204 no es que el objeto este ahi y completo, y sin confirmacion el dispositivo podria liberar la foto de su memoria creyendo que ya viajo.\n\nNO usar subida multiparte de objetos grandes: su parte minima es de 5 MB, asi que una foto de 200 KB seria una sola parte con dos viajes de red de mas."
             },
             {
               "id": "HU 1.2.6",
