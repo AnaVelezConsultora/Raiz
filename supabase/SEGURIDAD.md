@@ -9,6 +9,11 @@ Se documentan porque **el próximo cambio al esquema puede reintroducirlos**, y 
 quien tome F3 debe verificar cada uno contra el proyecto real, no confiar en este
 documento.
 
+> **La numeración continúa en [docs/hallazgos-revision.md](../docs/hallazgos-revision.md)**,
+> donde una revisión independiente reportó H7 a H14 contrastando la documentación
+> contra el código. Ahí está, entre otros, el fallo bloqueante que impedía crear el
+> esquema. Los dos archivos son un solo registro de hallazgos con numeración corrida.
+
 ---
 
 ## H1 · Grave · Las vistas saltaban el control de acceso
@@ -103,7 +108,7 @@ servidor. Quien tome F3 debe comprobar, con el proyecto ya creado:
    políticas. Nada de lo anterior lo cubre. Un bucket público expone todas las
    fotografías por URL directa, sin autenticación.
 
-El punto 6 es el que más se olvida y probablemente sea el H7 de la próxima revisión.
+El punto 6 es el que más se olvida y probablemente sea el hallazgo de la próxima revisión: ninguna política de tabla cubre el almacenamiento de archivos.
 
 ---
 
