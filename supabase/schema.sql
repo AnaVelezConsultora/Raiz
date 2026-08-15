@@ -68,11 +68,6 @@ create table perfiles (
   nombre           text not null,
   rol              rol_t not null default 'lider',
   organizacion_id  bigint references organizaciones(id),
-  -- Lo que la persona ESCRIBIO al registrarse, sin verificar. No es lo mismo que
-  -- organizacion_id, que es un vinculo confirmado. La custodia necesita ver lo
-  -- declarado para poder decidir si activa la cuenta, y distinguir una cosa de la
-  -- otra evita que un dato sin comprobar termine pareciendo comprobado.
-  organizacion_declarada text,
   telefono         text,
   activo           boolean not null default true,
   creado_en        timestamptz not null default now()
@@ -661,18 +656,13 @@ create trigger tr_touch_familias before update on familias
 create or replace function fn_crear_perfil() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into perfiles (id, nombre, rol, telefono, organizacion_declarada, activo)
+  insert into perfiles (id, nombre, rol, telefono, activo)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)),
     'lider',
     new.raw_user_meta_data->>'telefono',
-    new.raw_user_meta_data->>'organizacion',
-    -- Nace INACTIVA. En una emergencia el registro tiene que ser abierto para no
-    -- ponerle friccion a quien quiere ayudar, pero ningun dato de una familia
-    -- puede entrar al registro sin que alguien responda por quien lo levanto.
-    -- La custodia de datos activa la cuenta cuando confirma quien es la persona.
-    false
+    true
   )
   on conflict (id) do nothing;
   return new;

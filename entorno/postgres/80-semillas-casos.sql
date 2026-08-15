@@ -25,10 +25,6 @@
 --
 -- Todos entraron como 'lider' por el disparador. Aqui se ajustan los de prueba.
 -- ---------------------------------------------------------------------------
--- Las cuentas nacen inactivas (schema.sql, fn_crear_perfil). Las de prueba se
--- activan aqui, que es lo que hara la custodia de datos con cada voluntario real.
-update perfiles set activo = true;
-
 update perfiles p set rol = 'coordinador'
   from auth.users u where u.id = p.id and u.email = 'coordinadora@ejemplo.test';
 

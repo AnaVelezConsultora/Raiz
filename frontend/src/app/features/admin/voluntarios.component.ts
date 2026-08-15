@@ -12,14 +12,18 @@ const ROLES: readonly { v: Rol; t: string; explica: string }[] = [
 ];
 
 /**
- * Activación de voluntarios.
+ * Administración de voluntarios.
  *
  * QUE DECIDE QUIEN USA ESTA PANTALLA
  *
- * Activar una cuenta no es un trámite: es decir que esta persona puede empezar a
- * registrar familias reales, y que sus datos van a entrar al registro que después se
- * remite a las entidades. Por eso la pantalla muestra lo que la persona declaró y no
- * solo su nombre, y por eso el botón dice lo que va a pasar.
+ * La cuenta la crea la custodia desde `POST /voluntarios` y nace con el rol menos
+ * privilegiado. Aquí se hacen las dos cosas que vienen después: ascender a alguien
+ * cuando el equipo lo necesita, y retirarle el acceso a quien se va. No hay registro
+ * abierto, y esta pantalla no lo suple.
+ *
+ * Retirar el acceso NO borra los casos que la persona levantó. La familia sigue
+ * contada y el registro conserva quién la reportó: sacar a alguien del equipo no
+ * puede borrar el trabajo hecho ni romper la trazabilidad.
  *
  * LA PANTALLA NO ES LA PROTECCION
  *
@@ -38,7 +42,7 @@ const ROLES: readonly { v: Rol; t: string; explica: string }[] = [
       <header class="pila-sm">
         <h1>Voluntarios</h1>
         <p class="tenue">
-          {{ pendientes().length }} esperando activación · {{ activos().length }} activos
+          {{ activos().length }} con acceso · {{ sinAcceso().length }} sin acceso
         </p>
       </header>
 
@@ -50,55 +54,18 @@ const ROLES: readonly { v: Rol; t: string; explica: string }[] = [
         <p class="aviso">Consultando...</p>
       }
 
-      @if (!cargando() && pendientes().length === 0 && activos().length === 0) {
+      @if (!cargando() && todos().length === 0) {
         <p class="aviso">
-          Todavía no hay voluntarios registrados, o el servidor no está configurado.
+          Todavía no hay voluntarios dados de alta, o el servidor no está configurado.
+          Las cuentas las crea la custodia; no hay registro abierto.
         </p>
-      }
-
-      @if (pendientes().length > 0) {
-        <section class="pila-sm">
-          <h3>Esperando activación</h3>
-          <p class="pista">
-            Confirme quién es cada persona antes de activarla. Al activarla podrá
-            registrar familias reales, y esos datos entran al registro que se remite a
-            las entidades.
-          </p>
-
-          @for (v of pendientes(); track v.id) {
-            <article class="tarjeta pila-sm">
-              <strong>{{ v.nombre }}</strong>
-              <span class="tenue">{{ v.correo }}</span>
-              @if (v.telefono) {
-                <a class="mono" [href]="'tel:' + v.telefono">{{ v.telefono }}</a>
-              }
-              <span class="tenue">
-                Dice pertenecer a:
-                <strong>{{ v.organizacionDeclarada || 'no indicó ninguna' }}</strong>
-                <br />Se registró el {{ fecha(v.creadoEn) }}
-              </span>
-
-              <div class="fila">
-                <button type="button" class="btn-primario"
-                        [disabled]="ocupado() === v.id"
-                        (click)="activar(v)">
-                  {{ ocupado() === v.id ? 'Activando...' : 'Activar como líder' }}
-                </button>
-                <button type="button" class="btn-secundario"
-                        [disabled]="ocupado() === v.id"
-                        (click)="rechazar(v)">
-                  Dejar sin activar
-                </button>
-              </div>
-            </article>
-          }
-        </section>
       }
 
       @if (activos().length > 0) {
         <section class="pila-sm">
           <h3>Con acceso</h3>
           @for (v of activos(); track v.id) {
+
             <article class="tarjeta pila-sm">
               <div class="fila" style="justify-content:space-between">
                 <strong>{{ v.nombre }}</strong>
@@ -131,6 +98,31 @@ const ROLES: readonly { v: Rol; t: string; explica: string }[] = [
           </p>
         </section>
       }
+
+      @if (sinAcceso().length > 0) {
+        <section class="pila-sm">
+          <h3>Sin acceso</h3>
+          <p class="pista">
+            Conservan su cuenta y los casos que levantaron, pero no pueden entrar.
+          </p>
+          @for (v of sinAcceso(); track v.id) {
+            <article class="tarjeta pila-sm">
+              <strong>{{ v.nombre }}</strong>
+              <span class="tenue">{{ v.correo }}</span>
+              @if (v.telefono) {
+                <a class="mono" [href]="'tel:' + v.telefono">{{ v.telefono }}</a>
+              }
+              <span class="tenue">Cuenta creada el {{ fecha(v.creadoEn) }}</span>
+
+              <button type="button" class="btn-primario"
+                      [disabled]="ocupado() === v.id"
+                      (click)="activar(v)">
+                {{ ocupado() === v.id ? 'Devolviendo...' : 'Devolver el acceso' }}
+              </button>
+            </article>
+          }
+        </section>
+      }
     </div>
   `
 })
@@ -141,10 +133,10 @@ export class VoluntariosComponent implements OnInit {
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
   readonly ocupado = signal<string | null>(null);
-  private readonly todos = signal<PerfilAdministrable[]>([]);
+  readonly todos = signal<PerfilAdministrable[]>([]);
 
-  readonly pendientes = computed(() => this.todos().filter((v) => !v.activo));
   readonly activos = computed(() => this.todos().filter((v) => v.activo));
+  readonly sinAcceso = computed(() => this.todos().filter((v) => !v.activo));
 
   async ngOnInit(): Promise<void> {
     await this.recargar();
@@ -156,19 +148,6 @@ export class VoluntariosComponent implements OnInit {
 
   async desactivar(v: PerfilAdministrable): Promise<void> {
     await this.aplicar(v, { activo: false });
-  }
-
-  /**
-   * Dejar sin activar es simplemente no hacer nada, y se dice en voz alta.
-   *
-   * No hay boton de rechazar en el servidor a proposito: una cuenta que nunca se
-   * activa no puede hacer nada, y borrarla obligaria a la persona a registrarse otra
-   * vez si despues resulta que si era de confianza.
-   */
-  rechazar(v: PerfilAdministrable): void {
-    this.error.set(
-      `${v.nombre} queda sin activar. No puede registrar familias hasta que alguien la active.`
-    );
   }
 
   async cambiarRol(v: PerfilAdministrable, evento: Event): Promise<void> {

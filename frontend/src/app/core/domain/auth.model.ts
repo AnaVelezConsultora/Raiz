@@ -51,16 +51,11 @@ export interface ResultadoAcceso {
 /**
  * Un voluntario visto por la custodia de datos.
  *
- * Trae lo que el perfil no muestra al propio usuario y la custodia si necesita para
- * decidir: el correo, cuando se registro y que organizacion DECLARO.
- *
- * `organizacionDeclarada` es lo que la persona escribio, sin verificar. Se llama asi a
- * proposito: distinguirlo de un vinculo confirmado evita que un dato sin comprobar
- * termine pareciendo comprobado en la pantalla de quien decide.
+ * Trae lo que el perfil no le muestra al propio usuario y la custodia si necesita para
+ * decidir: el correo y desde cuando tiene cuenta.
  */
 export interface PerfilAdministrable extends PerfilUsuario {
   correo: string;
-  organizacionDeclarada: string | null;
   creadoEn: string;
 }
 
@@ -70,57 +65,9 @@ export interface CambioPerfil {
   rol?: Rol;
 }
 
-/** Datos con que un voluntario pide una cuenta. */
-export interface DatosRegistro {
-  nombre: string;
-  correo: string;
-  clave: string;
-  telefono: string | null;
-  /** Junta, comite o asociacion por la que llega. Texto libre: no es un catalogo. */
-  organizacion: string | null;
-}
-
-/** Resultado de pedir una cuenta. */
-export interface ResultadoRegistro {
-  exito: boolean;
-  /**
-   * True cuando la cuenta quedo creada pero todavia no puede entrar.
-   *
-   * Es el caso normal, no una excepcion: ver la nota sobre por que el registro es
-   * abierto pero la cuenta nace inactiva.
-   */
-  pendienteDeActivacion: boolean;
-  error?: string;
-  sinConexion: boolean;
-}
-
 /** Puerto de autenticacion. Lo implementa el adaptador contra la API propia. */
 export interface AuthPort {
   iniciarSesion(credenciales: CredencialesAcceso): Promise<ResultadoAcceso>;
-
-  /**
-   * Pide una cuenta.
-   *
-   * CONTRATO CON LA API: `POST /registro`, ruta abierta.
-   * Cuerpo: { nombre, correo, clave, telefono, organizacion }
-   * Respuesta 201: { pendienteDeActivacion: boolean }
-   * 409 si el correo ya existe. 422 si los datos no sirven.
-   *
-   * POR QUE EL REGISTRO ES ABIERTO PERO LA CUENTA NACE INACTIVA
-   *
-   * En una emergencia no se puede poner friccion para sumar voluntarios: quien
-   * quiera ayudar tiene que poder pedir su cuenta a las once de la noche, sin
-   * esperar a que alguien conteste un mensaje.
-   *
-   * Pero tampoco puede entrar informacion de familias reales al registro sin que
-   * alguien responda por quien la levanto. Por eso la cuenta se crea con el rol
-   * MENOS privilegiado y con `activo = false`: el voluntario puede registrarse,
-   * conocer la herramienta y practicar, y la custodia de datos la activa cuando
-   * confirma quien es.
-   *
-   * Las dos cosas a la vez: cero friccion para sumarse, cero datos sin responsable.
-   */
-  registrar(datos: DatosRegistro): Promise<ResultadoRegistro>;
 
   /**
    * Voluntarios que la custodia puede administrar.
@@ -129,9 +76,9 @@ export interface AuthPort {
    * Que la pantalla solo se le muestre a ella es comodidad; lo que protege el dato es
    * la politica de acceso por fila, no la ruta del navegador.
    *
-   * @param soloPendientes true para traer unicamente las cuentas sin activar.
+   * @param soloInactivos true para traer unicamente las cuentas sin acceso.
    */
-  listarVoluntarios(soloPendientes?: boolean): Promise<PerfilAdministrable[]>;
+  listarVoluntarios(soloInactivos?: boolean): Promise<PerfilAdministrable[]>;
 
   /**
    * Activa, desactiva o cambia el rol de un voluntario.

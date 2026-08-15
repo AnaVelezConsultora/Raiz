@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { SesionService } from '../../core/services/sesion.service';
 
@@ -14,7 +14,7 @@ import { SesionService } from '../../core/services/sesion.service';
  */
 @Component({
   selector: 'app-acceso',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor pila" style="padding:2rem 1rem;max-width:26rem">
@@ -63,9 +63,8 @@ import { SesionService } from '../../core/services/sesion.service';
         </form>
 
         <p class="pista">
-          ¿No tiene cuenta? <a routerLink="/registro">Pídala aquí</a>. Se crea al
-          momento, y la mesa la activa cuando confirme quién es usted: ningún dato de
-          una familia entra al registro sin que alguien responda por quien lo levantó.
+          ¿No tiene cuenta? El coordinador se la crea y le asigna un rol. No hay
+          registro abierto: los datos de las familias son sensibles.
         </p>
       }
     </div>
