@@ -1,0 +1,173 @@
+name: Verificacion
+
+# Corre en cada propuesta de cambio y en cada llegada a main.
+#
+# QUE PROTEGE ESTO
+#
+# HU 1.3.5 dice "que un cambio no rompa la proteccion de datos en silencio", y
+# HU 0.3.2 "verificar el control de acceso en cada cambio". Hoy las pruebas
+# existen pero solo corren si alguien se acuerda de correrlas, y lo que depende
+# de que alguien se acuerde es exactamente lo que deja de pasar en una semana
+# ocupada.
+#
+# Este flujo NO despliega nada. Solo verifica. El despliegue es otro flujo y
+# necesita secretos; este no necesita ninguno, y por eso puede existir antes.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Una propuesta que recibe tres empujones seguidos no necesita tres corridas.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    name: Compila el dominio, la API y la PWA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: npm
+
+      - name: Instalar
+        run: npm ci
+
+      - name: Compilar el contrato compartido
+        run: npm run build --workspace @raiz/dominio
+
+      - name: Verificar tipos de la API
+        run: npx tsc --noEmit -p tsconfig.json
+        working-directory: api
+
+      - name: Compilar la API
+        run: npm run build --workspace @raiz/api
+
+      - name: Verificar tipos de la PWA
+        run: npx tsc --noEmit -p tsconfig.app.json
+        working-directory: frontend
+
+      # El build de Angular es lo que revisa las plantillas. La verificacion de
+      # tipos sola no las mira, y ahi es donde aparecen los errores reales.
+      - name: Compilar la PWA
+        run: npm run build
+        working-directory: frontend
+
+  acceso:
+    name: Control de acceso e idempotencia contra PostgreSQL
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: raiz
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGPASSWORD: postgres
+      PSQL: psql -h localhost -U postgres -d raiz -v ON_ERROR_STOP=1 -q
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar cliente de PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      # La imagen de PostgreSQL levanta un servidor temporal para inicializarse y
+      # DESPUES lo reinicia. En esa ventana `pg_isready` ya responde que si, y el
+      # primer archivo que se mande muere a mitad con "the database system is
+      # shutting down". Por eso se exigen tres respuestas seguidas y no una.
+      - name: Esperar a que la base este estable
+        run: |
+          estables=0
+          for i in $(seq 1 60); do
+            if psql -h localhost -U postgres -d raiz -c 'select 1' >/dev/null 2>&1; then
+              estables=$((estables + 1))
+            else
+              estables=0
+            fi
+            [ "$estables" -ge 3 ] && exit 0
+            sleep 1
+          done
+          echo 'La base no quedo estable en 60 segundos.' && exit 1
+
+      # Mismo orden que monta el compose en /docker-entrypoint-initdb.d. El
+      # esquema es EL MISMO ARCHIVO que va a produccion, sin modificar: si algo
+      # de aqui falla, tambien habria fallado alla.
+      - name: Shim de identidad
+        run: $PSQL -f entorno/postgres/00-shim-auth.sql
+      - name: Roles
+        run: $PSQL -f entorno/postgres/01-roles.sql
+      - name: Esquema
+        run: $PSQL -f supabase/schema.sql
+      - name: Permisos
+        run: $PSQL -f entorno/postgres/60-grants.sql
+      - name: Catalogos
+        run: $PSQL -f entorno/postgres/70-semillas-catalogos.sql
+
+      # Sin Cognito: las filas de auth.users se insertan directo y el disparador
+      # crea los perfiles igual que lo hara el Lambda en produccion.
+      - name: Usuarios
+        run: $PSQL -f entorno/postgres/usuarios-ci.sql
+      - name: Casos de prueba
+        run: $PSQL -f entorno/postgres/80-semillas-casos.sql
+
+      - name: Pruebas de control de acceso
+        run: $PSQL -f entorno/pruebas/seguridad.sql
+
+      - name: Prueba de idempotencia
+        run: $PSQL -f entorno/pruebas/idempotencia.sql
+
+  campo:
+    name: La aplicacion abre sin conexion
+    runs-on: ubuntu-latest
+    needs: construir
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: npm
+
+      - name: Instalar
+        run: npm ci
+
+      - name: Compilar el contrato compartido
+        run: npm run build --workspace @raiz/dominio
+
+      - name: Compilar la PWA
+        run: npm run build
+        working-directory: frontend
+
+      - name: Instalar el navegador de pruebas
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      # Lo unico que hace util a Raiz: que el caso sobreviva a una recarga y que
+      # la aplicacion abra con la red apagada. Si esto se rompe, se rompio el
+      # producto, no una prueba.
+      - name: Ciclo de captura sin conexion
+        run: |
+          node tools/servidor-estatico.mjs dist/frontend/browser 8789 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8789/ >/dev/null && break
+            sleep 1
+          done
+          npm run prueba:e2e
+        working-directory: frontend
+        env:
+          BASE_PRUEBA: http://127.0.0.1:8789

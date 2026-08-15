@@ -48,9 +48,48 @@ export interface ResultadoAcceso {
   sinConexion: boolean;
 }
 
-/** Puerto de autenticacion. Lo implementa el adaptador de Supabase. */
+/**
+ * Un voluntario visto por la custodia de datos.
+ *
+ * Trae lo que el perfil no le muestra al propio usuario y la custodia si necesita para
+ * decidir: el correo y desde cuando tiene cuenta.
+ */
+export interface PerfilAdministrable extends PerfilUsuario {
+  correo: string;
+  creadoEn: string;
+}
+
+/** Cambio que la custodia aplica sobre un voluntario. */
+export interface CambioPerfil {
+  activo?: boolean;
+  rol?: Rol;
+}
+
+/** Puerto de autenticacion. Lo implementa el adaptador contra la API propia. */
 export interface AuthPort {
   iniciarSesion(credenciales: CredencialesAcceso): Promise<ResultadoAcceso>;
+
+  /**
+   * Voluntarios que la custodia puede administrar.
+   *
+   * CONTRATO CON LA API: `GET /perfiles`, restringida a la custodia POR EL SERVIDOR.
+   * Que la pantalla solo se le muestre a ella es comodidad; lo que protege el dato es
+   * la politica de acceso por fila, no la ruta del navegador.
+   *
+   * @param soloInactivos true para traer unicamente las cuentas sin acceso.
+   */
+  listarVoluntarios(soloInactivos?: boolean): Promise<PerfilAdministrable[]>;
+
+  /**
+   * Activa, desactiva o cambia el rol de un voluntario.
+   *
+   * CONTRATO CON LA API: `PATCH /perfiles/:id` con { activo?, rol? }.
+   *
+   * Desactivar NO borra los casos que la persona levanto: la familia sigue contada y
+   * el registro conserva quien lo reporto. Retirar a alguien del equipo no puede
+   * borrar el trabajo hecho ni romper la trazabilidad.
+   */
+  cambiarVoluntario(id: string, cambio: CambioPerfil): Promise<PerfilAdministrable>;
   cerrarSesion(): Promise<void>;
   /** Sesion vigente segun el servidor. Null si no hay o si no se pudo consultar. */
   sesionActual(): Promise<Sesion | null>;

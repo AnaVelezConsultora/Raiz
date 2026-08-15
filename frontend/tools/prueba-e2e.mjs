@@ -1,7 +1,11 @@
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'node:url';
 
-const BASE = 'http://127.0.0.1:8789';
+// El puerto se puede fijar por variable: en la maquina de quien programa se sirve en
+// el 8789 y en la integracion continua en el 4300. Cuando estaba escrito a mano en un
+// solo lado, la prueba pasaba local y fallaba en la nube por conexion rechazada, que
+// es el peor fallo posible: no dice nada sobre la aplicacion.
+const BASE = process.env['BASE_PRUEBA'] ?? 'http://127.0.0.1:8789';
 const OUT = 'preview';
 
 /**
