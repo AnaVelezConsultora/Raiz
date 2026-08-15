@@ -162,10 +162,12 @@ jobs:
       # producto, no una prueba.
       - name: Ciclo de captura sin conexion
         run: |
-          node tools/servidor-estatico.mjs dist/frontend/browser 4300 &
+          node tools/servidor-estatico.mjs dist/frontend/browser 8789 &
           for i in $(seq 1 30); do
-            curl -sf http://localhost:4300/ >/dev/null && break
+            curl -sf http://127.0.0.1:8789/ >/dev/null && break
             sleep 1
           done
           npm run prueba:e2e
         working-directory: frontend
+        env:
+          BASE_PRUEBA: http://127.0.0.1:8789
