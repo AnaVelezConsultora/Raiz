@@ -110,7 +110,23 @@ def orden(hu_id):
     return hito * 10000 + apartado * 100 + historia
 
 
-def descripcion(hu, apartado):
+def rotular(handle, personas):
+    """
+    'davidf9265' -> 'David Franco (`@davidf9265`)'. Sin ficha, deja el handle solo.
+
+    Van entre acentos graves a proposito: Trello trata un @algo suelto como mencion,
+    lo pasa a minusculas al guardarlo y entonces la descripcion nunca coincide con la
+    calculada, de modo que el script reescribe las mismas tarjetas en cada corrida.
+    Como codigo se guarda tal cual, y de paso los handles de GitHub distinguen
+    mayusculas.
+    """
+    ficha = personas.get(handle)
+    if not isinstance(ficha, dict) or not ficha.get("nombre"):
+        return f"`@{handle}`"
+    return f"{ficha['nombre']} (`@{handle}`)"
+
+
+def descripcion(hu, apartado, personas):
     partes = [
         f"**Apartado {apartado['numero']} · {apartado['nombre']}**",
         f"**Como** {hu['como']}\n**quiero** {hu['quiero']}\n**para** {hu['para']}.",
@@ -121,6 +137,22 @@ def descripcion(hu, apartado):
             "**Criterios de aceptación**\n"
             + "\n".join(f"- {c}" for c in hu["criterios"])
         )
+
+    bloque = []
+    if hu.get("asignado"):
+        bloque.append(f"**Responsable:** {hu['asignado']}")
+    if hu.get("sugerido"):
+        gente = ", ".join(rotular(p, personas) for p in hu["sugerido"])
+        etiqueta = "Apoyan" if hu.get("asignado") else "Responsable sugerido"
+        # Quien ya tiene cuenta en el tablero queda ademas en el campo de miembros de la
+        # tarjeta; el texto se conserva para los demas y para que el handle de GitHub
+        # siga visible, que es como el equipo se nombra en el repositorio.
+        bloque.append(
+            f"**{etiqueta}:** {gente}\n"
+            "Punto de partida, no asignación cerrada: se confirma en el grupo."
+        )
+    if bloque:
+        partes.append("\n\n".join(bloque))
 
     referencias = [
         (etiqueta, hu[campo])
@@ -161,6 +193,12 @@ def main():
     if modelo["tablero"] in existentes:
         tablero = existentes[modelo["tablero"]]
         print(f"\nReutilizando tablero existente: {tablero['id']}")
+        # La descripcion tambien se mantiene desde el modelo: es donde el tablero
+        # explica como se lee, y si solo se escribiera al crearlo quedaria congelada.
+        actual = consultar(f"/boards/{tablero['id']}", fields="desc").get("desc")
+        if actual != modelo["descripcion"]:
+            pedir("PUT", f"/boards/{tablero['id']}", desc=modelo["descripcion"])
+            print("  ~ descripción del tablero actualizada")
     else:
         print("\nCreando tablero")
         tablero = pedir(
@@ -199,29 +237,101 @@ def main():
         etiquetas[etiqueta["nombre"]] = creada["id"]
         print(f"  + {etiqueta['nombre']} ({etiqueta['color']})")
 
+    # --- miembros ------------------------------------------------------------
+    # Trello asigna por cuenta de Trello, no por handle de GitHub. El bloque `personas`
+    # del modelo hace ese cruce; quien todavia no tiene cuenta en el tablero se queda en
+    # el texto de la tarjeta y entra sola la proxima vez que se corra esto, sin tocar
+    # el backlog.
+    print("\nMiembros")
+    miembros = {m["username"]: m["id"]
+                for m in consultar(f"/boards/{id_tablero}/members", fields="username")}
+    personas = modelo.get("personas", {})
+
+    cuentas = {}          # handle de GitHub -> id de miembro de Trello
+    sin_cuenta = []
+    for handle, ficha in personas.items():
+        if handle.startswith("_") or not isinstance(ficha, dict):
+            continue
+        usuario = ficha.get("trello")
+        if usuario and usuario in miembros:
+            cuentas[handle] = miembros[usuario]
+        elif usuario:
+            print(f"  ! @{handle} -> {usuario} no esta en el tablero")
+            sin_cuenta.append(handle)
+        else:
+            sin_cuenta.append(handle)
+    print(f"  {len(cuentas)} de {len(cuentas) + len(sin_cuenta)} personas con cuenta en el tablero")
+    if sin_cuenta:
+        print(f"  pendientes de invitacion: {', '.join('@' + h for h in sin_cuenta)}")
+
+    def ids_de(hu):
+        """Responsable + apoyos que ya tengan cuenta. Devuelve ids sin repetir."""
+        ids = []
+        usuario = hu.get("asignado")
+        if usuario:
+            if usuario in miembros:
+                ids.append(miembros[usuario])
+            else:
+                print(f"  ! {hu['id']}: {usuario} no esta en el tablero, no se asigna")
+        for handle in hu.get("sugerido", []):
+            if handle in cuentas:
+                ids.append(cuentas[handle])
+        return list(dict.fromkeys(ids))
+
     # --- historias -----------------------------------------------------------
     print("\nHistorias")
-    ya_estan = set()
+    ya_estan = {}
     for id_lista in listas.values():
-        for tarjeta in consultar(f"/lists/{id_lista}/cards", fields="name"):
-            ya_estan.add(tarjeta["name"].split(" · ")[0])
+        for tarjeta in consultar(f"/lists/{id_lista}/cards",
+                                 fields="name,desc,idMembers,idLabels"):
+            ya_estan[tarjeta["name"].split(" · ")[0]] = tarjeta
 
-    creadas = omitidas = 0
+    creadas = actualizadas = iguales = 0
     for hito, apartado, hu in sorted(todas, key=lambda t: orden(t[2]["id"])):
+        texto = descripcion(hu, apartado, personas)
+        quienes = ids_de(hu)
+
         if hu["id"] in ya_estan:
-            omitidas += 1
+            existente = ya_estan[hu["id"]]
+            actuales = existente.get("idMembers", [])
+            # Union, no reemplazo: si alguien se asigno a mano en Trello, no se le quita.
+            faltan = [i for i in quienes if i not in actuales]
+
+            # Las etiquetas SI se reemplazan por las del modelo: son el estado de la
+            # historia, y el modelo manda. Marcar una como hecha aqui tiene que verse
+            # en el tablero, que es donde el equipo mira.
+            deseadas = [etiquetas[e] for e in hu["etiquetas"] if e in etiquetas]
+            cambia_etiquetas = sorted(deseadas) != sorted(existente.get("idLabels", []))
+
+            if existente.get("desc") == texto and not faltan and not cambia_etiquetas:
+                iguales += 1
+            else:
+                cambios = {"desc": texto}
+                if faltan:
+                    cambios["idMembers"] = ",".join(actuales + faltan)
+                if cambia_etiquetas:
+                    cambios["idLabels"] = ",".join(deseadas)
+                pedir("PUT", f"/cards/{existente['id']}", **cambios)
+                actualizadas += 1
+                detalle = []
+                if faltan:
+                    detalle.append(f"+{len(faltan)} miembro(s)")
+                if cambia_etiquetas:
+                    detalle.append("etiquetas")
+                print(f"  ~ {hu['id']}  {', '.join(detalle) or 'descripción'}")
             continue
 
         pedir("POST", "/cards",
               idList=listas[nombre_lista(hito)],
               name=f"{hu['id']} · {hu['titulo']}",
-              desc=descripcion(hu, apartado),
+              desc=texto,
               idLabels=",".join(etiquetas[e] for e in hu["etiquetas"]),
+              idMembers=",".join(quienes),
               pos=orden(hu["id"]))
         creadas += 1
         print(f"  + {hu['id']} · {hu['titulo'][:58]}")
 
-    print(f"\nListo. Creadas: {creadas}. Ya existian: {omitidas}.")
+    print(f"\nListo. Creadas: {creadas}. Actualizadas: {actualizadas}. Sin cambios: {iguales}.")
     if not SIMULAR:
         print(f"https://trello.com/b/{tablero.get('shortLink', id_tablero)}")
         print(

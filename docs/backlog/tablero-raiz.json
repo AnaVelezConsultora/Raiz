@@ -1,24 +1,113 @@
 {
   "tablero": "Raíz — Backlog",
-  "descripcion": "Caracterización y seguimiento de familias afectadas por el sismo en Sevilla, Valle del Cauca. Estructura: hitos numerados → apartados → historias de usuario. Derivado de docs/FRENTES.md, docs/ROLES-Y-ESFUERZO.md, docs/hallazgos-revision.md y los ADR 002, 003 y 004.",
+  "descripcion": "Caracterización y seguimiento de familias afectadas por el sismo en Sevilla, Valle del Cauca. Estructura: hitos numerados → apartados → historias de usuario. No hay sprints: los hitos son estados del producto, no iteraciones con fecha. Se toma la siguiente historia sin bloquear del hito más bajo. Derivado de docs/FRENTES.md, docs/ROLES-Y-ESFUERZO.md, docs/hallazgos-revision.md y los ADR 002, 003 y 004.",
   "corte": "2026-08-13",
   "convenciones": {
     "numeracion": "HU <hito>.<apartado>.<historia>. El numeral lleva la jerarquía: HU 1.2.4 es la cuarta historia del segundo apartado del hito 1.",
     "listas_trello": "Cada hito es una lista. Las historias se ordenan por su numeral dentro de la lista.",
-    "asignacion": "Las 15 personas del equipo son contribuyentes. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
-    "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta."
+    "ritmo": "NO HAY SPRINTS. Los hitos son estados a los que llega el producto, no iteraciones con fecha: el hito 1 no dura dos semanas, termina cuando sus historias estan hechas. Esto atiende una emergencia y se trabaja contra reloj, asi que no hay ceremonia de planeacion ni espera de corte: quien queda libre toma la siguiente historia sin bloquear del hito mas bajo y avisa en el grupo que la tomo. Una historia con etiqueta 'bloqueada' no se toma; su campo depende_de dice que falta.",
+    "asignacion": "Las 15 personas del equipo son contribuyentes. Solo se listan quienes coinciden en el organigrama de GitHub y en el tablero de Trello. Las etiquetas de capacidad (FrontEnd, BackEnd, Infra) indican qué perfil requiere cada historia, no a quién se asigna. Coordinación, custodia de datos y enlace con la mesa se manejan fuera de este tablero.",
+    "bloqueadas": "Una historia con etiqueta 'bloqueada' no se puede tomar todavía. El campo depende_de dice qué falta.",
+    "responsable": "El campo asignado es la persona responsable en Trello y se asigna de verdad al miembro del tablero. El campo sugerido son handles de GitHub de quienes pueden apoyar, y es un punto de partida que se confirma en el grupo.",
+    "personas": "El bloque `personas` cruza handle de GitHub con cuenta de Trello. Quien tenga cuenta queda asignado de verdad a la tarjeta; quien no, figura por nombre en la descripcion."
+  },
+  "personas": {
+    "_nota": "Cruce entre el handle de GitHub (que es como el equipo se nombra en el repo) y la cuenta de Trello (que es lo unico que Trello sabe asignar). Con `trello` presente, la persona se asigna de verdad a la tarjeta; con `trello` en null queda como texto en la descripcion hasta que acepte la invitacion al tablero.",
+    "DdeDiegoA": {
+      "nombre": "Diego Arenas",
+      "trello": "diegoarenas111"
+    },
+    "johan1113": {
+      "nombre": "Johan Medina",
+      "trello": "johanmedina1"
+    },
+    "HKevinH": {
+      "nombre": "Kevin Lopez",
+      "trello": "kl31967041"
+    },
+    "lDavidSantiago": {
+      "nombre": "David Santiago Velasco",
+      "trello": "davidsantiagovelascotriana"
+    },
+    "diegof59": {
+      "nombre": "Diego Botero",
+      "trello": "diegobotero"
+    },
+    "oramirez1512-CO": {
+      "nombre": "Oscar Ramirez",
+      "trello": "oscarramirez279"
+    },
+    "pkill2913": {
+      "nombre": "Oscar Castillo",
+      "trello": "oscareduardocastillo"
+    },
+    "davidf9265": {
+      "nombre": "David Franco",
+      "trello": null
+    },
+    "skLuan": {
+      "nombre": "David Luan Erazo",
+      "trello": null
+    },
+    "EdwarMontano": {
+      "nombre": "Edwar Montano",
+      "trello": null
+    },
+    "Frank-Apotheosis": {
+      "nombre": "Francesco Garcia",
+      "trello": null
+    },
+    "Clavijo110": {
+      "nombre": "Alejandro Clavijo",
+      "trello": null
+    },
+    "kvinstuard": {
+      "nombre": "Kevin Marin",
+      "trello": null
+    },
+    "Inmemorialake": {
+      "nombre": "Gerardo Gonzalez",
+      "trello": null
+    },
+    "luigiands-tech": {
+      "nombre": "Gabriel Rojas",
+      "trello": null
+    }
   },
   "etiquetas": [
-    { "nombre": "FrontEnd", "color": "sky" },
-    { "nombre": "BackEnd", "color": "purple" },
-    { "nombre": "Infra", "color": "black" },
-    { "nombre": "sin código", "color": "pink" },
-    { "nombre": "defecto", "color": "red" },
-    { "nombre": "decisión F7", "color": "orange" },
-    { "nombre": "bloqueada", "color": "yellow" },
-    { "nombre": "hecha", "color": "green" }
+    {
+      "nombre": "FrontEnd",
+      "color": "sky"
+    },
+    {
+      "nombre": "BackEnd",
+      "color": "purple"
+    },
+    {
+      "nombre": "Infra",
+      "color": "black"
+    },
+    {
+      "nombre": "sin código",
+      "color": "pink"
+    },
+    {
+      "nombre": "defecto",
+      "color": "red"
+    },
+    {
+      "nombre": "decisión F7",
+      "color": "orange"
+    },
+    {
+      "nombre": "bloqueada",
+      "color": "yellow"
+    },
+    {
+      "nombre": "hecha",
+      "color": "green"
+    }
   ],
-
   "hitos": [
     {
       "numero": 0,
@@ -41,7 +130,10 @@
                 "Coordenada por satélite, que no requiere internet",
                 "Verificado en navegador real con la red apagada"
               ],
-              "etiquetas": ["FrontEnd", "hecha"],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
               "origen": "FRENTES.md F1"
             }
           ]
@@ -61,7 +153,11 @@
                 "La mora se calcula al consultar, así que crece cada día que la entidad no responde",
                 "12 tablas, 5 vistas, 19 políticas y PostGIS, verificado"
               ],
-              "etiquetas": ["BackEnd", "defecto", "hecha"],
+              "etiquetas": [
+                "BackEnd",
+                "defecto",
+                "hecha"
+              ],
               "origen": "hallazgos-revision.md H14"
             }
           ]
@@ -81,8 +177,12 @@
                 "Quien trabaje formulario, listado, tablero o mapa no necesita Docker",
                 "Quien trabaje contra la base levanta el entorno con un comando"
               ],
-              "etiquetas": ["Infra", "hecha"],
-              "origen": "entorno/README.md, ADR 004"
+              "etiquetas": [
+                "Infra",
+                "hecha"
+              ],
+              "origen": "entorno/README.md, ADR 004",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 0.3.2",
@@ -95,14 +195,18 @@
                 "Falla al primer error y devuelve código distinto de cero",
                 "Verificada en negativo: detecta la regresión que busca"
               ],
-              "etiquetas": ["Infra", "BackEnd", "hecha"],
-              "origen": "entorno/pruebas/seguridad.sql, SEGURIDAD.md"
+              "etiquetas": [
+                "Infra",
+                "BackEnd",
+                "hecha"
+              ],
+              "origen": "entorno/pruebas/seguridad.sql, SEGURIDAD.md",
+              "asignado": "yonathangutierrez"
             }
           ]
         }
       ]
     },
-
     {
       "numero": 1,
       "nombre": "Captura real",
@@ -125,9 +229,16 @@
                 "Sin puerta de enlace NAT: se usan endpoints de VPC",
                 "Se levanta y se destruye completo desde cero"
               ],
-              "etiquetas": ["Infra"],
+              "etiquetas": [
+                "Infra"
+              ],
               "origen": "ADR 002, ADR 004",
-              "desbloquea": "todo el hito 1"
+              "desbloquea": "todo el hito 1",
+              "sugerido": [
+                "pkill2913",
+                "Frank-Apotheosis"
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.1.2",
@@ -140,8 +251,14 @@
                 "Ningún secreto de AWS en la configuración del repositorio",
                 "Los devs no reciben consola de la nube; quien depure recibe lectura de registros"
               ],
-              "etiquetas": ["Infra"],
-              "origen": "ADR 004"
+              "etiquetas": [
+                "Infra"
+              ],
+              "origen": "ADR 004",
+              "sugerido": [
+                "Inmemorialake"
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.1.3",
@@ -155,8 +272,15 @@
                 "Nunca se asume que todos los clientes están actualizados: un celular puede correr la versión de la semana pasada durante días",
                 "Los catálogos NO son migraciones"
               ],
-              "etiquetas": ["Infra", "BackEnd"],
-              "origen": "ADR 004"
+              "etiquetas": [
+                "Infra",
+                "BackEnd"
+              ],
+              "origen": "ADR 004",
+              "sugerido": [
+                "EdwarMontano"
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.1.4",
@@ -169,8 +293,14 @@
                 "Sin puerta de enlace NAT, sin intermediario de conexiones, sin base sin servidor con mínimo de capacidad",
                 "Costo mensual verificado dentro del rango del ADR 002"
               ],
-              "etiquetas": ["Infra"],
-              "origen": "ADR 002"
+              "etiquetas": [
+                "Infra"
+              ],
+              "origen": "ADR 002",
+              "asignado": "yonathangutierrez",
+              "sugerido": [
+                "pkill2913"
+              ]
             }
           ]
         },
@@ -190,9 +320,15 @@
                 "Los errores se clasifican en transporte, sesión y rechazo, según ADR 003",
                 "Acepta cargas de clientes viejos: ningún campo nuevo es obligatorio"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 003, ADR 002",
-              "desbloquea": "casi todo el apartado 1.2 y la HU 1.3.4"
+              "desbloquea": "casi todo el apartado 1.2 y la HU 1.3.4",
+              "sugerido": [
+                "davidf9265"
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.2.2",
@@ -206,9 +342,14 @@
                 "Se construye con un comando estándar, sin argumentos especiales",
                 "Corre contra el entorno local sin tocar la nube"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 002, ADR 004",
-              "depende_de": "HU 1.2.1"
+              "depende_de": "HU 1.2.1",
+              "sugerido": [
+                "diegof59"
+              ]
             },
             {
               "id": "HU 1.2.3",
@@ -222,9 +363,15 @@
                 "La identidad es local a la transacción: una conexión reutilizada del pool no arrastra al usuario anterior",
                 "Ninguna autorización se decide en código de la aplicación"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 002, entorno/postgres/00-shim-auth.sql",
-              "depende_de": "HU 1.2.2"
+              "depende_de": "HU 1.2.2",
+              "sugerido": [
+                "Clavijo110"
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.2.4",
@@ -238,9 +385,14 @@
                 "El registrador no puede firmar un caso a nombre de otro",
                 "Prueba automática del reintento tras respuesta perdida"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 003",
-              "depende_de": "HU 1.2.3"
+              "depende_de": "HU 1.2.3",
+              "sugerido": [
+                "oramirez1512-CO"
+              ]
             },
             {
               "id": "HU 1.2.5",
@@ -254,9 +406,14 @@
                 "Sin consentimiento no se emite URL: la regla en el borde, no en la interfaz",
                 "El objeto no queda legible sin firma"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 003",
-              "depende_de": "HU 1.2.3"
+              "depende_de": "HU 1.2.3",
+              "sugerido": [
+                "lDavidSantiago"
+              ]
             },
             {
               "id": "HU 1.2.6",
@@ -270,9 +427,14 @@
                 "Un token vencido devuelve clase sesión, nunca clase rechazo",
                 "Iniciar sesión exige conexión; capturar, no"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "ADR 002, ADR 003",
-              "depende_de": "HU 1.2.2"
+              "depende_de": "HU 1.2.2",
+              "sugerido": [
+                "DdeDiegoA"
+              ]
             },
             {
               "id": "HU 1.2.7",
@@ -286,8 +448,15 @@
                 "Es idempotente: los reintentos no duplican",
                 "El disparador existente no se modifica"
               ],
-              "etiquetas": ["Infra", "BackEnd"],
-              "origen": "ADR 002, schema.sql §10.b"
+              "etiquetas": [
+                "Infra",
+                "BackEnd"
+              ],
+              "origen": "ADR 002, schema.sql §10.b",
+              "sugerido": [
+                "EdwarMontano"
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -306,8 +475,14 @@
                 "Se vigila el espacio disponible y se avisa ANTES de que falle una captura",
                 "Prueba automática de la solicitud"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H11, ADR 003"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H11, ADR 003",
+              "sugerido": [
+                "HKevinH"
+              ]
             },
             {
               "id": "HU 1.3.2",
@@ -322,22 +497,36 @@
                 "Espera con retroceso entre pasadas",
                 "Pruebas: sesión vencida, red caída a la mitad, reintento idempotente"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H10, ADR 003"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H10, ADR 003",
+              "sugerido": [
+                "skLuan"
+              ]
             },
             {
               "id": "HU 1.3.3",
               "titulo": "Decidir yo cuándo se gastan mis datos",
               "como": "líder territorial",
-              "quiero": "que en datos móviles se manden sólo los casos y las fotos esperen al wifi",
-              "para": "que sincronizar no me consuma el plan del mes",
+              "quiero": "que los casos salgan solos al haber senal y que las fotografias esperen mi decision",
+              "para": "que sincronizar no me consuma el plan del mes ni dependa de que yo me acuerde",
               "criterios": [
-                "En datos móviles sólo casos; en wifi casos y fotografías; con ahorro de datos, nada sin pedirlo",
-                "El botón dice qué va a mandar y cuánto pesa antes de mandarlo",
-                "Nada de sincronización automática en segundo plano"
+                "Los casos se envian solos al reconectar y al abrir la aplicacion: pesan unos 3 KB",
+                "Las fotografias, de unos 200 KB, siguen esperando el boton",
+                "En wifi se ofrece mandar tambien las fotografias",
+                "Con ahorro de datos activo no se manda nada sin pedirlo",
+                "Nada de sincronizacion automatica en segundo plano: solo con la aplicacion abierta"
               ],
-              "etiquetas": ["FrontEnd"],
-              "origen": "ADR 003"
+              "etiquetas": [
+                "FrontEnd"
+              ],
+              "origen": "ADR 003",
+              "sugerido": [
+                "johan1113"
+              ],
+              "nota": "PARCIAL. Los casos ya salen solos al reconectar y al abrir, y las fotografias siguen pidiendo el boton. Falta detectar wifi y respetar el ahorro de datos. Esto REEMPLAZA la decision anterior de que la sincronizacion nunca es automatica: el corte estaba en el lugar equivocado, porque trataba igual un caso de 3 KB y una foto de 200 KB, y el costo de olvidar el boton lo pagaba la familia, no el voluntario. Hay que corregir ESTADO.md y la lamina 10 del pitch, que dicen lo contrario."
             },
             {
               "id": "HU 1.3.4",
@@ -350,9 +539,17 @@
                 "Ningún componente ni servicio de dominio se modifica",
                 "La aplicación sigue corriendo completa en modo local sin backend"
               ],
-              "etiquetas": ["FrontEnd"],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
               "origen": "ADR 002",
-              "depende_de": "HU 1.2.1"
+              "depende_de": "HU 1.2.1",
+              "sugerido": [
+                "luigiands-tech"
+              ],
+              "asignado": "yonathangutierrez",
+              "nota": "HECHA. Se reemplazaron los dos adaptadores de Supabase por adaptadores contra la API propia. Costo dos lineas y dos importaciones en app.config.ts; ningun componente ni servicio de dominio se modifico, y la aplicacion sigue corriendo completa en modo local con apiUrl vacio. Se retiro @supabase/supabase-js de las dependencias. Sesion del 15 de agosto de 2026, rama del frontend."
             },
             {
               "id": "HU 1.3.5",
@@ -365,8 +562,113 @@
                 "El comportamiento de la cola ante sesión vencida y red caída",
                 "Corren en el pipeline de cada PR"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H13"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H13",
+              "sugerido": [
+                "johan1113"
+              ],
+              "asignado": "yonathangutierrez"
+            },
+            {
+              "id": "HU 1.3.6",
+              "titulo": "Que lo que lleno de la vivienda llegue al servidor",
+              "como": "lider territorial",
+              "quiero": "que el bloque de vivienda y los anexos rural y urbano viajen con el caso",
+              "para": "que el paso mas largo del formulario no sea trabajo descartado en silencio",
+              "criterios": [
+                "El caso viaja como un solo documento y el servidor lo reparte entre familias, viviendas y produccion",
+                "El reparto ocurre en una transaccion: no quedan hogares a medias si la senal se cae",
+                "Ningun campo que el formulario captura se queda sin enviar"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Revision del adaptador de sincronizacion, 15 de agosto de 2026",
+              "nota": "HECHA del lado del cliente. El adaptador anterior solo escribia en la tabla familias: 13 campos de vivienda, 16 del anexo rural y 5 del urbano nunca viajaban. No se habia notado porque no hay servidor. Falta el lado del servidor, que es HU 1.2.1 y HU 1.2.2. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.7",
+              "titulo": "Llenar el hogar sin pelear con el teclado",
+              "como": "lider territorial",
+              "quiero": "contar personas con botones y no con diez campos numericos",
+              "para": "no abandonar el formulario en el bloque que las entidades mas exigen",
+              "criterios": [
+                "La rejilla de edad y sexo se llena sin abrir el teclado",
+                "Se ve la rejilla completa mientras se llena, y el aviso de descuadre no queda tapado",
+                "Ningun campo numerico cambia de valor al deslizar el dedo encima",
+                "Los objetivos tactiles usan la medida del sistema, no una menor"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision de ergonomia del paso 2, 15 de agosto de 2026",
+              "nota": "HECHA. Diez campos numericos eran diez aperturas de teclado, y el teclado tapa la mitad inferior de la pantalla. Se reemplazaron por un contador de menos y mas. Se cambio type=number por texto con teclado numerico en todo el paso, porque el campo numerico cambia de valor al deslizar. El aviso de descuadre subio sobre la rejilla. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.8",
+              "titulo": "Que abrir un caso y arrepentirse no deje un registro fantasma",
+              "como": "lider territorial",
+              "quiero": "que un caso sin nada del hogar no se guarde",
+              "para": "que la lista muestre familias y no filas vacias que despues inflan el total",
+              "criterios": [
+                "Un caso nuevo no se escribe hasta que haya telefono, nombre, lugar, personas, foto o coordenada",
+                "Los datos que vienen rellenados de antemano no cuentan como dato del hogar",
+                "Un caso que ya existe se sigue guardando aunque quede vacio",
+                "Guardar caso sin nada escrito avisa que falta, en vez de no hacer nada en silencio"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Defecto encontrado en revision de flujo, 15 de agosto de 2026",
+              "nota": "HECHA. persistir() escribia en IndexedDB sin preguntar si habia algo, y lo llamaban tanto Salir como Continuar. Los fantasmas se contaban como pendientes de envio y el dia que exista servidor habrian viajado, inflando el total consolidado. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.9",
+              "titulo": "Borrar del celular un registro equivocado",
+              "como": "lider territorial",
+              "quiero": "poder decidir si guardo o descarto, y borrar despues lo que quedo mal",
+              "para": "que no viaje a la entidad un registro que se creo por error",
+              "criterios": [
+                "Al salir con algo escrito se pregunta: guardar, descartar o seguir llenando",
+                "Descartar borra tambien lo que ya se habia guardado en pasadas anteriores",
+                "La lista tiene boton de borrar en cada caso sin enviar",
+                "La confirmacion ocurre en la misma tarjeta, para ver cual caso se borra",
+                "Borrar se lleva las fotografias en la misma transaccion",
+                "Un caso ya sincronizado NO se puede borrar desde el celular"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision de flujo, 15 de agosto de 2026",
+              "nota": "HECHA. Se agrego eliminar() al puerto de almacenamiento, que no existia. Borrar un caso ya enviado es supresion de datos y va por el canal del custodio, no por un boton en el celular. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.10",
+              "titulo": "Que mi nombre no se aprenda de un caso que descarte",
+              "como": "lider territorial",
+              "quiero": "que la aplicacion recuerde quien soy, pero solo de un registro que decidi conservar",
+              "para": "no encontrar rellenado lo que escribi por error y despues borre",
+              "criterios": [
+                "El perfil se guarda al conservar un caso, nunca en el guardado automatico",
+                "El campo dice que el dato es del voluntario y no de la familia",
+                "Sigue sin pedirse el nombre en cada registro"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Defecto reportado en pruebas manuales, 15 de agosto de 2026",
+              "nota": "HECHA. guardarPerfil corria en cada persistir(), asi que un caso borrado seguia ensenandole a la aplicacion. Persistir el nombre es correcto y es buen UX: el dato es del voluntario, no del registro. Sesion del 15 de agosto de 2026, rama del frontend."
             }
           ]
         },
@@ -386,8 +688,15 @@
                 "Reporte con qué se intentó, qué pasó y qué incomodó",
                 "Los hallazgos entran como historias nuevas"
               ],
-              "etiquetas": ["sin código"],
-              "origen": "FRENTES.md F6, ESTADO.md §5"
+              "etiquetas": [
+                "sin código"
+              ],
+              "origen": "FRENTES.md F6, ESTADO.md §5",
+              "sugerido": [
+                "HKevinH",
+                "skLuan",
+                "DdeDiegoA"
+              ]
             },
             {
               "id": "HU 1.4.2",
@@ -400,9 +709,15 @@
                 "La vista previa funciona sin backend, en modo local",
                 "Se retira al cerrar la propuesta"
               ],
-              "etiquetas": ["Infra"],
+              "etiquetas": [
+                "Infra"
+              ],
               "origen": "ADR 004, FRENTES.md F6",
-              "desbloquea": "HU 1.4.1"
+              "desbloquea": "HU 1.4.1",
+              "sugerido": [
+                "kvinstuard"
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -422,10 +737,15 @@
                 "Escoger una de tres: que el teléfono entre en la regla; mantenerlo y CORREGIR la documentación; o pedir autorización específica para el contacto",
                 "La decisión queda escrita en docs/cumplimiento/"
               ],
-              "etiquetas": ["decisión F7", "sin código", "bloqueada"],
+              "etiquetas": [
+                "decisión F7",
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "hallazgos-revision.md H7",
               "depende_de": "que la custodia de datos resuelva",
-              "desbloquea": "HU 1.5.2 (alcance)"
+              "desbloquea": "HU 1.5.2 (alcance)",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.5.2",
@@ -438,9 +758,16 @@
                 "Se aplica ANTES de que haya datos: después es una migración con filas adentro",
                 "Prueba automática que verifica el rechazo"
               ],
-              "etiquetas": ["BackEnd", "defecto"],
+              "etiquetas": [
+                "BackEnd",
+                "defecto"
+              ],
               "origen": "hallazgos-revision.md H9",
-              "depende_de": "HU 1.5.1 sólo para el alcance del teléfono"
+              "depende_de": "HU 1.5.1 sólo para el alcance del teléfono",
+              "sugerido": [
+                "Clavijo110"
+              ],
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.5.3",
@@ -453,8 +780,15 @@
                 "Al desmarcar la autorización, las fotografías del caso se descartan",
                 "Prueba automática del escenario: se autoriza, se toman fotos, se retracta"
               ],
-              "etiquetas": ["FrontEnd", "defecto"],
-              "origen": "hallazgos-revision.md H8"
+              "etiquetas": [
+                "FrontEnd",
+                "defecto"
+              ],
+              "origen": "hallazgos-revision.md H8",
+              "sugerido": [
+                "luigiands-tech"
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -474,8 +808,11 @@
                 "Varios revisores por capacidad: con 15 contribuyentes el cuello de botella es la revisión, no la capacidad",
                 "La plataforma va ANTES de los frentes que dependen de ella"
               ],
-              "etiquetas": ["sin código"],
-              "origen": "ADR 004, capacidades del equipo"
+              "etiquetas": [
+                "sin código"
+              ],
+              "origen": "ADR 004, capacidades del equipo",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 1.6.2",
@@ -488,14 +825,19 @@
                 "El prefijo de código del tablero estático frente al del esquema",
                 "Política de seguridad de contenido en las cabeceras de despliegue"
               ],
-              "etiquetas": ["sin código"],
-              "origen": "hallazgos-revision.md, desajustes menores"
+              "etiquetas": [
+                "sin código"
+              ],
+              "origen": "hallazgos-revision.md, desajustes menores",
+              "sugerido": [
+                "davidf9265"
+              ],
+              "asignado": "yonathangutierrez"
             }
           ]
         }
       ]
     },
-
     {
       "numero": 2,
       "nombre": "Evidencia",
@@ -517,10 +859,15 @@
                 "Escoger: umbral de anonimato por vereda, retirar código y desglose, o agregar por vereda",
                 "Confirmar si el archivo del tablero estático contiene dato inventado o real"
               ],
-              "etiquetas": ["decisión F7", "sin código", "bloqueada"],
+              "etiquetas": [
+                "decisión F7",
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "hallazgos-revision.md H12",
               "depende_de": "que la custodia de datos resuelva",
-              "desbloquea": "HU 2.1.2"
+              "desbloquea": "HU 2.1.2",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 2.1.2",
@@ -533,7 +880,9 @@
                 "Funciona con los datos inventados del entorno local",
                 "Las cifras cuadran con el total consolidado: si no cuadran, se pierde la palanca"
               ],
-              "etiquetas": ["FrontEnd"],
+              "etiquetas": [
+                "FrontEnd"
+              ],
               "origen": "FRENTES.md F4",
               "depende_de": "HU 2.1.1"
             },
@@ -548,8 +897,12 @@
                 "Se revoca el permiso del rol anónimo cuando el archivo esté en uso",
                 "Coordenada degradada y sin identidad, verificado en la generación"
               ],
-              "etiquetas": ["Infra", "BackEnd"],
-              "origen": "ADR 002"
+              "etiquetas": [
+                "Infra",
+                "BackEnd"
+              ],
+              "origen": "ADR 002",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -569,8 +922,12 @@
                 "Nombra explícitamente el paso de borrar las fotografías del almacenamiento y quién lo ejecuta",
                 "Define qué pasa con la base cuando la emergencia se cierre y quién la custodia"
               ],
-              "etiquetas": ["decisión F7", "sin código"],
-              "origen": "cumplimiento/README.md"
+              "etiquetas": [
+                "decisión F7",
+                "sin código"
+              ],
+              "origen": "cumplimiento/README.md",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 2.2.2",
@@ -583,9 +940,13 @@
                 "Sólo se borra lo confirmado por el servidor",
                 "Procedimiento escrito para cuando un voluntario se retira o pierde el teléfono"
               ],
-              "etiquetas": ["FrontEnd", "decisión F7"],
+              "etiquetas": [
+                "FrontEnd",
+                "decisión F7"
+              ],
               "origen": "cumplimiento/README.md §3, ADR 003",
-              "depende_de": "HU 2.2.1 define el plazo"
+              "depende_de": "HU 2.2.1 define el plazo",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -606,8 +967,11 @@
                 "Un cambio que toque exportación nominal, vistas públicas o políticas requiere aprobación de la custodia",
                 "Preproducción NUNCA recibe datos reales: garantía del pipeline, no disciplina de las personas"
               ],
-              "etiquetas": ["Infra"],
-              "origen": "ADR 004"
+              "etiquetas": [
+                "Infra"
+              ],
+              "origen": "ADR 004",
+              "asignado": "yonathangutierrez"
             },
             {
               "id": "HU 2.3.2",
@@ -621,8 +985,11 @@
                 "El asesor de seguridad no reporta advertencias",
                 "Las seis verificaciones de SEGURIDAD.md corren contra el proyecto real"
               ],
-              "etiquetas": ["Infra"],
-              "origen": "SEGURIDAD.md punto 6, entorno/pruebas/flujo-completo.sh"
+              "etiquetas": [
+                "Infra"
+              ],
+              "origen": "SEGURIDAD.md punto 6, entorno/pruebas/flujo-completo.sh",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -641,14 +1008,15 @@
                 "Los campos de selección múltiple llegan separados por espacio y se convierten correctamente",
                 "Se puede correr sin supervisión"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "schema.sql §11, ESTADO.md"
             }
           ]
         }
       ]
     },
-
     {
       "numero": 3,
       "nombre": "Exigibilidad",
@@ -669,7 +1037,10 @@
                 "Sin radicado la remisión no es exigible: la interfaz lo refleja",
                 "El destinatario cambia según el tipo de afectación, sobre el mismo registro único"
               ],
-              "etiquetas": ["FrontEnd", "BackEnd"],
+              "etiquetas": [
+                "FrontEnd",
+                "BackEnd"
+              ],
               "origen": "FRENTES.md F5"
             },
             {
@@ -683,7 +1054,9 @@
                 "Ordenado por entidad con más casos sin responder",
                 "Verificado de punta a punta en la prueba funcional del entorno"
               ],
-              "etiquetas": ["FrontEnd"],
+              "etiquetas": [
+                "FrontEnd"
+              ],
               "origen": "FRENTES.md F5, entorno/pruebas/flujo-completo.sh"
             },
             {
@@ -697,7 +1070,10 @@
                 "Al responder, el caso sale de la mora",
                 "Queda el rastro completo: quién remitió, cuándo, qué contestaron"
               ],
-              "etiquetas": ["FrontEnd", "BackEnd"],
+              "etiquetas": [
+                "FrontEnd",
+                "BackEnd"
+              ],
               "origen": "FRENTES.md F5, ESTADO.md §1"
             }
           ]
@@ -718,7 +1094,9 @@
                 "Se entrega por enlace de vida corta, no como adjunto abierto",
                 "Incluye la cláusula de finalidad: la entidad pasa a ser responsable y no se autoriza uso secundario"
               ],
-              "etiquetas": ["BackEnd"],
+              "etiquetas": [
+                "BackEnd"
+              ],
               "origen": "README.md, cumplimiento/README.md §7"
             },
             {
@@ -733,7 +1111,10 @@
                 "Sigla y nombre completo de la organización internacional de representación",
                 "Formato oficial de censo del consejo municipal de gestión del riesgo"
               ],
-              "etiquetas": ["sin código", "bloqueada"],
+              "etiquetas": [
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "ESTADO.md §4, FRENTES.md",
               "depende_de": "gestión ante las entidades",
               "bloquea": "radicar el primer reporte"
@@ -742,7 +1123,6 @@
         }
       ]
     },
-
     {
       "numero": 4,
       "nombre": "Escala",
@@ -762,7 +1142,10 @@
                 "Listado oficial obtenido y versionado como catálogo",
                 "Criterio de normalización de nombres definido"
               ],
-              "etiquetas": ["sin código", "bloqueada"],
+              "etiquetas": [
+                "sin código",
+                "bloqueada"
+              ],
               "origen": "ESTADO.md §4",
               "depende_de": "gestión ante la alcaldía",
               "bloquea": "HU 4.1.2 y las cifras por vereda"
@@ -778,9 +1161,13 @@
                 "Catálogo de veredas por municipio",
                 "Un municipio nuevo no requiere desplegar código"
               ],
-              "etiquetas": ["BackEnd", "Infra"],
+              "etiquetas": [
+                "BackEnd",
+                "Infra"
+              ],
               "origen": "FRENTES.md F8",
-              "depende_de": "HU 4.1.1"
+              "depende_de": "HU 4.1.1",
+              "asignado": "yonathangutierrez"
             }
           ]
         },
@@ -799,7 +1186,10 @@
                 "Restringido a la mesa",
                 "Los cambios quedan auditados"
               ],
-              "etiquetas": ["FrontEnd", "BackEnd"],
+              "etiquetas": [
+                "FrontEnd",
+                "BackEnd"
+              ],
               "origen": "ADR 004"
             }
           ]

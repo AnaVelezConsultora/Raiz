@@ -24,6 +24,10 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
         <div class="campo">
           <label for="reg">Su nombre</label>
           <input id="reg" type="text" formControlName="registradorNombre" autocomplete="name" />
+          <!-- Este dato es del voluntario, no de la familia: se conserva entre casos a
+               proposito. Sin decirlo, verlo ya escrito parece que la aplicacion
+               arrastro datos del registro anterior. -->
+          <span class="pista">Es suyo, no de la familia: queda guardado para los siguientes casos.</span>
         </div>
         <div class="campo">
           <label for="org">Organizacion, junta o comite</label>

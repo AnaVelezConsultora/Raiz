@@ -1,6 +1,6 @@
 # Raíz — Estado del proyecto
 
-Corte: 13 de agosto de 2026. Sevilla, Valle del Cauca.
+Corte: 14 de agosto de 2026. Sevilla, Valle del Cauca.
 
 Documento para el equipo técnico voluntario. Se actualiza cuando cambie algo
 sustantivo, no cada día.
@@ -44,6 +44,9 @@ Están cerradas. Si alguien quiere reabrir una, que traiga argumentos nuevos.
 | **Iniciar sesión exige conexión, capturar no** | Un token que caduca en el monte no puede costar una jornada de trabajo. Solo sincronizar exige sesión vigente. |
 | **La sincronización nunca es automática** | En zona rural la señal aparece y desaparece. Un envío automático consume los datos del voluntario sin que él lo decida. El botón es explícito. |
 | **KoboToolbox corre en paralelo y no se detiene** | La emergencia no espera a que terminemos. Las columnas de PostgreSQL replican los nombres del formulario de Kobo, así que migrar es una carga, no una reescritura. |
+| **La infraestructura va sobre AWS, no sobre Supabase** | [ADR 002](adr/002-infraestructura-en-aws.md). El acoplamiento a Supabase estaba contenido en cuatro puntos, de modo que las tablas, vistas y políticas se portan con un adaptador de unas cuarenta líneas. |
+| **El contrato de sincronización no depende del proveedor** | [ADR 003](adr/003-contrato-de-sincronizacion.md). Incluye la taxonomía de error —transporte, sesión, rechazo— que el cliente necesita para saber si reintentar, detenerse o marcar para revisión. |
+| **La infraestructura no depende de quien programa** | [ADR 004](adr/004-modelo-de-entrega.md). Quien contribuye levanta todo en su máquina con un comando, envía su propuesta de cambio y el despliegue ocurre aparte. |
 
 ---
 
@@ -63,19 +66,39 @@ internet.
 **Cola de sincronización.** Envía casos antes que fotos, prioridad de riesgo de vida
 primero, secuencial y no en paralelo, con idempotencia por `origen_id`: si el envío
 llega al servidor pero la respuesta se pierde por corte de señal, el reintento
-actualiza la misma fila en lugar de crear un duplicado.
+actualiza la misma fila en lugar de crear un duplicado. El cliente está escrito; el
+servidor que lo atiende, no.
 
 **Identidad y roles (F2).** Cinco roles, guardas de ruta, pantalla de acceso, permisos
 derivados del rol y disparador que crea el perfil al dar de alta un usuario, con el rol
 menos privilegiado por defecto. El código está; falta el servidor.
 
-**Modelo de datos.** 11 tablas, 5 vistas, políticas de acceso por fila, auditoría de
-cambios y vista pública anonimizada con la coordenada redondeada a tres decimales
-(~110 m): ubica la afectación, no la vivienda.
+**Modelo de datos.** 12 tablas, 5 vistas, políticas de acceso por fila y auditoría de
+cambios. La vista del mapa entrega la coordenada redondeada a tres decimales (~111 m).
+Ver la salvedad importante en «Lo que la documentación decía de más».
+
+**Entorno local completo.** `cd entorno && make arriba` levanta PostgreSQL con PostGIS,
+LocalStack emulando el almacenamiento de objetos, Cognito local, el esquema cargado sin
+modificar, catálogos, casos de ejemplo y cinco usuarios de prueba. **Se contribuye sin
+credenciales de AWS y sin tocar nada compartido**, que era el bloqueo anterior.
+
+**Pruebas de control de acceso.** `make pruebas` comprueba sobre la base que ninguna
+tabla quede sin políticas, que las vistas no las salten, que un líder no vea los casos
+de otro y que nadie pueda escribir en la auditoría, y falla si alguien lo rompe. Antes
+eran una lista para revisar a mano.
+
+**Prueba de punta a punta.** `make e2e` recorre el camino completo en diez pasos con
+veintiún asertos —entrar, sincronizar, reintentar tras un corte, subir la fotografía,
+verificar, remitir, medir la mora, registrar la respuesta y comprobar la auditoría—,
+es repetible y se limpia sola.
+
+**Paquete de dominio compartido.** El contrato que cruza la red y la regla de
+consentimiento viven en `dominio/` y los usan los dos lados. Cuando alguien agregue un
+campo de un solo lado, deja de compilar en vez de perder el dato en silencio.
 
 **Vía paralela operativa.** Formulario XLSForm de 125 preguntas listo para
 KoboToolbox, plantilla fija de reporte por WhatsApp y tablero estático con mapa. Eso
-permite empezar a capturar hoy mientras la aplicación propia madura.
+permite capturar hoy mientras la aplicación propia madura.
 
 **Entorno local reproducible.** `entorno/` levanta PostgreSQL con el esquema completo,
 almacenamiento de archivos y las pruebas de acceso ejecutables. Sirve para dos cosas:
@@ -100,14 +123,18 @@ errores de consola: ninguno
 ```
 
 Bundle inicial: 100 kB de transferencia. El formulario, la pantalla de acceso y el
-cliente de Supabase se descargan aparte.
+cliente de datos se descargan aparte.
 
 ### Lo que NO está probado
 
 **No se ha probado en un celular Android real.** Todo lo anterior es un navegador de
 escritorio emulando un celular. Un teléfono de gama baja con poca memoria, pantalla
-bajo el sol y un pulgar de verdad es otra cosa. Ese es el frente F6 y es el más
-urgente.
+bajo el sol y un pulgar de verdad es otra cosa. Ese es el frente F6 y **es lo más
+urgente que hay**: no depende del servidor ni de la nube, y se puede empezar hoy.
+
+**El dato nunca ha viajado del celular a una base central**, porque esa base todavía no
+existe. La cola de sincronización está escrita contra un contrato, no contra un
+servidor que responda.
 
 ### Revisión independiente
 
@@ -135,42 +162,65 @@ creara la base.
 |---|---|---|
 | F1 Captura offline | Funcionando | — |
 | F2 Identidad y acceso | Código listo, falta servidor | — |
-| F3 Sincronización y servidor | Abierto | F2 |
-| F4 Tablero y mapa | Abierto | — |
-| F5 Remisiones y seguimiento | Abierto | F2 |
-| F6 Calidad y prueba en campo | **Empieza ya** | — |
-| F7 Datos y cumplimiento | Abierto | — |
+| F3 Sincronización y servidor | Puertos y dominio escritos; falta la API | — |
+| F4 Tablero y mapa | Abierto, bloqueado por una decisión | F7 |
+| F5 Remisiones y seguimiento | Abierto | F3 |
+| F6 Calidad y prueba en campo | **Empieza ya, no depende de nada** | — |
+| F7 Datos y cumplimiento | Abierto, con cuatro decisiones pendientes | — |
 | F8 Multi-municipio | Abierto | — |
 
 El estándar de confiabilidad que debe cumplir la información está en
 [ESTANDAR-PROBATORIO.md](ESTANDAR-PROBATORIO.md), con nueve brechas identificadas y su
 prioridad.
 
-Detalle de cada frente en [FRENTES.md](FRENTES.md). Roles, estimación e hitos en
-[ROLES-Y-ESFUERZO.md](ROLES-Y-ESFUERZO.md). Las historias de usuario dentro de cada
-hito, en [backlog/](backlog/).
+Detalle de cada frente en [FRENTES.md](FRENTES.md). El desglose en historias está en
+Trello, organizado en cinco hitos con 43 historias; la fuente es
+[docs/backlog/tablero-raiz.json](backlog/tablero-raiz.json).
 
-### Decisión abierta
+**No hay sprints.** Los hitos son estados a los que llega el producto, no iteraciones
+con fecha. Quien queda libre toma la siguiente historia sin bloquear del hito más bajo
+y avisa en el grupo que la tomó.
 
-[ADR 002](adr/002-infraestructura-en-aws.md) propone mover la infraestructura a AWS y
-está en estado **Propuesta**. No se apoya en carga ni en límites alcanzados —el cálculo
-del [ADR 001](adr/001-supabase-frente-a-nube-propia.md) sigue vigente— sino en que se
-habría cumplido su sexta condición: que exista capacidad real de *operar*
-infraestructura.
+### Lo que la documentación decía de más
 
-Esa es una afirmación sobre personas, no sobre código. Antes de aceptarla hay que
-responder tres cosas por escrito: quién opera y qué pasa cuando se retire, el costo
-mensual con los servicios concretos, y si retrasa el Hito 1.
+Una revisión contra el código encontró ocho puntos donde la documentación afirmaba algo
+que el código no sostenía. Están en [hallazgos-revision.md](hallazgos-revision.md).
+Cuatro importan para lo que se dice por fuera del equipo:
+
+- **La vista pública del mapa no es agregada** (H12). `v_estadisticas` y
+  `v_estado_gestion` sí lo son. `v_mapa_publico` es **una fila por familia** con vereda,
+  prioridad, personas, menores, adultos mayores y la coordenada redondeada. Redondear
+  una coordenada no la agrega: en una vereda de vivienda dispersa ese conjunto describe
+  una vivienda y a quién hay dentro. Decidir qué se publica es la HU 2.1.1.
+- **El teléfono viaja sin autorización** (H7). Es obligatorio y no está en la regla de
+  consentimiento. Sin él no se puede verificar el caso ni avisarle a la familia; con él,
+  el registro no es anónimo. Hay que escoger. Es la HU 1.5.1.
+- **La regla de consentimiento existe una sola vez, pero todavía no la llama nadie**
+  (H8, H9). Está en `dominio/src/consentimiento.ts` como función pura compartida, que es
+  lo que permite que «ninguna ruta puede saltársela» llegue a ser cierto. El frontend
+  aún no la usa y el servidor no existe.
+- **La auditoría no registra consultas.** Los disparadores son de escritura sobre
+  `familias` y `remisiones`; PostgreSQL no dispara sobre lecturas.
+
+El contraste completo entre la presentación a autoridades y lo que el código sostiene
+está en [pitch-contraste.md](pitch-contraste.md).
+
+Un noveno hallazgo ya se corrigió: **el esquema no se podía crear** (H14). Una columna
+generada usaba una expresión no inmutable y abortaba el archivo completo a media
+carga. Nunca se detectó porque nadie lo había ejecutado.
 
 ### Los dos bloqueos reales
 
-**No hay proyecto de Supabase.** Hasta que exista, correr el esquema y asignar rol a
-cada voluntario, la base central no se conecta y F3 y F5 no pueden arrancar. Es trabajo
-operativo, no de programación.
-
 **Nadie ha probado esto en campo.** El código puede estar perfecto y el formulario
 seguir siendo inusable de pie, bajo el sol, con la familia esperando. Eso no lo detecta
-ninguna prueba automática.
+ninguna prueba automática. Ya no hay excusa técnica: no requiere servidor.
+
+**No existe el servidor.** Los puertos del dominio y el contrato están escritos; la API
+que los implementa, no. Hasta que exista, F3 y F5 no cierran.
+
+El bloqueo anterior —«no hay proyecto de Supabase»— ya no aplica: el entorno local
+levanta todo lo necesario para trabajar, y la infraestructura de producción es trabajo
+de plataforma que ocurre aparte de quien programa.
 
 ### Pendientes que no son técnicos y bloquean la entrega
 
@@ -183,22 +233,27 @@ ninguna prueba automática.
 - Formato oficial de censo de damnificados del consejo municipal de gestión del
   riesgo, para que ninguna entidad devuelva el reporte por forma.
 
+Los dos últimos dependen de gestión ante la alcaldía y las entidades, y la
+presentación a autoridades civiles es la ocasión de pedirlos.
+
 ---
 
 ## 5. Qué necesitamos ahora
 
 **Prioridad 1 — cualquiera con un Android.** Instalar la aplicación, ponerla en modo
 avión, registrar un caso de prueba y contar todo lo que incomodó. No requiere escribir
-código y es lo de mayor impacto.
+código, no depende del servidor y es lo de mayor impacto.
 
-**Prioridad 2 — alguien con Supabase.** Crear el proyecto, correr el esquema, dar de
-alta voluntarios. Desbloquea la mitad del tablero.
+**Prioridad 2 — quien quiera hacer el servidor.** El contrato, los puertos y el
+paquete de dominio están listos, y el entorno local levanta la base con un comando.
+Desbloquea la mitad del tablero.
 
 **Prioridad 3 — Angular y visualización.** El tablero y el mapa no tocan el núcleo: se
-pueden construir en paralelo desde hoy con datos de prueba.
+pueden construir en paralelo desde hoy con los datos de ejemplo del entorno local. Ojo
+con la decisión pendiente sobre qué puede mostrar el mapa público.
 
-Con dos horas a la semana se aporta. Escoja un frente y avise cuál toma, para no
-repetir trabajo.
+Con dos horas a la semana se aporta. Escoja una historia del tablero y avise cuál toma,
+para no repetir trabajo.
 
 ---
 
@@ -207,7 +262,9 @@ repetir trabajo.
 - En el grupo de chat **no** se publican nombres, cédulas, teléfonos ni fotografías de
   familias afectadas. Son datos sensibles bajo la Ley 1581 de 2012.
 - Para desarrollar y probar se usan datos inventados. Nunca datos reales.
-- Toda vista pública es agregada y con la coordenada degradada.
+- Ninguna vista pública lleva nombre, documento ni teléfono, y la coordenada va
+  degradada. **No todas son agregadas**, y hasta que se resuelva la HU 2.1.1 no se
+  afirma que lo sean.
 - No se prometen ayudas, plazos ni cobertura a nombre del equipo.
 - Aquí no se recauda ni se administra dinero.
 - Las decisiones técnicas se escriben en el repositorio, no solo en el chat.
