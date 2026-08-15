@@ -4,6 +4,7 @@ import { Caso } from '../domain/caso.model';
 import {
   FuenteCoordenada,
   FuenteDato,
+  Necesidad,
   LugarPernocta,
   NivelAfectacion,
   Prioridad,
@@ -73,11 +74,15 @@ export class CasoFormService {
       vivienda: this.fb.group({
         tenencia: [caso.vivienda?.tenencia ?? Tenencia.Propietario, Validators.required],
         hogaresEnEstructura: [caso.vivienda?.hogaresEnEstructura ?? 1, Validators.min(1)],
-        afectacion: [caso.vivienda?.afectacion ?? NivelAfectacion.Moderado, Validators.required],
-        habitable: [caso.vivienda?.habitable ?? true],
+        // Estos tres NO tienen valor por defecto, y es deliberado. Antes venian en
+        // "moderado", "habitable" y "duerme en la misma vivienda": un paso que nadie
+        // llenaba describia una familia sin problema. En un censo de damnificados, el
+        // silencio no puede leerse como que la casa esta bien.
+        afectacion: [caso.vivienda?.afectacion ?? null, Validators.required],
+        habitable: [caso.vivienda?.habitable ?? null],
         riesgoColapso: [caso.vivienda?.riesgoColapso ?? false],
         riesgoColapsoDesc: [caso.vivienda?.riesgoColapsoDesc],
-        dondeDuerme: [caso.vivienda?.dondeDuerme ?? LugarPernocta.MismaVivienda]
+        dondeDuerme: [caso.vivienda?.dondeDuerme ?? null]
       }),
       rural: this.fb.group({
         areaHa: [caso.anexoRural?.areaHa],
@@ -213,7 +218,12 @@ export class CasoFormService {
         convenioObs: caso.anexoConvenio?.convenioObs ?? null
       },
       triaje: {
-        prioridad: v.triaje.prioridad,
+        // El riesgo de colapso es riesgo de vida y manda sobre lo que diga la lista de
+        // prioridad. Antes el formulario le PEDIA al voluntario que se acordara de
+        // marcar P0 un paso despues; una advertencia que hay que recordar es una
+        // advertencia que se pierde, y lo que se pierde aqui es una familia durmiendo
+        // bajo algo que se puede caer.
+        prioridad: v.vivienda.riesgoColapso === true ? Prioridad.P0 : v.triaje.prioridad,
         necesidadesInmediatas: seleccion.necesidades,
         yaRecibioAyuda: caso.triaje?.yaRecibioAyuda ?? null,
         ayudaCual: caso.triaje?.ayudaCual ?? null,
@@ -359,46 +369,94 @@ export const OPCIONES = {
     { v: Prioridad.P3, t: 'P3 dano leve' }
   ],
   afiliacion: [
-    'Comite de reforma agraria',
-    'Asociacion campesina',
-    'Junta de Accion Comunal',
-    'Federacion (convenio)',
-    'No afiliada',
-    'Otra'
+    { v: 'comite_reforma', t: 'Comite de reforma agraria' },
+    { v: 'asoc_campesina', t: 'Asociacion campesina' },
+    { v: 'jac', t: 'Junta de Accion Comunal' },
+    { v: 'federacion', t: 'Federacion (convenio)' },
+    { v: 'no_afiliada', t: 'No afiliada' },
+    { v: 'otra', t: 'Otra' }
   ],
   requiereVivienda: [
-    'Remocion de escombros',
-    'Apuntalamiento urgente',
-    'Evaluacion estructural',
-    'Demolicion controlada',
-    'Materiales',
-    'Reubicacion temporal',
-    'Reubicacion definitiva',
-    'Subsidio de arriendo',
-    'Reconstruccion total'
+    { v: 'remocion', t: 'Remocion de escombros' },
+    { v: 'apuntalamiento', t: 'Apuntalamiento urgente' },
+    { v: 'eval_estructural', t: 'Evaluacion estructural' },
+    { v: 'demolicion', t: 'Demolicion controlada' },
+    { v: 'materiales', t: 'Materiales' },
+    { v: 'reubicacion_temp', t: 'Reubicacion temporal' },
+    { v: 'reubicacion_def', t: 'Reubicacion definitiva' },
+    { v: 'subsidio_arriendo', t: 'Subsidio de arriendo' },
+    { v: 'reconstruccion', t: 'Reconstruccion total' }
   ],
-  servicios: ['Agua', 'Energia', 'Alcantarillado', 'Gas', 'Via de acceso'],
+  servicios: [
+    { v: 'agua', t: 'Agua' },
+    { v: 'energia', t: 'Energia' },
+    { v: 'alcantarillado', t: 'Alcantarillado' },
+    { v: 'gas', t: 'Gas' },
+    { v: 'via', t: 'Via de acceso' }
+  ],
   cultivos: [
-    'Cafe', 'Platano', 'Aguacate', 'Cana', 'Maiz', 'Frijol', 'Yuca',
-    'Cacao', 'Hortalizas', 'Frutales', 'Pancoger', 'Piscicola'
+    { v: 'cafe', t: 'Cafe' },
+    { v: 'platano', t: 'Platano' },
+    { v: 'aguacate', t: 'Aguacate' },
+    { v: 'cana', t: 'Cana' },
+    { v: 'maiz', t: 'Maiz' },
+    { v: 'frijol', t: 'Frijol' },
+    { v: 'yuca', t: 'Yuca' },
+    { v: 'cacao', t: 'Cacao' },
+    { v: 'hortalizas', t: 'Hortalizas' },
+    { v: 'frutales', t: 'Frutales' },
+    { v: 'pancoger', t: 'Pancoger' },
+    { v: 'piscicola', t: 'Piscicola' }
   ],
   infraProductiva: [
-    'Beneficiadero', 'Establo o corral', 'Galpon', 'Invernadero',
-    'Reservorio', 'Acueducto veredal', 'Bodega', 'Cercas', 'Maquinaria'
+    { v: 'beneficiadero', t: 'Beneficiadero' },
+    { v: 'establo', t: 'Establo o corral' },
+    { v: 'galpon', t: 'Galpon' },
+    { v: 'invernadero', t: 'Invernadero' },
+    { v: 'reservorio', t: 'Reservorio' },
+    { v: 'acueducto_veredal', t: 'Acueducto veredal' },
+    { v: 'bodega', t: 'Bodega' },
+    { v: 'cercas', t: 'Cercas' },
+    { v: 'maquinaria', t: 'Maquinaria' }
   ],
   requiereAgro: [
-    'Semillas', 'Insumos', 'Herramientas', 'Reposicion de animales',
-    'Asistencia tecnica', 'Credito', 'Riego o acueducto', 'Rehabilitacion de via'
+    { v: 'semillas', t: 'Semillas' },
+    { v: 'insumos', t: 'Insumos' },
+    { v: 'herramientas', t: 'Herramientas' },
+    { v: 'animales', t: 'Reposicion de animales' },
+    { v: 'asistencia', t: 'Asistencia tecnica' },
+    { v: 'credito', t: 'Credito' },
+    { v: 'agua_riego', t: 'Riego o acueducto' },
+    { v: 'via', t: 'Rehabilitacion de via' }
   ],
   requiereUrbano: [
-    'Alojamiento temporal', 'Subsidio de arriendo', 'Evaluacion estructural',
-    'Remocion de escombros', 'Materiales', 'Reactivacion del negocio', 'Reubicacion'
+    { v: 'alojamiento_temp', t: 'Alojamiento temporal' },
+    { v: 'subsidio_arriendo', t: 'Subsidio de arriendo' },
+    { v: 'eval_estructural', t: 'Evaluacion estructural' },
+    { v: 'remocion', t: 'Remocion de escombros' },
+    { v: 'materiales', t: 'Materiales' },
+    { v: 'reactivacion_negocio', t: 'Reactivacion del negocio' },
+    { v: 'reubicacion', t: 'Reubicacion' }
   ],
-  convenioLinea: ['Vivienda rural', 'Cultivos y produccion', 'Vivienda urbana', 'Apoyo psicosocial'],
+  convenioLinea: [
+    { v: 'vivienda_rural', t: 'Vivienda rural' },
+    { v: 'cultivos', t: 'Cultivos y produccion' },
+    { v: 'vivienda_urbana', t: 'Vivienda urbana' },
+    { v: 'psicosocial', t: 'Apoyo psicosocial' }
+  ],
   necesidades: [
-    'Alimentos o mercado', 'Agua potable', 'Kit de aseo', 'Kit de cocina',
-    'Colchonetas y cobijas', 'Carpa o plastico', 'Ropa', 'Medicamentos',
-    'Panales o leche infantil', 'Apoyo psicosocial', 'Transporte', 'Reposicion de documentos'
+    { v: Necesidad.Alimentos, t: 'Alimentos o mercado' },
+    { v: Necesidad.AguaPotable, t: 'Agua potable' },
+    { v: Necesidad.Aseo, t: 'Kit de aseo' },
+    { v: Necesidad.Cocina, t: 'Kit de cocina' },
+    { v: Necesidad.Dormir, t: 'Colchonetas y cobijas' },
+    { v: Necesidad.Carpa, t: 'Carpa o plastico' },
+    { v: Necesidad.Ropa, t: 'Ropa' },
+    { v: Necesidad.Medicamentos, t: 'Medicamentos' },
+    { v: Necesidad.Panales, t: 'Panales o leche infantil' },
+    { v: Necesidad.Psicosocial, t: 'Apoyo psicosocial' },
+    { v: Necesidad.Transporte, t: 'Transporte' },
+    { v: Necesidad.Documentos, t: 'Reposicion de documentos' }
   ],
   viaAcceso: [
     'Transitable en vehiculo', 'Solo moto', 'Solo a pie o en bestia', 'Bloqueada por derrumbe'

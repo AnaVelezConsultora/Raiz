@@ -161,9 +161,13 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
       </ul>
     </div>
 
+    <!-- El padding va SOLO en el contenedor interno. Tenerlo aqui y ahi sumaba 64 px
+         en un celular de 440, y con los dos botones sin poder encogerse la barra se
+         salia de la pantalla. -->
     <nav style="position:fixed;left:0;right:0;bottom:0;background:var(--surface);
-                border-top:1px solid var(--rule);padding:.7rem 1rem">
-      <div class="contenedor fila" style="gap:.6rem;flex-wrap:nowrap">
+                border-top:1px solid var(--rule);padding:.7rem 0;
+                padding-bottom:calc(.7rem + env(safe-area-inset-bottom))">
+      <div class="contenedor fila" style="gap:.6rem">
         <a routerLink="/nuevo" [queryParams]="{ zona: zonaRural }"
            class="btn-primario btn-grande"
            style="flex:1;text-align:center;text-decoration:none;display:flex;

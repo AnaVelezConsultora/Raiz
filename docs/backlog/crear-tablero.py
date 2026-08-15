@@ -96,8 +96,24 @@ def consultar(ruta, **parametros):
         return []
     parametros.update(AUTH)
     url = f"{API}{ruta}?{urllib.parse.urlencode(parametros)}"
-    with urllib.request.urlopen(url, timeout=30) as respuesta:
-        return json.loads(respuesta.read() or "[]")
+    try:
+        with urllib.request.urlopen(url, timeout=30) as respuesta:
+            return json.loads(respuesta.read() or "[]")
+    except urllib.error.HTTPError as e:
+        # El token se genera con expiration=1day, asi que caduca solo y esto pasa
+        # seguido. Antes salia un volcado de Python de veinte lineas que no decia
+        # nada; un error que no dice como arreglarse cuesta media hora a quien lo ve.
+        if e.code == 401:
+            sys.exit(
+                "\nTrello respondio 401: el token no sirve o ya caduco.\n\n"
+                "Genere uno nuevo abriendo esta URL con su sesion de Trello:\n\n"
+                "  https://trello.com/1/authorize?expiration=1day"
+                "&name=Raiz%20backlog&scope=read,write&response_type=token&key=$TRELLO_KEY\n\n"
+                "Y expórtelo:  export TRELLO_TOKEN=...\n"
+            )
+        sys.exit(f"Error {e.code} consultando {ruta}: {e.read().decode()[:300]}")
+    except urllib.error.URLError as e:
+        sys.exit(f"No se pudo alcanzar Trello: {e}")
 
 
 def nombre_lista(hito):

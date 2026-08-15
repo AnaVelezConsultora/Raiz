@@ -192,3 +192,30 @@ falta.
 No dice cómo se implementa la cola, ni con qué biblioteca, ni contra qué API. Dice
 qué garantías tiene que ofrecer para que el trabajo de un líder que caminó dos
 horas hasta una vereda no se pierda entre el celular y la base.
+
+## Por que la idempotencia esta en los dos lados
+
+Hay dos barreras contra el duplicado y no son redundantes: atacan casos distintos.
+
+**En el dispositivo.** El `origenId` es el UUID que se genero al crear el caso y no se
+regenera nunca; el reintento viaja con el mismo. Y la cola solo devuelve casos en estado
+`Pendiente` o `Error`, asi que un caso ya confirmado no vuelve a enviarse.
+
+**En la API.** Upsert por `origen_id`, que tiene indice unico, devolviendo `xmax = 0`
+para distinguir alta de actualizacion, y respondiendo `yaExistia` al dispositivo.
+
+### La primera falla justo en el caso que importa
+
+Si el envio **llega al servidor pero la respuesta se pierde** —el corte de senal a mitad,
+que en zona veredal es lo corriente— el dispositivo no recibe confirmacion, marca el caso
+como `Error` y **vuelve a enviarlo**. La barrera del dispositivo esta disenada para no
+reenviar lo confirmado, y este caso nunca se confirmo.
+
+Ahi entra el upsert. Sin el, ese reintento crea una segunda fila para la misma familia,
+el total se infla, y el total consolidado es la palanca ante la entidad.
+
+Dicho corto: **la del dispositivo evita trafico innecesario en el caso normal; la de la
+API evita el duplicado en el caso anormal, que es el unico donde puede ocurrir.**
+
+Queda escrito porque es de las cosas que alguien quita en seis meses por parecer
+duplicada. La prueba `entorno/pruebas/idempotencia.sql` falla si se quita.

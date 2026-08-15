@@ -1,8 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Zona } from '../../core/domain/enums';
+import { NivelAfectacion, Zona } from '../../core/domain/enums';
 import { OPCIONES } from '../../core/services/caso-form.service';
+import { ContadorComponent } from '../../shared/contador.component';
 import { PastillasComponent } from '../../shared/pastillas.component';
+
+/** Niveles de dano con los que decir que la casa es habitable es una contradiccion. */
+const NIVELES_INHABITABLES: readonly string[] = [
+  NivelAfectacion.Severo,
+  NivelAfectacion.Destruida,
+  NivelAfectacion.Riesgo
+];
 
 /**
  * Paso 3. Vivienda, dano y anexo segun la zona.
@@ -19,12 +27,20 @@ import { PastillasComponent } from '../../shared/pastillas.component';
  */
 @Component({
   selector: 'app-paso-vivienda',
-  imports: [ReactiveFormsModule, PastillasComponent],
+  imports: [ReactiveFormsModule, PastillasComponent, ContadorComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="pila" [formGroup]="form()">
       <section class="pila-sm" formGroupName="vivienda">
         <h3>La vivienda</h3>
+
+        @if (heredado()) {
+          <p class="aviso">
+            El estado del inmueble viene del registro anterior de esta misma casa:
+            afectacion, riesgo y servicios. Corrijalo si no coincide. La tenencia y
+            donde duerme esta familia se preguntan de nuevo, porque son de ella.
+          </p>
+        }
 
         <div class="campo">
           <label for="ten">Relacion con la vivienda</label>
@@ -38,23 +54,47 @@ import { PastillasComponent } from '../../shared/pastillas.component';
 
         <div class="campo">
           <label for="hog">Cuantas familias vivian en esa misma casa o estructura</label>
-          <input id="hog" type="number" inputmode="numeric" min="1" formControlName="hogaresEnEstructura" />
+          <div class="fila" style="flex-wrap:nowrap">
+            <app-contador formControlName="hogaresEnEstructura" [minimo]="1"
+                          etiqueta="Familias en la misma estructura" />
+          </div>
           <span class="pista">Si son varias, se llena un formulario por cada familia.</span>
         </div>
 
         <div class="campo">
           <label for="afec">Nivel de afectacion</label>
           <select id="afec" formControlName="afectacion">
+            <!-- Sin preseleccion. Antes venia en "moderado", asi que un paso que nadie
+                 lleno describia una casa con dano moderado que no tiene. -->
+            <option [value]="null">Seleccione</option>
             @for (o of afectaciones; track o.v) {
               <option [value]="o.v">{{ o.t }}</option>
             }
           </select>
         </div>
 
-        <label class="pastilla" [class.activa]="habitable()">
-          <input type="checkbox" formControlName="habitable" />
-          La vivienda es habitable hoy
-        </label>
+        <!-- Pregunta explicita en vez de casilla: una casilla sin marcar no distingue
+             "no es habitable" de "no me preguntaron", y de este dato depende si la
+             familia entra en la lista de quienes necesitan techo esta noche. -->
+        <div class="campo">
+          <label>Se puede vivir ahi hoy</label>
+          <div class="pastillas">
+            <button type="button" class="pastilla" [class.activa]="habitable() === true"
+                    (click)="fijarHabitable(true)">Si, es habitable</button>
+            <button type="button" class="pastilla" [class.activa]="habitable() === false"
+                    (click)="fijarHabitable(false)">No se puede vivir ahi</button>
+          </div>
+          @if (habitable() === null) {
+            <span class="pista">Sin responder.</span>
+          }
+        </div>
+
+        @if (incoherente()) {
+          <p class="aviso peligro">
+            Dice que el dano es {{ textoAfectacion() }} y que si se puede vivir ahi.
+            Revise cual de las dos es. Puede continuar igual.
+          </p>
+        }
 
         <label class="pastilla" [class.activa]="riesgo()">
           <input type="checkbox" formControlName="riesgoColapso" />
@@ -68,8 +108,8 @@ import { PastillasComponent } from '../../shared/pastillas.component';
                       placeholder="Que estructura amenaza caer y sobre quien"></textarea>
           </div>
           <p class="aviso peligro">
-            Riesgo de colapso. Marque prioridad P0 en el ultimo paso y avise al
-            coordinador hoy mismo, sin esperar a sincronizar.
+            Riesgo de colapso: el caso queda en prioridad P0. Avise al coordinador hoy
+            mismo, sin esperar a sincronizar.
           </p>
         }
 
@@ -98,14 +138,17 @@ import { PastillasComponent } from '../../shared/pastillas.component';
           <h3>Predio, cultivos y animales</h3>
           <p class="pista">Este bloque alimenta el reporte a la Secretaria de Agricultura y Pesca.</p>
 
+          <!-- Texto con teclado decimal, no type=number: el campo numerico de HTML
+               cambia de valor al deslizar el dedo encima, y este paso es largo y se
+               recorre deslizando. Ver el mismo cambio en el paso 2. -->
           <div class="fila">
             <div class="campo" style="flex:1">
               <label for="area">Area del predio (ha)</label>
-              <input id="area" type="number" inputmode="decimal" min="0" step="0.1" formControlName="areaHa" />
+              <input id="area" type="text" inputmode="decimal" formControlName="areaHa" />
             </div>
             <div class="campo" style="flex:1">
               <label for="areac">Area de cultivo afectada (ha)</label>
-              <input id="areac" type="number" inputmode="decimal" min="0" step="0.1"
+              <input id="areac" type="text" inputmode="decimal"
                      formControlName="areaCultivoAfectadaHa" />
             </div>
           </div>
@@ -123,18 +166,14 @@ import { PastillasComponent } from '../../shared/pastillas.component';
 
           <div class="campo">
             <label for="perd">Perdida estimada de la produccion (%)</label>
-            <input id="perd" type="number" inputmode="numeric" min="0" max="100" formControlName="perdidaPct" />
+            <input id="perd" type="text" inputmode="numeric" formControlName="perdidaPct" />
           </div>
 
-          <div class="fila">
-            <div class="campo" style="flex:1">
-              <label for="bov">Bovinos perdidos</label>
-              <input id="bov" type="number" inputmode="numeric" min="0" formControlName="bovinosPerdidos" />
-            </div>
-            <div class="campo" style="flex:1">
-              <label for="aves">Aves perdidas</label>
-              <input id="aves" type="number" inputmode="numeric" min="0" formControlName="avesPerdidas" />
-            </div>
+          <div class="rejilla-condiciones">
+            <span class="rango">Bovinos perdidos</span>
+            <app-contador formControlName="bovinosPerdidos" etiqueta="Bovinos perdidos" />
+            <span class="rango">Aves perdidas</span>
+            <app-contador formControlName="avesPerdidas" etiqueta="Aves perdidas" />
           </div>
         </section>
 
@@ -176,6 +215,9 @@ import { PastillasComponent } from '../../shared/pastillas.component';
 export class PasoViviendaComponent {
   readonly form = input.required<FormGroup>();
 
+  /** True cuando el caso nacio de otro de la misma estructura. */
+  readonly heredado = input(false);
+
   readonly requiereVivienda = model.required<string[]>();
   readonly serviciosAfectados = model.required<string[]>();
   readonly cultivos = model.required<string[]>();
@@ -197,12 +239,38 @@ export class PasoViviendaComponent {
 
   readonly esRural = computed(() => this.form().get('ubicacion.zona')?.value === Zona.Rural);
 
-  habitable(): boolean {
-    return this.form().get('vivienda.habitable')?.value === true;
+  /** true, false o null cuando todavia nadie respondio. */
+  habitable(): boolean | null {
+    const v = this.form().get('vivienda.habitable')?.value;
+    return v === true || v === false ? v : null;
+  }
+
+  fijarHabitable(valor: boolean): void {
+    this.form().get('vivienda.habitable')?.setValue(valor);
   }
 
   riesgo(): boolean {
     return this.form().get('vivienda.riesgoColapso')?.value === true;
+  }
+
+  /**
+   * Avisa cuando el nivel de dano y la habitabilidad se contradicen.
+   *
+   * Pasa mas de lo que parece: se escoge "Severo, inhabitable" en la lista y despues
+   * se responde que si se puede vivir ahi. Uno de los dos dato entra mal a la base y
+   * decide si la familia aparece o no en el listado de quienes necesitan techo.
+   *
+   * Avisa, no bloquea: en campo el voluntario puede tener una razon, y un formulario
+   * que bloquea es un formulario que se abandona.
+   */
+  incoherente(): boolean {
+    const nivel = this.form().get('vivienda.afectacion')?.value as string | null;
+    return this.habitable() === true && NIVELES_INHABITABLES.includes(nivel ?? '');
+  }
+
+  textoAfectacion(): string {
+    const nivel = this.form().get('vivienda.afectacion')?.value;
+    return this.afectaciones.find((o) => o.v === nivel)?.t.toLowerCase() ?? 'grave';
   }
 
   perdioMedioVida(): boolean {

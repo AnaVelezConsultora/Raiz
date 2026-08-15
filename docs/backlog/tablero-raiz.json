@@ -674,6 +674,85 @@
               ],
               "origen": "Defecto reportado en pruebas manuales, 15 de agosto de 2026",
               "nota": "HECHA. guardarPerfil corria en cada persistir(), asi que un caso borrado seguia ensenandole a la aplicacion. Persistir el nombre es correcto y es buen UX: el dato es del voluntario, no del registro. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.11",
+              "titulo": "Que un paso sin llenar no describa una familia sin problema",
+              "como": "coordinador de la mesa",
+              "quiero": "que los campos de dano no vengan con un valor por defecto",
+              "para": "que el silencio no entre a la base como una casa en buen estado",
+              "criterios": [
+                "Nivel de afectacion, habitabilidad y donde duerme la familia arrancan sin responder",
+                "La habitabilidad se pregunta con dos opciones, no con una casilla",
+                "Se distingue 'no se puede vivir ahi' de 'nadie pregunto'"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. El formulario traia afectacion en 'moderado', habitable en true y donde duerme en 'la misma vivienda'. Un paso que nadie llenaba describia una familia sin problema, y en un censo de damnificados el silencio no puede leerse como que la casa esta bien. La habitabilidad pasa de casilla a dos botones porque una casilla sin marcar no distingue 'no es habitable' de 'no me preguntaron', y de ese dato depende si la familia entra en la lista de quienes necesitan techo esta noche. Sesion del 15 de agosto de 2026."
+            },
+            {
+              "id": "HU 1.3.12",
+              "titulo": "Que el riesgo de colapso no dependa de que alguien se acuerde",
+              "como": "lider territorial",
+              "quiero": "que marcar riesgo de colapso deje el caso en P0 automaticamente",
+              "para": "que una familia bajo una estructura que se puede caer no quede en la cola normal",
+              "criterios": [
+                "Marcar riesgo de colapso fija prioridad P0 al guardar",
+                "El aviso dice que ya quedo en P0, no pide recordarlo",
+                "Se mantiene el aviso de avisar al coordinador el mismo dia"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. El aviso decia 'Marque prioridad P0 en el ultimo paso'. Una advertencia que hay que recordar un paso despues es una advertencia que se pierde, y lo que se pierde aqui es una familia durmiendo bajo algo que se puede caer. Sesion del 15 de agosto de 2026."
+            },
+            {
+              "id": "HU 1.3.13",
+              "titulo": "Avisar cuando el dano y la habitabilidad se contradicen",
+              "como": "coordinador de la mesa",
+              "quiero": "que el formulario avise si dice dano severo y a la vez que si se puede vivir ahi",
+              "para": "que no entre a la base un dato que decide si la familia recibe techo",
+              "criterios": [
+                "Avisa con severo, destruida o riesgo de colapso mas habitable en si",
+                "Avisa y no bloquea: en campo puede haber una razon",
+                "El aviso queda arriba, donde el teclado no lo tapa"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. Mismo criterio que el descuadre de personas del paso 2: avisar sin bloquear, porque un formulario que bloquea es un formulario que se abandona. Sesion del 15 de agosto de 2026."
+            },
+            {
+              "id": "HU 1.3.14",
+              "titulo": "Registrar la siguiente familia de la misma casa sin repetir la ubicacion",
+              "como": "lider territorial",
+              "quiero": "crear el caso de otra familia de la misma estructura con el lugar ya puesto",
+              "para": "no escribir cuatro veces la misma vereda cuando una casa alojaba cuatro familias",
+              "criterios": [
+                "Al guardar un caso donde vivian varias familias se ofrece registrar la siguiente",
+                "Se copia el lugar completo, incluida la coordenada ya tomada",
+                "Se copia el estado del INMUEBLE: afectacion, riesgo de colapso, materiales y servicios",
+                "NO se copia nada del hogar: ni nombre, ni documento, ni telefono, ni composicion",
+                "NO se copia la autorizacion: cada familia la da por separado",
+                "NO se copian tenencia ni donde duerme: son de cada familia",
+                "El paso 3 avisa que el estado del inmueble viene del registro anterior",
+                "El caso nuevo es independiente y tiene su propio identificador de origen"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. El ofrecimiento aparece al guardar, no en la lista: el voluntario todavia esta parado frente a la casa y en la lista ya no lo esta.\n\nQue se copia el estado del inmueble fue una correccion sobre la marcha. La primera version solo copiaba el lugar, y eso dejaba el registro parcial y obligaba a re-responder el dano de la MISMA casa: la grieta es la misma grieta, y volver a preguntarla invita a que un inmueble quede con 'severo' en una familia y 'moderado' en la siguiente, de modo que la entidad recibe dos verdades del mismo predio y ninguna sirve. Lo copiado queda editable y avisado.\n\nLa navegacion va por /nuevo?desde=<id> para que la creacion siga estando en un solo lugar. Se reacciona a los parametros de la ruta y no se leen una sola vez, porque Angular reutiliza el componente cuando solo cambian y el voluntario se quedaria mirando el caso que acaba de guardar."
             }
           ]
         },
