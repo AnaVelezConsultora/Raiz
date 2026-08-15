@@ -1,6 +1,6 @@
 import { Rol } from '@raiz/dominio';
 import { Injectable } from '@nestjs/common';
-import { Perfil, PerfilRepositorioPort } from '../../dominio/puertos';
+import { Perfil, PerfilRepositorioPort, UsuarioNuevo } from '../../dominio/puertos';
 import { PostgresPool } from './pool';
 
 /** Fila de `perfiles` tal como sale de la consulta. */
@@ -32,6 +32,32 @@ interface Fila {
 @Injectable()
 export class PerfilRepositorioPostgres implements PerfilRepositorioPort {
   constructor(private readonly pool: PostgresPool) {}
+
+  /**
+   * Escribe el usuario en `auth.users`, el espejo local de Cognito.
+   *
+   * De ese insert cuelga el disparador `tr_crear_perfil`, que crea la fila de
+   * `perfiles` con rol `lider` —el menos privilegiado— y `activo = true`. Ascender a
+   * alguien es despues una accion deliberada del custodio, no un efecto del alta.
+   *
+   * `on conflict do nothing` porque esto se puede reintentar: si el alta en Cognito
+   * salio bien y esta escritura fallo por un corte, el custodio repite la operacion y
+   * no debe encontrarse con un error de clave duplicada.
+   */
+  async reflejarDelProveedor(usuario: UsuarioNuevo): Promise<void> {
+    await this.pool.sinIdentidad(async (cliente) => {
+      await cliente.query(
+        `insert into auth.users (id, email, raw_user_meta_data)
+         values ($1, $2, $3::jsonb)
+         on conflict (id) do nothing`,
+        [
+          usuario.sub,
+          usuario.correo,
+          JSON.stringify({ nombre: usuario.nombre, telefono: usuario.telefono })
+        ]
+      );
+    });
+  }
 
   async porSub(sub: string): Promise<Perfil | null> {
     return this.pool.sinIdentidad(async (cliente) => {
