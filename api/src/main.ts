@@ -18,7 +18,12 @@ async function arrancar(): Promise<void> {
     origin: (process.env['ORIGENES_PERMITIDOS'] ?? 'http://localhost:4200,http://localhost:4300')
       .split(',')
       .map((o) => o.trim()),
-    methods: ['GET', 'POST'],
+    // DELETE esta aqui porque `DELETE /sesion` existe. Sin el, el navegador
+    // rechaza la peticion en el vuelo previo y cerrar sesion no funciona desde la
+    // PWA — solo desde una herramienta de linea de comandos, que es donde se
+    // habia probado. Se descubrio consultando las cabeceras contra el despliegue.
+    // La lista sigue sin PUT ni PATCH: no hay ninguna ruta que los use.
+    methods: ['GET', 'POST', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     maxAge: 3600
   });

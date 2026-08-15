@@ -12,22 +12,16 @@
 # desplegar una version nueva de la imagen.
 #
 # -----------------------------------------------------------------------------
-# LO QUE FALTA Y HAY QUE DECIR EN VOZ ALTA: TLS
+# ESTE GUION DEJA EL BALANCEADOR EN HTTP. NO TERMINA AHI
 # -----------------------------------------------------------------------------
 #
-# Hoy el balanceador escucha en HTTP. POST /sesion lleva la clave del voluntario
-# en el cuerpo, asi que sobre HTTP esa clave viaja en claro por internet.
+# El escucha de 443, el certificado y el nombre propio los pone desplegar-tls.sh,
+# que se corre INMEDIATAMENTE despues. Estan separados porque son dos
+# preocupaciones —una es el servicio, la otra el borde publico— y porque el de TLS
+# depende de la zona de Route 53, que el de la API no necesita para nada.
 #
-# NO SE USA CON CREDENCIALES REALES HASTA QUE HAYA TLS. Sirve para verificar que
-# el despliegue funciona, y para eso alcanza.
-#
-# La razon de que no este resuelto aqui es concreta: un certificado de ACM exige
-# un dominio propio y el proyecto todavia no tiene uno. Sin dominio, el camino que
-# si funciona es poner CloudFront delante, que trae certificado en su propio
-# nombre sin pedir nada. Es el siguiente paso, no una idea.
-#
-# El grupo de seguridad del balanceador YA acepta 443, de modo que ese dia no hay
-# que tocar la red: solo agregar el escucha.
+# Entre los dos hay una ventana en la que POST /sesion acepta claves en claro. No
+# se usa con credenciales reales dentro de esa ventana.
 #
 # -----------------------------------------------------------------------------
 # UNA SOLA TAREA
@@ -162,9 +156,14 @@ fi
 ARN_API="$(aws_ secretsmanager describe-secret --secret-id raiz/base-api --query 'ARN' --output text)"
 
 # ORIGENES_PERMITIDOS es el unico valor de esta lista que no sale de la
-# infraestructura sino de donde se sirva la PWA. Mientras no haya dominio propio
-# se dejan los de desarrollo, que es lo que hay.
-ORIGENES="${ORIGENES_PERMITIDOS:-http://localhost:4200,http://localhost:4300}"
+# infraestructura sino de donde se sirva la PWA. Son los dos nombres del frente
+# —CLAUDE.md los fija— mas los de desarrollo.
+#
+# Los de localhost se quedan a proposito: quien programa la PWA la levanta en su
+# maquina y la apunta a esta API para probar contra datos reales de prueba. Si se
+# quitan, ese ciclo se rompe y la unica forma de probar pasa a ser desplegar, que
+# es justo lo que el ADR 004 no quiere.
+ORIGENES="${ORIGENES_PERMITIDOS:-https://apoyo-colombia.com,https://www.apoyo-colombia.com,http://localhost:4200,http://localhost:4300}"
 
 cat >"$TMP/tarea.json" <<JSON
 {
@@ -262,8 +261,21 @@ ENV
 
 echo ""
 echo "==> listo"
-echo "    API en:  http://$DNS_ALB"
-echo "    Salud:   curl http://$DNS_ALB/salud"
-echo ""
-echo "    RECUERDE: esto es HTTP. La clave de POST /sesion viaja en claro."
-echo "    No se usa con credenciales reales hasta que haya TLS."
+
+# Se consulta el estado real en vez de anunciar siempre lo mismo. Un guion que
+# advierte "falta TLS" cuando TLS ya esta puesto ensena a no leer sus avisos, y
+# entonces tampoco se lee el dia que el aviso es cierto.
+HAY_443="$(aws_ elbv2 describe-listeners --load-balancer-arn "$ARN_ALB" \
+  --query "Listeners[?Port==\`443\`] | [0].ListenerArn" --output text 2>/dev/null || true)"
+
+if [ -z "$HAY_443" ] || [ "$HAY_443" = "None" ]; then
+  echo "    Balanceador en: $DNS_ALB  (solo HTTP)"
+  echo ""
+  echo "    FALTA EL PASO DE TLS. Hasta que corra ./desplegar-tls.sh, la clave de"
+  echo "    POST /sesion viaja en claro y esto no se usa con credenciales reales."
+  echo ""
+  echo "    Siguiente: ./desplegar-tls.sh"
+else
+  echo "    API en: https://api.apoyo-colombia.com"
+  echo "    Salud:  curl https://api.apoyo-colombia.com/salud"
+fi

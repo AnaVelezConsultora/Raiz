@@ -154,8 +154,9 @@ intermitente de la vereda, que es donde este sistema tiene que aguantar.
 ### Revisión independiente
 
 Un integrante del equipo revisó la documentación contra el código y encontró ocho
-defectos, todos válidos. El despliegue del 15 de agosto destapó dos más, que solo se
-ven cuando la API corre contra una base donde no es dueña de las tablas. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
+defectos, todos válidos. El despliegue del 15 de agosto destapó tres más: dos que solo se
+ven cuando la API corre contra una base donde no es dueña de las tablas, y uno que solo
+se ve desde un navegador. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
 [SEGURIDAD.md](../supabase/SEGURIDAD.md).
 
 | | Hallazgo | Estado |
@@ -168,6 +169,7 @@ ven cuando la API corre contra una base donde no es dueña de las tablas. Están
 | H8, H12, H13 | Imprecisiones de documentación y ausencia de pruebas automáticas | Pendiente |
 | H15 | La API no podía leer perfiles ni escribir en `auth.users`: ningún inicio de sesión contra la nube era posible | **Corregido** |
 | H16 | El alta de voluntarios no es idempotente, aunque su documentación lo afirma | Pendiente |
+| H17 | CORS no permitía `DELETE`, así que cerrar sesión desde la PWA no habría funcionado | **Corregido** |
 
 H14 era bloqueante: el esquema completo habría fallado al ejecutarse el día que alguien
 creara la base.
@@ -180,7 +182,7 @@ creara la base.
 |---|---|---|
 | F1 Captura offline | Funcionando | — |
 | F2 Identidad y acceso | **Registro y acceso funcionando contra la nube real** | — |
-| F3 Sincronización y servidor | **Desplegada en Fargate contra RDS.** Falta TLS | — |
+| F3 Sincronización y servidor | **Desplegada en `api.apoyo-colombia.com`, con TLS** | — |
 | F4 Tablero y mapa | Abierto, bloqueado por una decisión | F7 |
 | F5 Remisiones y seguimiento | Abierto | F3 |
 | F6 Calidad y prueba en campo | **Empieza ya, no depende de nada** | — |
@@ -268,18 +270,24 @@ correr las veces que haga falta sin duplicar nada.
 | Base | RDS PostgreSQL 16.14, `db.t4g.micro`, cifrada, en subredes **sin ruta a internet**. |
 | Esquema | Lo aplica una tarea efímera **dentro** de la VPC, no una persona. Migraciones numeradas con registro: aplicar dos veces no repite ninguna. |
 | API | Fargate, ARM64, una réplica de 0,25 vCPU, detrás de un balanceador. |
+| Borde | HTTPS con certificado comodín; el 80 solo redirige. Nombre propio en Route 53. |
 | Presupuesto | 50 USD/mes con cuatro avisos, configurado **antes** del primer recurso. |
 
-Verificado contra el despliegue real, no supuesto: el custodio inicia sesión y recibe
-un token de 12 horas con su rol leído del perfil; da de alta un voluntario, que nace
-con el rol menos privilegiado; ese voluntario inicia sesión y **no** puede dar de alta
-a nadie. `GET /salud` responde `disponible: true`.
+Verificado contra el despliegue real y sobre HTTPS, no supuesto: el custodio inicia
+sesión y recibe un token de 12 horas con su rol leído del perfil; da de alta un
+voluntario, que nace con el rol menos privilegiado; ese voluntario inicia sesión y
+**no** puede dar de alta a nadie. `GET /salud` responde `disponible: true`, y un
+origen que no está en la lista no recibe permiso de CORS.
 
-**Lo que falta y no se puede omitir: TLS.** El balanceador escucha en HTTP, de modo
-que la clave de `POST /sesion` viaja en claro. **No se usa con credenciales reales
-hasta que eso se resuelva.** No está hecho porque un certificado exige un dominio
-propio y el proyecto no tiene uno; el camino que no lo exige es poner CloudFront
-delante, que trae certificado a su nombre.
+**La API tiene nombre propio y TLS: `https://api.apoyo-colombia.com`.** Certificado
+comodín de ACM, TLS 1.3, y el puerto 80 dejó de servir la API — su única acción es
+redirigir con 301. No se cierra, porque un enlace viejo pegado en el grupo de WhatsApp
+acabaría en una conexión rechazada sin ninguna pista; con la redirección esa petición
+llega cifrada. No queda ninguna ruta por la que una clave viaje en claro.
+
+El dominio se administra en Route 53 y el certificado lo renueva ACM solo, mientras el
+registro CNAME de validación siga en la zona. El frente irá en `apoyo-colombia.com` y
+`www`, y ya están en la lista de orígenes que la API acepta.
 
 Dos cosas quedaron decididas y conviene que no se reabran por error:
 

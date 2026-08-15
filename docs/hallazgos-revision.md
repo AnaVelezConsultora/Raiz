@@ -331,6 +331,23 @@ vez de prometer que repetir alcanza. La primera es la que resuelve el problema.
 
 ---
 
+## H17 · Grave · CORS no permitía DELETE: cerrar sesión no habría funcionado — CORREGIDO
+
+`main.ts` declaraba `methods: ['GET', 'POST']`, pero `sesion.controller.ts` expone
+`DELETE /sesion`. Un navegador consulta antes de mandar una petición así, y esa
+consulta previa habría respondido `access-control-allow-methods: GET,POST`: el
+navegador cancela la petición y **cerrar sesión desde la PWA falla**.
+
+**Por qué no se había visto.** Todas las pruebas de las rutas se hicieron con `curl`,
+que no aplica CORS — es una regla que impone el navegador, no el servidor. `DELETE
+/sesion` respondía 204 en cada prueba y seguiría respondiendo 204 para siempre, sin
+que ningún voluntario pudiera usarla.
+
+Apareció al consultar las cabeceras contra el despliegue con un origen real. La lista
+sigue sin `PUT` ni `PATCH`: ninguna ruta los usa.
+
+---
+
 ## Desajustes menores
 
 No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
@@ -358,6 +375,7 @@ No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
 | F7 decide | H7, H8, H12 | Tienen consecuencia jurídica y de operación; no son llamadas de quien programa |
 | Continuo | H13 | Empieza con las pruebas de acceso ya incluidas |
 | Hecho | H15 | Sin esto no había inicio de sesión posible contra la nube |
+| Hecho | H17 | Cerrar sesión desde la PWA no habría funcionado nunca |
 | Antes del primer voluntario real | H16 | Hoy un fallo a mitad deja una cuenta que no se puede reparar repitiendo |
 
 ---
