@@ -9,7 +9,7 @@
 -- =============================================================================
 
 insert into organizaciones (nombre, tipo, contacto, telefono) values
-  ('Junta de Accion Comunal La Mirandita (ficticia)', 'junta',      'Contacto de prueba', '3000000001'),
+  ('Junta de Accion Comunal Ficticia Uno', 'junta',      'Contacto de prueba', '3000000001'),
   ('Asociacion Campesina El Ejemplo (ficticia)',     'asociacion', 'Contacto de prueba', '3000000002'),
   ('Comite de Prueba Casco Urbano (ficticio)',       'comite',     'Contacto de prueba', '3000000003')
 on conflict (nombre) do nothing;
