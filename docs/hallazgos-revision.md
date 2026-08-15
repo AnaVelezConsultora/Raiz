@@ -310,7 +310,7 @@ que el mismo INSERT sin la cláusula entra sin problema.
 
 ---
 
-## H16 · Medio · El alta de voluntarios no es idempotente, aunque su documentación lo afirme
+## H16 · Medio · El alta de voluntarios no es idempotente, aunque su documentación lo afirme — CORREGIDO
 
 `registrar-voluntario.service.ts` dice, sobre el fallo a mitad de camino:
 
@@ -328,6 +328,22 @@ propio comentario decía que no iba a quedar.
 Es de código, no de esquema, y hay dos salidas: que el alta tolere el «ya existe» de
 Cognito y siga hasta la segunda escritura, o que el mensaje de error diga qué hacer en
 vez de prometer que repetir alcanza. La primera es la que resuelve el problema.
+
+**Corregido con la primera.** El adaptador de Cognito ya no se rinde: consulta la cuenta
+existente y devuelve su identificador. Quien decide qué significa eso es el servicio,
+que es el único que sabe si la persona tiene perfil — con perfil es un duplicado y se
+rechaza; sin perfil es el alta rota y se completa.
+
+**La parte delicada fue la clave.** Reponerla siempre habría convertido «dar de alta» en
+«restablecer la clave de quien sea» sin decirlo: el custodio que da de alta por descuido
+a alguien que ya existe le cambiaría la clave, y esa persona no podría entrar al día
+siguiente sin saber por qué. Se distingue por el estado que escribe el propio Cognito:
+`FORCE_CHANGE_PASSWORD` significa que la clave nunca llegó a fijarse y hay que
+terminarla; `CONFIRMED` significa que la cuenta está completa y su clave es de su dueño.
+
+Verificado contra el despliegue provocando un alta a medias a propósito: repetirla
+devuelve 201 y la cuenta entra; repetirla otra vez devuelve 422; y la clave del intento
+duplicado **no** se aplicó.
 
 ---
 
@@ -376,7 +392,7 @@ No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
 | Continuo | H13 | Empieza con las pruebas de acceso ya incluidas |
 | Hecho | H15 | Sin esto no había inicio de sesión posible contra la nube |
 | Hecho | H17 | Cerrar sesión desde la PWA no habría funcionado nunca |
-| Antes del primer voluntario real | H16 | Hoy un fallo a mitad deja una cuenta que no se puede reparar repitiendo |
+| Hecho | H16 | Un alta interrumpida ya se repara repitiendola |
 
 ---
 

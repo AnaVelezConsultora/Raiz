@@ -26,6 +26,7 @@ Desde cero, en este orden. Cada guion escribe lo que el siguiente necesita en
 | 8 | `desplegar-api.sh` | El servicio en Fargate y el balanceador | ~4 min |
 | 9 | `desplegar-tls.sh` | Certificado, redirección y `api.apoyo-colombia.com` | ~1 min |
 | 10 | `crear-custodio.sh <correo> <nombre>` | El primer custodio | ~1 min |
+| 11 | `desplegar-identidad-federada.sh` | Rol del pipeline sin llaves, y rol de solo lectura de registros | segundos |
 
 **El presupuesto va primero y no es formalismo.** AWS evalúa un presupuesto desde
 que existe, así que una alerta configurada el martes no dice nada de lo que se
@@ -60,19 +61,54 @@ grupo de seguridad solo acepta al de la API — por grupo y no por rango, porque
 tarea cambia de IP al reciclarse y el grupo no. Por eso el esquema lo carga una
 tarea efímera adentro: abrirla «un rato» es la puerta que después nadie cierra.
 
+## Desplegar sin llaves
+
+`desplegar-identidad-federada.sh` deja montado lo que el flujo
+[`.github/workflows/desplegar.yml`](../../.github/workflows/desplegar.yml) necesita:
+GitHub firma un token que dice de qué rama viene, AWS lo verifica y entrega
+credenciales de una hora. **No hay que crear ningún secreto en GitHub.** Si alguien
+agrega un `AWS_ACCESS_KEY_ID` a la configuración del repositorio, está deshaciendo
+esto.
+
+La confianza está acotada a `refs/heads/main` con `StringEquals`, no con comodín.
+Sin esa acotación, cualquiera que abra una propuesta de cambio con el flujo
+modificado desplegaría a producción — y abrir una propuesta puede hacerlo quien
+sea. Por eso el flujo de verificación no pide `id-token` siquiera: las propuestas
+compilan y construyen las imágenes, y no tocan la nube.
+
+El pipeline **no puede** crear ni borrar red, base, roles ni leer secretos. Esa
+clase de cambio la hace una persona. Un pipeline que puede borrar la base es un
+pipeline que un día la borra.
+
+**Queda una llave de larga vida viva**: la del usuario que corrió todo esto por
+primera vez. Retirarla es el último paso, y va después de comprobar que el
+pipeline despliega solo. Es la deuda [D3](../../docs/DEUDA-TECNICA.md), la de mayor
+riesgo abierta.
+
+## La protección contra borrado
+
+La instancia la tiene activa. Es una decisión de quien responde por el proyecto:
+esto atiende una emergencia humanitaria, y un borrado accidental no cuesta una
+tarde sino el padrón de familias ya caracterizadas.
+
+El precio es que `delete-db-instance` falla. Para destruir el entorno de verdad hay
+que apagarla a propósito primero:
+
+```sh
+aws rds modify-db-instance --db-instance-identifier raiz-base \
+  --no-deletion-protection --apply-immediately
+```
+
+Ese paso extra **es** la protección. `desplegar-base.sh` la vuelve a activar en cada
+corrida, porque lo que pasa después de una destrucción es que nadie se acuerda de
+encenderla otra vez.
+
 ## Lo que falta
 
-- **`sslmode=no-verify`** entre la API y RDS. Se cifra, no se valida la autoridad:
-  el paquete de certificados de Amazon no está en la imagen. El tráfico no sale de
-  la VPC, así que protege contra escucha pasiva y no contra alguien ya adentro.
-- **La instancia no tiene protección contra borrado.** Es lo que permite destruirla
-  y volverla a levantar, que es criterio de la HU 1.1.1. **Hay que invertirlo antes
-  de que entre la primera familia real.**
-- **Sin rotación automática de claves.** Rotarlas hoy es cambiar el secreto y
-  volver a correr `aplicar-migraciones.sh`, que las reconcilia.
-- **Nada de esto está en un pipeline.** Los guiones se corren a mano desde una
-  máquina con credenciales. Es la HU 1.1.2, y hasta que exista sigue habiendo una
-  llave de larga vida.
+Está en [DEUDA-TECNICA.md](../../docs/DEUDA-TECNICA.md), cada entrada con la
+condición escrita que obliga a pagarla. En resumen: la llave de larga vida (D3, la
+urgente), el certificado de RDS sin validar (D1), las claves sin rotación
+automática (D2) y estos guiones sin código declarativo detrás (D4).
 
 ## El primer custodio
 

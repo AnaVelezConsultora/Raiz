@@ -48,8 +48,22 @@ export interface VoluntarioCreado {
  *
  * Si la segunda falla, queda una cuenta en Cognito sin perfil: el voluntario podria
  * autenticarse pero no entrar, y la API se lo dice con todas las letras. Repetir el
- * alta lo arregla, porque las dos escrituras son idempotentes. Al reves —perfil sin
- * cuenta— seria peor: una fila con rol y sin nadie detras.
+ * alta lo arregla. Al reves —perfil sin cuenta— seria peor: una fila con rol y sin
+ * nadie detras.
+ *
+ * QUE "REPETIR LO ARREGLA" SEA CIERTO COSTO UNA CORRECCION (H16)
+ *
+ * Este comentario decia que las dos escrituras eran idempotentes, y no lo eran. La
+ * primera —Cognito— respondia que el correo ya existe, asi que el reintento moria
+ * ahi y la segunda no llegaba a intentarse NUNCA. La cuenta a medias se quedaba a
+ * medias para siempre y solo se arreglaba borrandola del proveedor a mano.
+ *
+ * Se descubrio probando contra el despliegue, no leyendo el codigo: en el entorno
+ * local nunca se habia interrumpido un alta entre las dos escrituras.
+ *
+ * Ahora el adaptador de Cognito si es idempotente —busca la cuenta existente en vez
+ * de rendirse— y este servicio decide que significa que ya exista, mirando si la
+ * persona tiene perfil.
  *
  * @version 0.1.0
  */
@@ -72,7 +86,31 @@ export class RegistrarVoluntarioService {
     const correo = alta.correo.trim().toLowerCase();
     const nombre = alta.nombre.trim();
 
-    const sub = await this.proveedor.crearVoluntario(correo, nombre, alta.telefono, alta.clave);
+    const { sub, yaExistia } = await this.proveedor.crearVoluntario(
+      correo,
+      nombre,
+      alta.telefono,
+      alta.clave
+    );
+
+    // La cuenta ya estaba en el proveedor. Hay dos situaciones detras de eso y se
+    // parecen mucho, pero exigen respuestas opuestas:
+    //
+    //   tiene perfil  -> el alta esta completa. Repetirla es un descuido y se
+    //                    rechaza, que es lo que el custodio necesita saber.
+    //   sin perfil    -> el alta anterior se corto entre las dos escrituras. Ese
+    //                    es el estado roto que hay que reparar, no denunciar.
+    //
+    // El proveedor de identidad no puede distinguirlos porque no sabe nada de
+    // perfiles. Por eso la decision esta aqui.
+    if (yaExistia) {
+      const perfil = await this.perfiles.porSub(sub);
+      if (perfil) {
+        throw new ErrorRechazo('Ya hay un voluntario con ese correo.');
+      }
+      this.log.warn(`Alta a medias de ${sub}: existe en el proveedor y no tenia perfil. Se completa.`);
+    }
+
     await this.perfiles.reflejarDelProveedor({ sub, correo, nombre, telefono: alta.telefono });
 
     this.log.log(`Voluntario ${sub} dado de alta por ${quienPide.sub}`);

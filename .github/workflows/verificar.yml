@@ -1,0 +1,59 @@
+# =============================================================================
+# Verificacion de cada propuesta de cambio.
+#
+# ESTE FLUJO NO RECIBE CREDENCIALES DE AWS, Y ESO ES EL DISENO.
+#
+# Abrir una propuesta de cambio puede hacerlo cualquiera, y una propuesta puede
+# modificar este mismo archivo. Si aqui hubiera acceso a la nube, cualquier persona
+# de internet podria pedir credenciales de produccion abriendo una propuesta con un
+# flujo alterado. Es el error clasico de este montaje y no da la cara hasta que
+# alguien lo usa.
+#
+# Por eso `permissions: contents: read` y nada mas: no hay `id-token`, asi que
+# GitHub ni siquiera emite un token que AWS pudiera aceptar. Desplegar es otro
+# flujo, y solo corre sobre lo que ya paso por revision.
+# =============================================================================
+name: Verificar
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  compilar:
+    name: Compila y empaqueta
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # `npm ci` y no `npm install`: instala exactamente lo que dice el lock y
+      # falla si no coinciden. Ya hizo su trabajo una vez, al detectar que el lock
+      # no incluia el SDK de Cognito.
+      - name: Instalar
+        run: npm ci
+
+      - name: Compilar el dominio compartido
+        run: npm run build --workspace @raiz/dominio
+
+      - name: Compilar la API
+        run: npm run build --workspace @raiz/api
+
+      # Se construye la imagen sin subirla. Es la comprobacion de que el
+      # Dockerfile sigue sirviendo: compilar con tsc y construir la imagen son dos
+      # cosas distintas, y la segunda es la que se rompe cuando alguien agrega un
+      # archivo y olvida copiarlo.
+      - name: Construir la imagen de la API
+        run: docker build -f api/Dockerfile -t raiz-api:verificacion .
+
+      - name: Construir la imagen de migraciones
+        run: docker build -f entorno/aws/migraciones/Dockerfile -t raiz-migraciones:verificacion .

@@ -40,10 +40,20 @@
 #   dato que no puede perderse vive en el celular del voluntario hasta que el
 #   servidor confirma, asi que una caida de la base retrasa la sincronizacion, no
 #   borra nada.
-# - Sin proteccion contra borrado, HOY. La HU 1.1.1 pide poder destruir el entorno
-#   completo, y la proteccion lo impide. El dia que entre la primera familia real
-#   hay que ponerla en true; queda anotado aqui porque ese dia nadie va a estar
-#   leyendo este archivo.
+# - CON proteccion contra borrado. Se activo el 15 de agosto, y la decision es de
+#   quien responde por el proyecto: esto atiende una emergencia humanitaria, de
+#   modo que un borrado accidental no cuesta una tarde de trabajo sino el padron
+#   de familias que ya fueron caracterizadas una vez.
+#
+#   Tiene un precio y conviene saberlo: la HU 1.1.1 pide poder destruir el entorno
+#   completo desde cero, y con esto activo `delete-db-instance` falla. Para
+#   destruirlo de verdad hay que apagarla a proposito primero:
+#
+#     aws rds modify-db-instance --db-instance-identifier raiz-base \
+#       --no-deletion-protection --apply-immediately
+#
+#   Ese paso extra ES la proteccion. Que borrar exija una decision explicita y no
+#   un descuido es exactamente lo que se quiere.
 # - Sin rotacion automatica de claves. Las claves se generan una vez y quedan en
 #   Secrets Manager. Rotarlas exige un Lambda y una ventana de reconexion.
 # =============================================================================
@@ -157,7 +167,7 @@ if [ -z "$ESTADO" ] || [ "$ESTADO" = "None" ]; then
     --preferred-backup-window "07:00-08:00" \
     --auto-minor-version-upgrade \
     --copy-tags-to-snapshot \
-    --no-deletion-protection \
+    --deletion-protection \
     --tags "Key=Proyecto,Value=Raiz" "Key=Datos,Value=sensibles" \
            "Key=Gestion,Value=entorno/aws/desplegar-base.sh" >/dev/null
 
@@ -182,6 +192,25 @@ fi
 echo ""
 echo "==> esperando a que la instancia este disponible (8 a 12 minutos)"
 aws_ rds wait db-instance-available --db-instance-identifier "$INSTANCIA"
+
+# -----------------------------------------------------------------------------
+# 2b. La proteccion contra borrado se reconcilia SIEMPRE
+# -----------------------------------------------------------------------------
+# No basta con pedirla al crear. Para destruir el entorno hay que apagarla, y lo
+# que pasa despues es que nadie la vuelve a encender: la instancia queda
+# desprotegida por el resto de su vida sin que nada lo indique. Comprobarlo en
+# cada corrida hace que el estado desprotegido dure lo que dure la destruccion.
+echo ""
+echo "==> proteccion contra borrado"
+PROTEGIDA="$(aws_ rds describe-db-instances --db-instance-identifier "$INSTANCIA" \
+  --query 'DBInstances[0].DeletionProtection' --output text)"
+if [ "$PROTEGIDA" = "True" ]; then
+  echo "    ya estaba activa"
+else
+  aws_ rds modify-db-instance --db-instance-identifier "$INSTANCIA" \
+    --deletion-protection --apply-immediately >/dev/null
+  echo "    activada"
+fi
 
 ANFITRION="$(aws_ rds describe-db-instances --db-instance-identifier "$INSTANCIA" \
   --query 'DBInstances[0].Endpoint.Address' --output text)"

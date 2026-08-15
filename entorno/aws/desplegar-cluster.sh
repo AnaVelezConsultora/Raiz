@@ -18,11 +18,11 @@
 #                       ve ni puede usarlo.
 #
 #   raiz-ecs-tarea      lo usa el CODIGO ya corriendo. Aqui adentro solo hay
-#                       permiso para dos operaciones sobre un pool de Cognito.
+#                       permiso para tres operaciones sobre un pool de Cognito.
 #
 # Separarlos es lo que hace que una falla en la API no alcance los secretos. Si
 # alguien lograra ejecutar codigo dentro del contenedor, tendria el rol de tarea
-# —dos llamadas a Cognito— y no el de ejecucion, que es el que puede leer la clave
+# —tres llamadas a Cognito— y no el de ejecucion, que es el que puede leer la clave
 # de la base. Con un rol unico, que es lo comodo, esa distincion no existe.
 # =============================================================================
 set -e
@@ -137,10 +137,16 @@ echo "    politicas: ECR + registros + los dos secretos de Raiz"
 
 echo ""
 echo "==> rol de tarea"
-ARN_TAREA="$(rol raiz-ecs-tarea 'Lo usa el codigo de la API. Dos operaciones sobre un pool de Cognito.')"
+ARN_TAREA="$(rol raiz-ecs-tarea 'Lo usa el codigo de la API. Tres operaciones sobre un pool de Cognito.')"
 
-# Dos acciones, un recurso. AdminCreateUser y AdminSetUserPassword son
-# exactamente lo que hace POST /voluntarios (cognito-admin.ts) y nada mas.
+# Tres acciones, un recurso. Son exactamente las que hace POST /voluntarios
+# (cognito-admin.ts) y ni una mas.
+#
+# AdminGetUser se agrego con la correccion del hallazgo H16: cuando el correo ya
+# existe, el alta ya no se rinde — consulta la cuenta para saber su identificador y
+# si quedo a medias. Sin este permiso, reparar un alta interrumpida seria imposible.
+# Es de LECTURA sobre el mismo pool que la API ya puede escribir, asi que no amplia
+# lo que alcanza: solo le deja mirar antes de escribir.
 #
 # InitiateAuth NO esta aqui, y no es un olvido: es una API sin firmar —quien se
 # autentica es el voluntario, no la cuenta— asi que no consume este rol. Por eso
@@ -153,7 +159,8 @@ aws_ iam put-role-policy --role-name raiz-ecs-tarea \
       \"Effect\": \"Allow\",
       \"Action\": [
         \"cognito-idp:AdminCreateUser\",
-        \"cognito-idp:AdminSetUserPassword\"
+        \"cognito-idp:AdminSetUserPassword\",
+        \"cognito-idp:AdminGetUser\"
       ],
       \"Resource\": \"arn:aws:cognito-idp:$REGION:$CUENTA:userpool/$COGNITO_USER_POOL_ID\"
     }]

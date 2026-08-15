@@ -123,9 +123,36 @@ export interface UsuarioNuevo {
  * organizacion con credenciales de cuenta. Son dos poderes muy distintos y conviene
  * que se vean distintos tambien en el codigo.
  */
+/** Lo que devuelve un alta en el proveedor de identidad. */
+export interface AltaEnProveedor {
+  /** Identificador que el proveedor asigno a la persona. */
+  sub: string;
+
+  /**
+   * La cuenta ya estaba en el proveedor y esta llamada no la creo.
+   *
+   * No es un error: puede ser un alta repetida por descuido —y entonces hay que
+   * rechazarla— o el segundo intento de un alta que quedo a medias, y entonces hay
+   * que dejarla terminar. Quien puede distinguir los dos casos no es el proveedor
+   * de identidad sino quien sabe si la persona tiene perfil, asi que el dato sube
+   * y la decision se toma arriba.
+   */
+  yaExistia: boolean;
+}
+
 export interface AdministradorIdentidadPort {
-  /** Crea la cuenta y le fija clave definitiva. Devuelve el `sub` asignado. */
-  crearVoluntario(correo: string, nombre: string, telefono: string | null, clave: string): Promise<string>;
+  /**
+   * Crea la cuenta y le fija clave definitiva.
+   *
+   * Es IDEMPOTENTE: si la cuenta ya existe no falla, la busca y devuelve su `sub`
+   * con `yaExistia`. Es lo que permite reparar un alta interrumpida repitiendola.
+   */
+  crearVoluntario(
+    correo: string,
+    nombre: string,
+    telefono: string | null,
+    clave: string
+  ): Promise<AltaEnProveedor>;
 }
 
 // =============================================================================

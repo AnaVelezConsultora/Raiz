@@ -168,7 +168,7 @@ se ve desde un navegador. Están en [hallazgos-revision.md](hallazgos-revision.m
 | H10 | La cola no consulta si la sesión sigue vigente | Pendiente |
 | H8, H12, H13 | Imprecisiones de documentación y ausencia de pruebas automáticas | Pendiente |
 | H15 | La API no podía leer perfiles ni escribir en `auth.users`: ningún inicio de sesión contra la nube era posible | **Corregido** |
-| H16 | El alta de voluntarios no es idempotente, aunque su documentación lo afirma | Pendiente |
+| H16 | El alta de voluntarios no es idempotente, aunque su documentación lo afirma | **Corregido** |
 | H17 | CORS no permitía `DELETE`, así que cerrar sesión desde la PWA no habría funcionado | **Corregido** |
 
 H14 era bloqueante: el esquema completo habría fallado al ejecutarse el día que alguien
@@ -191,7 +191,9 @@ creara la base.
 
 El estándar de confiabilidad que debe cumplir la información está en
 [ESTANDAR-PROBATORIO.md](ESTANDAR-PROBATORIO.md), con nueve brechas identificadas y su
-prioridad.
+prioridad. Los atajos que se tomaron a sabiendas están en
+[DEUDA-TECNICA.md](DEUDA-TECNICA.md), cada uno con la condición escrita que obliga a
+volver sobre él.
 
 Detalle de cada frente en [FRENTES.md](FRENTES.md). El desglose en historias está en
 Trello, organizado en cinco hitos con 43 historias; la fuente es
@@ -296,6 +298,17 @@ Dos cosas quedaron decididas y conviene que no se reabran por error:
 - **La base no recibe tráfico público.** Su grupo de seguridad solo acepta al
   contenedor. Por eso el esquema se carga desde adentro: abrir la base «un rato» es la
   puerta que después nadie cierra.
+- **La base tiene protección contra borrado.** Esto atiende una emergencia humanitaria:
+  un borrado accidental no cuesta una tarde de trabajo sino el padrón de familias que
+  ya fueron caracterizadas una vez. Destruir el entorno sigue siendo posible, pero exige
+  apagarla a propósito primero — ese paso extra **es** la protección.
+
+**El pipeline se autentica sin llaves.** GitHub firma un token que dice de qué rama
+viene; AWS lo verifica y entrega credenciales que duran una hora. No hay ningún secreto
+de AWS en el repositorio, y la confianza está acotada a `refs/heads/main`: una propuesta
+de cambio no puede asumir el rol por mucho que altere el flujo. Queda una llave de larga
+vida —la de quien montó todo esto— y retirarla es la deuda [D3](DEUDA-TECNICA.md), la de
+mayor riesgo que hay abierta.
 
 ### El bloqueo real que queda
 
