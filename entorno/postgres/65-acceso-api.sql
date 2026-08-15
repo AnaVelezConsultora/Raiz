@@ -47,6 +47,19 @@
 --
 -- Se deja el DROP y no solo la ausencia: las bases ya creadas tienen la politica
 -- adentro, y un archivo que solo omite algo no lo retira de donde ya esta.
+--
+-- OJO CON LA BASE QUE YA ESTA DESPLEGADA: este archivo NO la va a tocar. El
+-- aplicador lleva registro por nombre de archivo y `005-acceso-api.sql` ya figura
+-- como aplicada, asi que no vuelve a correr aunque su contenido cambie. Alli la
+-- politica sigue existiendo, y mientras siga, la API funciona igual: la lectura con
+-- identidad no depende de ella.
+--
+-- Retirarla en produccion es una migracion nueva y numerada, y va en un despliegue
+-- POSTERIOR al que lleve este codigo. No por formalidad: el despliegue aplica las
+-- migraciones ANTES de que la version nueva reciba trafico, de modo que soltar el
+-- DROP en la misma entrega dejaria unos minutos a la version vieja —la que lee sin
+-- identidad— sin poder resolver ningun ingreso. Es la misma regla que ya declara la
+-- HU 1.1.3: nada se elimina en la misma entrega en que deja de usarse.
 drop policy if exists perfil_lee_en_login on perfiles;
 
 -- -----------------------------------------------------------------------------
