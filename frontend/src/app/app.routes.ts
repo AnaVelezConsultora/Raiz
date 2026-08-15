@@ -19,6 +19,13 @@ export const routes: Routes = [
       import('./features/auth/acceso.component').then((m) => m.AccesoComponent)
   },
   {
+    path: 'registro',
+    title: 'Pedir una cuenta · Raíz',
+    canActivate: [invitadoGuard],
+    loadComponent: () =>
+      import('./features/auth/registro.component').then((m) => m.RegistroComponent)
+  },
+  {
     path: 'casos',
     title: 'Casos · Raíz',
     canActivate: [sesionGuard],

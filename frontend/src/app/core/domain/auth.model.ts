@@ -48,9 +48,57 @@ export interface ResultadoAcceso {
   sinConexion: boolean;
 }
 
-/** Puerto de autenticacion. Lo implementa el adaptador de Supabase. */
+/** Datos con que un voluntario pide una cuenta. */
+export interface DatosRegistro {
+  nombre: string;
+  correo: string;
+  clave: string;
+  telefono: string | null;
+  /** Junta, comite o asociacion por la que llega. Texto libre: no es un catalogo. */
+  organizacion: string | null;
+}
+
+/** Resultado de pedir una cuenta. */
+export interface ResultadoRegistro {
+  exito: boolean;
+  /**
+   * True cuando la cuenta quedo creada pero todavia no puede entrar.
+   *
+   * Es el caso normal, no una excepcion: ver la nota sobre por que el registro es
+   * abierto pero la cuenta nace inactiva.
+   */
+  pendienteDeActivacion: boolean;
+  error?: string;
+  sinConexion: boolean;
+}
+
+/** Puerto de autenticacion. Lo implementa el adaptador contra la API propia. */
 export interface AuthPort {
   iniciarSesion(credenciales: CredencialesAcceso): Promise<ResultadoAcceso>;
+
+  /**
+   * Pide una cuenta.
+   *
+   * CONTRATO CON LA API: `POST /registro`, ruta abierta.
+   * Cuerpo: { nombre, correo, clave, telefono, organizacion }
+   * Respuesta 201: { pendienteDeActivacion: boolean }
+   * 409 si el correo ya existe. 422 si los datos no sirven.
+   *
+   * POR QUE EL REGISTRO ES ABIERTO PERO LA CUENTA NACE INACTIVA
+   *
+   * En una emergencia no se puede poner friccion para sumar voluntarios: quien
+   * quiera ayudar tiene que poder pedir su cuenta a las once de la noche, sin
+   * esperar a que alguien conteste un mensaje.
+   *
+   * Pero tampoco puede entrar informacion de familias reales al registro sin que
+   * alguien responda por quien la levanto. Por eso la cuenta se crea con el rol
+   * MENOS privilegiado y con `activo = false`: el voluntario puede registrarse,
+   * conocer la herramienta y practicar, y la custodia de datos la activa cuando
+   * confirma quien es.
+   *
+   * Las dos cosas a la vez: cero friccion para sumarse, cero datos sin responsable.
+   */
+  registrar(datos: DatosRegistro): Promise<ResultadoRegistro>;
   cerrarSesion(): Promise<void>;
   /** Sesion vigente segun el servidor. Null si no hay o si no se pudo consultar. */
   sesionActual(): Promise<Sesion | null>;

@@ -3,8 +3,10 @@ import { environment } from '../../../environments/environment';
 import {
   AuthPort,
   CredencialesAcceso,
+  DatosRegistro,
   PerfilUsuario,
   ResultadoAcceso,
+  ResultadoRegistro,
   Sesion
 } from '../domain/auth.model';
 
@@ -85,6 +87,60 @@ export class ApiAuthAdapter implements AuthPort {
         exito: false,
         error:
           'No hay conexion. Conectese una vez para iniciar sesion; despues puede trabajar sin senal.',
+        sinConexion: true
+      };
+    }
+  }
+
+  async registrar(datos: DatosRegistro): Promise<ResultadoRegistro> {
+    if (!environment.apiUrl) {
+      return {
+        exito: false,
+        pendienteDeActivacion: false,
+        error: 'El servidor no esta configurado.',
+        sinConexion: false
+      };
+    }
+
+    try {
+      const r = await this.pedir('POST', '/registro', {
+        nombre: datos.nombre.trim(),
+        correo: datos.correo.trim().toLowerCase(),
+        clave: datos.clave,
+        telefono: datos.telefono?.trim() || null,
+        organizacion: datos.organizacion?.trim() || null
+      });
+
+      if (r.status === 409) {
+        return {
+          exito: false,
+          pendienteDeActivacion: false,
+          error: 'Ya existe una cuenta con ese correo. Intente entrar, o pida que la activen.',
+          sinConexion: false
+        };
+      }
+
+      if (!r.ok) {
+        return {
+          exito: false,
+          pendienteDeActivacion: false,
+          error: await this.detalle(r),
+          sinConexion: false
+        };
+      }
+
+      const cuerpo = (await r.json()) as { pendienteDeActivacion?: boolean };
+      return {
+        exito: true,
+        // Si el servidor no lo dice, se asume lo mas restrictivo: que falta activar.
+        pendienteDeActivacion: cuerpo.pendienteDeActivacion !== false,
+        sinConexion: false
+      };
+    } catch {
+      return {
+        exito: false,
+        pendienteDeActivacion: false,
+        error: 'No hay conexion. Necesita senal una sola vez para crear la cuenta.',
         sinConexion: true
       };
     }

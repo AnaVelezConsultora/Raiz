@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const BASE = 'http://127.0.0.1:8789';
+const BASE = 'http://localhost:4315';
 const OUT = 'c:/tmp/raiz/frontend/preview';
 
 const browser = await chromium.launch();
@@ -63,7 +63,7 @@ await page.getByRole('button', { name: 'Continuar' }).click();
 await page.waitForSelector('#ten');
 await page.selectOption('#ten', 'arrendatario');
 await page.selectOption('#afec', 'severo');
-await page.fill('#hog', '2');
+await page.getByRole('textbox', { name: 'Familias en la misma estructura' }).fill('2');
 await page.getByText('Hay riesgo inminente de colapso').click();
 await page.getByText('Remocion de escombros', { exact: true }).click();
 await page.getByText('Cafe', { exact: true }).click();
@@ -82,6 +82,14 @@ await page.screenshot({ path: `${OUT}-5-paso4.png`, fullPage: true });
 
 // --- 6. guardar y volver a la lista ----------------------------------------
 await page.getByRole('button', { name: 'Guardar caso' }).click();
+// La casa aloja dos familias: la aplicacion ofrece registrar la siguiente ahi mismo,
+// porque el voluntario todavia esta parado frente a la casa. Aqui se termina.
+await page.waitForSelector('li.tarjeta, button:has-text("Terminar por ahora")', { timeout: 15000 });
+const ofrece = page.getByRole('button', { name: 'Terminar por ahora' });
+if (await ofrece.count()) {
+  paso('6b', 'ofrecio registrar la siguiente familia de la misma casa');
+  await ofrece.click();
+}
 await page.waitForSelector('li.tarjeta', { timeout: 10000 });
 const tarjeta = (await page.textContent('li.tarjeta')).replace(/\s+/g, ' ').trim();
 paso(7, 'caso en la lista: ' + tarjeta.slice(0, 110));
