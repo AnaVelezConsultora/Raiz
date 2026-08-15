@@ -89,7 +89,8 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
     </div>
 
     <nav style="position:fixed;left:0;right:0;bottom:0;background:var(--surface);
-                border-top:1px solid var(--rule);padding:.7rem 1rem;">
+                border-top:1px solid var(--rule);padding:.7rem 0;
+                padding-bottom:calc(.7rem + env(safe-area-inset-bottom))">
       @if (aviso()) {
         <p class="contenedor aviso peligro" style="margin:0 0 .6rem">{{ aviso() }}</p>
       }
