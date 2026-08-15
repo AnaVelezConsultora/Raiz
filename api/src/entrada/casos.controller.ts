@@ -1,21 +1,8 @@
-import {
-  Body,
-  Controller,
-  Headers,
-  HttpCode,
-  Inject,
-  Logger,
-  Post
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
 import { CasoParaSincronizar, CasoSincronizado } from '@raiz/dominio';
 import { RegistrarCasoService } from '../aplicacion/registrar-caso.service';
-import {
-  ErrorRechazo,
-  ErrorSesion,
-  Identidad,
-  VERIFICADOR_TOKEN,
-  VerificadorTokenPort
-} from '../dominio/puertos';
+import { ErrorRechazo, Identidad } from '../dominio/puertos';
+import { Quien } from './ruta-abierta.decorador';
 
 /**
  * Recepcion de casos capturados en terreno.
@@ -34,18 +21,14 @@ import {
 export class CasosController {
   private readonly log = new Logger(CasosController.name);
 
-  constructor(
-    private readonly registrar: RegistrarCasoService,
-    @Inject(VERIFICADOR_TOKEN) private readonly verificador: VerificadorTokenPort
-  ) {}
+  constructor(private readonly registrar: RegistrarCasoService) {}
 
   @Post()
   @HttpCode(200)
   async recibir(
     @Body() caso: CasoParaSincronizar,
-    @Headers('authorization') autorizacion?: string
+    @Quien() identidad: Identidad
   ): Promise<CasoSincronizado> {
-    const identidad = await this.identificar(autorizacion);
     this.validar(caso);
 
     const resultado = await this.registrar.ejecutar(caso, identidad);
@@ -55,20 +38,6 @@ export class CasosController {
         `por ${identidad.sub}`
     );
     return resultado;
-  }
-
-  /**
-   * La identidad sale SIEMPRE del token, nunca del cuerpo del mensaje.
-   *
-   * Es la diferencia entre que un voluntario firme su propio trabajo y que un cliente
-   * modificado pueda registrar casos a nombre de otro.
-   */
-  private async identificar(autorizacion?: string): Promise<Identidad> {
-    const token = autorizacion?.replace(/^Bearer\s+/i, '').trim();
-    if (!token) {
-      throw new ErrorSesion('Falta el token de sesion.');
-    }
-    return this.verificador.verificar(token);
   }
 
   /**

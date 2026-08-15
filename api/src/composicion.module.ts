@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { RegistrarCasoService } from './aplicacion/registrar-caso.service';
 import { SesionService } from './aplicacion/sesion.service';
 import {
@@ -11,6 +12,7 @@ import {
 import { CasosController } from './entrada/casos.controller';
 import { SaludController } from './entrada/salud.controller';
 import { SesionController } from './entrada/sesion.controller';
+import { SesionGuard } from './entrada/sesion.guard';
 import { CognitoIdentidad } from './infra/identidad/cognito';
 import { VerificadorToken } from './infra/identidad/verificador-token';
 import { CasoRepositorioPostgres } from './infra/postgres/caso-repositorio.postgres';
@@ -35,7 +37,11 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
     { provide: VERIFICADOR_TOKEN, useClass: VerificadorToken },
     { provide: SALUD, useClass: SaludPostgres },
     { provide: PROVEEDOR_IDENTIDAD, useClass: CognitoIdentidad },
-    { provide: PERFIL_REPOSITORIO, useClass: PerfilRepositorioPostgres }
+    { provide: PERFIL_REPOSITORIO, useClass: PerfilRepositorioPostgres },
+
+    // Global: toda ruta pide token salvo las marcadas con @RutaAbierta(). Registrarla
+    // controlador por controlador dejaria abierta la que alguien olvide.
+    { provide: APP_GUARD, useClass: SesionGuard }
   ]
 })
 export class ComposicionModule {}

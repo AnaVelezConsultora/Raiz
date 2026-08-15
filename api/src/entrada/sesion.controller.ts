@@ -1,20 +1,7 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Headers,
-  Inject,
-  Post
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Post } from '@nestjs/common';
 import { SesionAbierta, SesionService } from '../aplicacion/sesion.service';
-import {
-  ErrorRechazo,
-  ErrorSesion,
-  VERIFICADOR_TOKEN,
-  VerificadorTokenPort
-} from '../dominio/puertos';
+import { ErrorRechazo } from '../dominio/puertos';
+import { RutaAbierta } from './ruta-abierta.decorador';
 
 /** Cuerpo del inicio de sesion. */
 interface CuerpoAcceso {
@@ -33,12 +20,15 @@ interface CuerpoAcceso {
  */
 @Controller('sesion')
 export class SesionController {
-  constructor(
-    private readonly sesiones: SesionService,
-    @Inject(VERIFICADOR_TOKEN) private readonly verificador: VerificadorTokenPort
-  ) {}
+  constructor(private readonly sesiones: SesionService) {}
 
-  /** Entrar. Devuelve token, vencimiento y el perfil ya resuelto. */
+  /**
+   * Entrar. Devuelve token, vencimiento y el perfil ya resuelto.
+   *
+   * Abierta por necesidad: es donde se consigue el token, y exigirlo aqui seria pedir
+   * la llave para entrar a buscar la llave.
+   */
+  @RutaAbierta()
   @Post()
   @HttpCode(200)
   async entrar(@Body() cuerpo: CuerpoAcceso): Promise<SesionAbierta> {
@@ -64,11 +54,11 @@ export class SesionController {
    */
   @Get()
   @HttpCode(204)
-  async vigente(@Headers('authorization') autorizacion?: string): Promise<void> {
-    const token = autorizacion?.replace(/^Bearer\s+/i, '').trim();
-    if (!token) throw new ErrorSesion('Falta el token de sesion.');
-
-    await this.verificador.verificar(token);
+  vigente(): void {
+    // No lleva cuerpo: si la peticion llego hasta aqui es porque la guarda ya verifico
+    // el token, y esa es exactamente la pregunta. Comprobarlo otra vez seria tener dos
+    // respuestas posibles a la misma pregunta.
+    return;
   }
 
   /**
@@ -82,9 +72,10 @@ export class SesionController {
    * llamada: si el voluntario presta el celular, cerrar sesion tiene que funcionar sin
    * senal.
    */
+  @RutaAbierta()
   @Delete()
   @HttpCode(204)
-  async salir(): Promise<void> {
+  salir(): void {
     return;
   }
 }
