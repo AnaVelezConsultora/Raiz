@@ -39,6 +39,11 @@
 html, body {
   margin: 0;
   min-height: 100%;
+  /* Red de seguridad, no la solucion: si algun dia algo vuelve a sobresalir, que no
+     se traduzca en una pagina que se corre de lado con el pulgar. La causa se busca
+     igual, con el diagnostico que esta en docs/hallazgos-revision.md. */
+  overflow-x: hidden;
+  max-width: 100%;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
@@ -59,6 +64,19 @@ h3 { font-size: 1.05rem; }
 .pila-sm { display: flex; flex-direction: column; gap: 0.5rem; }
 .fila { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
 
+/* Un hijo de flex se niega por defecto a encogerse por debajo de su contenido, y por
+   eso una fila con dos botones se sale de la pantalla en vez de repartirse. Es la
+   causa mas comun de que aparezca barra horizontal, y en un formulario que se usa con
+   una sola mano una barra horizontal no es un detalle: mueve el boton de debajo del
+   pulgar. */
+.fila > * { min-width: 0; }
+
+/* Nada del contenido justifica desplazarse de lado. Un texto largo sin espacios
+   —una URL, un documento mal escrito— parte en vez de empujar la pagina. */
+.contenedor,
+.tarjeta,
+.aviso { overflow-wrap: anywhere; }
+
 /* ---------- formularios ---------- */
 .campo { display: flex; flex-direction: column; gap: 0.3rem; }
 
@@ -72,10 +90,15 @@ h3 { font-size: 1.05rem; }
 
 .pista { font-size: 0.78rem; color: var(--ink-faint); }
 
-input[type='text'],
-input[type='tel'],
-input[type='number'],
-input[type='date'],
+/* Se enumeraba tipo por tipo —text, tel, number, date— y faltaban `email` y
+   `password`, que son justamente los dos de la pantalla de acceso. La consecuencia
+   fue que el primer formulario que ve un voluntario era el unico sin estilo: campos
+   delgados, pegados a su etiqueta, imposibles de acertar con el pulgar.
+
+   Ahora se excluye lo que NO debe recibir esta forma en vez de enumerar lo que si.
+   Es la unica manera de que el proximo tipo de campo que alguien agregue no vuelva a
+   caerse por la misma rendija sin que nadie lo note. */
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not([type='submit']):not([type='button']),
 select,
 textarea {
   width: 100%;
@@ -117,7 +140,6 @@ a:focus-visible {
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
-.rejilla-edades input { min-height: 42px; text-align: center; padding: 0.3rem; }
 .rejilla-edades .cab {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -126,6 +148,62 @@ a:focus-visible {
   text-align: center;
 }
 .rejilla-edades .rango { font-size: 0.85rem; color: var(--ink-soft); }
+
+/* Condiciones especiales: mismas dos columnas, sin cabecera de sexo. */
+.rejilla-condiciones {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem 0.6rem;
+  align-items: center;
+}
+.rejilla-condiciones .rango { font-size: 0.85rem; color: var(--ink-soft); }
+
+/* Contador de personas: menos, numero, mas.
+   Usa --alto-toque, la medida que ya define el resto del sistema: es lo minimo que un
+   pulgar acierta sin mirar. Los 42px que tenia la rejilla obligaban a apuntar, y aqui
+   se toca de pie, bajo el sol y a veces con la mano mojada. */
+.contador {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.contador-boton {
+  width: var(--alto-toque);
+  min-height: var(--alto-toque);
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 600;
+  cursor: pointer;
+  /* Sin resaltado azul al tocar repetido, que en un contador se toca muchas veces. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.contador-boton:disabled { color: var(--ink-faint); opacity: 0.45; cursor: default; }
+.contador-boton:active:not(:disabled) { background: var(--surface-2); }
+.contador-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.contador-valor {
+  width: 44px;
+  min-height: var(--alto-toque);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.contador-valor:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* En cero se atenua para que la vista distinga de un golpe que filas tienen dato. */
+.contador.en-cero .contador-valor { color: var(--ink-faint); font-weight: 400; }
 
 /* Opciones multiples en forma de pastillas: mas faciles de tocar que casillas. */
 .pastillas { display: flex; flex-wrap: wrap; gap: 0.4rem; }
@@ -171,13 +249,39 @@ button {
   background: var(--surface-2);
   color: var(--ink);
 }
-button:disabled { opacity: 0.45; cursor: not-allowed; }
+/* 0.45 dejaba el boton casi ilegible bajo el sol y se leia como "esta danado" en
+   vez de "todavia no". Se sube el contraste y se marca la intencion con el cursor. */
+button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-primario { background: var(--accent); color: #fff; font-weight: 600; }
 .btn-secundario { background: var(--surface); border-color: var(--rule); }
 .btn-peligro { background: var(--p0-bg); color: var(--p0); border-color: var(--p0); font-weight: 600; }
 .btn-ancho { width: 100%; }
 .btn-grande { min-height: 60px; font-size: 1.05rem; }
+
+/* Accion secundaria dentro de un formulario: se ve como enlace, no como boton, para
+   que no compita con la accion principal. Conserva el objetivo tactil completo. */
+.enlace-accion {
+  background: none;
+  border: 0;
+  padding: 0.2rem 0;
+  min-height: auto;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  cursor: pointer;
+}
+
+/* Etiqueta y accion en la misma linea, encima del campo. Ahorra una fila de alto en
+   una pantalla donde cada fila cuenta. */
+.campo-cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
 
 /* ---------- tarjetas y estados ---------- */
 .tarjeta {

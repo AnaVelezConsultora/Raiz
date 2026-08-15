@@ -1,13 +1,16 @@
 {
   "name": "frontend",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node tools/estampar-version.mjs",
     "start": "ng serve",
+    "prebuild": "node tools/estampar-version.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "servir": "ng build && node tools/servidor-estatico.mjs",
+    "prueba:e2e": "node tools/prueba-e2e.mjs",
     "verificar": "tsc --noEmit -p tsconfig.app.json && ng build"
   },
   "private": true,
@@ -20,7 +23,6 @@
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
     "@angular/service-worker": "^21.2.0",
-    "@supabase/supabase-js": "^2.112.3",
     "dexie": "^4.4.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
@@ -30,6 +32,7 @@
     "@angular/cli": "^21.2.21",
     "@angular/compiler-cli": "^21.2.0",
     "jsdom": "^28.0.0",
+    "playwright": "^1.49.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"

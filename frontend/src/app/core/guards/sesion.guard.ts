@@ -22,12 +22,12 @@ import { SesionService } from '../services/sesion.service';
  * seguir capturando. Lo que el servidor rechazara es el envio, y de eso avisa la
  * pantalla de sincronizacion.
  *
- * Mientras el servidor no este configurado, la aplicacion opera en modo local y la
+ * Mientras la API no este configurada, la aplicacion opera en modo local y la
  * guarda deja pasar: exigir sesion contra un servidor inexistente dejaria la
  * herramienta inutilizable.
  */
 export const sesionGuard: CanActivateFn = (_ruta, estado) => {
-  if (!environment.supabaseUrl) return true;
+  if (!environment.apiUrl) return true;
 
   const sesion = inject(SesionService);
   const router = inject(Router);
@@ -42,7 +42,7 @@ export const sesionGuard: CanActivateFn = (_ruta, estado) => {
 /** Exige uno de los roles indicados. Se compone con sesionGuard. */
 export function rolGuard(...permitidos: Rol[]): CanActivateFn {
   return () => {
-    if (!environment.supabaseUrl) return true;
+    if (!environment.apiUrl) return true;
 
     const sesion = inject(SesionService);
     const router = inject(Router);

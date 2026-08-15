@@ -27,6 +27,16 @@ llegue vea de dónde parte y no rehaga lo que ya está.
 | `tablero-raiz.json` | **Fuente de verdad.** Se edita este; los otros se regeneran |
 | `tablero-raiz.csv` | Para la importación por CSV de Trello |
 | `crear-tablero.py` | Crea el tablero por API, con credenciales que sólo tú ves |
+| `trello.py` | Solo lectura: ver tableros, listas, tarjetas y etiquetas |
+| `marcar-hechas.py` | Pone la etiqueta `hecha` y un comentario en lo que se cerró |
+
+`trello.py` sólo lee y `marcar-hechas.py` sólo agrega — nunca quita una etiqueta,
+mueve una tarjeta ni edita una descripción. La separación es deliberada: quince
+personas usan este tablero y lo que marcan es suyo. Los dos son re-ejecutables.
+
+Si sale `401 invalid key`, el problema es la **clave**, no el token, y generar un
+token nuevo no arregla nada porque el enlace de autorización lleva la clave dentro.
+El orden correcto y las direcciones están en el `CLAUDE.md` de la raíz.
 
 ## Crear el tablero
 

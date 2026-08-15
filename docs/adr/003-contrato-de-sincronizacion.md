@@ -76,13 +76,53 @@ deja los casos fuera del envío **sin decírselo a nadie**. El botón muestra
 pendientes y no manda nada. En campo eso se lee como "la aplicación perdió mi
 trabajo".
 
-### 5. Fotografías por URL prefirmada
+### 5. Fotografías por política de subida firmada
 
-El dispositivo pide una URL, sube **directo al almacenamiento de objetos** y luego
-confirma. Las fotografías no atraviesan la API.
+El dispositivo pide autorización, sube **directo al almacenamiento de objetos** y
+luego **confirma contra la API**. Las fotografías no atraviesan la API.
 
 Con 15.000 fotos previstas a 200 KB, hacerlas pasar por el servidor es pagar
 cómputo y transferencia por mover bytes que no se procesan.
+
+**Son tres pasos, no dos.** El tercero no es opcional:
+
+| | Quién | Qué |
+|---|---|---|
+| 1 | Dispositivo → API | Declara `fotoId`, `casoOrigenId`, `tipo`, `bytes` y `tipoMime` |
+| 2 | Dispositivo → almacenamiento | `POST` multiparte con los campos firmados; el archivo va **de último** |
+| 3 | Dispositivo → API | Confirma; **la API verifica contra el almacenamiento** y responde la ruta definitiva |
+
+**Por qué se firma una política y no una URL simple.** La política lleva
+`content-length-range`, de modo que el tamaño que el dispositivo declaró en el paso 1
+es el que el almacenamiento acepta en el paso 2. Sin eso, la autorización para subir
+una foto de 200 KB sirve para subir un archivo de cualquier tamaño, y quien paga esa
+factura es el proyecto. También fija tipo de contenido y ruta.
+
+El archivo va de último en el formulario porque el almacenamiento evalúa la política
+con lo que ya leyó: si va primero, el rechazo llega **después** de haber transmitido
+los bytes, que en una conexión rural es exactamente lo que no se puede permitir.
+
+**Por qué el paso 3 existe.** Que el almacenamiento responda 204 no es que el objeto
+esté ahí y esté completo. La única afirmación que vale es la de la API, que lo
+verifica. Sin ese paso el dispositivo podría liberar la fotografía de su memoria
+creyendo que ya viajó, y la evidencia de una familia desaparecería sin que nadie se
+entere. Confirmar es **idempotente**: repetirlo no sube nada de nuevo, así que el
+dispositivo puede reintentarlo sin miedo cuando se le cae la señal a mitad.
+
+**Consistencia eventual.** La escritura de un objeto nuevo es de lectura inmediata,
+pero el listado no. Por eso la confirmación se hace contra el objeto concreto y no
+listando un prefijo, y por eso el estado de una fotografía lo dicta la API y no lo
+infiere el dispositivo.
+
+> **Lo que NO se usa: subida multiparte de objetos grandes.** Está pensada para
+> archivos de varios megabytes y su tamaño mínimo de parte es de 5 MB. Una fotografía
+> de 200 KB sería una sola parte, con dos viajes de red adicionales para iniciarla y
+> cerrarla. Si algún día se suben videos, se revisa.
+
+**Lo que el dispositivo sí calcula, y por qué.** Cuánto pesa lo que está **por subir**
+sale del dispositivo, porque esos bytes todavía no existen en ninguna otra parte: es
+el número que se le muestra al voluntario antes de gastarle el plan. Lo que el
+dispositivo **no** decide es si algo ya llegó; eso lo dice la API.
 
 ### 6. Persistencia local, explícita
 
@@ -125,6 +165,38 @@ vereda sigue registrando aunque su token haya expirado.
 Lo único que exige sesión vigente es sincronizar, y esa verificación ocurre
 **antes** de empezar la pasada, no descubriéndolo error por error.
 
+**Las tres rutas.** El navegador nunca habla con el proveedor de identidad: le habla
+a la API, y la API decide.
+
+| Ruta | Qué hace | Respuesta |
+|---|---|---|
+| `POST /sesion` | Valida correo y clave contra el proveedor | `{ token, expiraEn, correo, perfil }` |
+| `GET /sesion` | ¿El token sirve para enviar? | `200` sirve · `401` no |
+| `DELETE /sesion` | Cierra sesión del lado del servidor | `204` |
+
+**El perfil viaja resuelto en la respuesta**, no se pide aparte. El dispositivo necesita
+nombre y rol para pintar la interfaz, y pedirlos en una segunda llamada significa que un
+corte de señal entre las dos deja a alguien autenticado y sin perfil, mirando una
+pantalla que no sabe qué mostrarle.
+
+**El rol NO se lee del token.** Se lee de `perfiles` en cada petición. Si viviera en el
+token, ascender o retirar a un voluntario no surtiría efecto hasta que su token
+caducara, y en una emergencia ese retraso es justo lo que no se puede tener. Es también
+lo que permite desactivar a alguien de inmediato.
+
+**Un usuario con `activo = false` no entra**, aunque sus credenciales sean correctas. Es
+la forma de retirar a un voluntario sin borrar los casos que levantó ni romper la
+trazabilidad de quién reportó qué.
+
+**Cerrar sesión no puede depender de la red.** El dispositivo avisa al servidor si
+puede, pero borra su copia local pase lo que pase: si el voluntario presta el celular,
+cerrar sesión tiene que funcionar sin señal.
+
+> `GET /sesion` responde `401` como respuesta legítima, no como fallo. Es la diferencia
+> entre «el servidor dice que su sesión ya no sirve» y «no alcancé el servidor». Sin esa
+> distinción, un corte de red expulsaría al voluntario en plena vereda. Ver la
+> taxonomía de error de la sección 4.
+
 ## Qué queda fuera, a propósito
 
 **No hay descarga.** El contrato es de un solo sentido: el dispositivo empuja.
@@ -152,3 +224,30 @@ falta.
 No dice cómo se implementa la cola, ni con qué biblioteca, ni contra qué API. Dice
 qué garantías tiene que ofrecer para que el trabajo de un líder que caminó dos
 horas hasta una vereda no se pierda entre el celular y la base.
+
+## Por que la idempotencia esta en los dos lados
+
+Hay dos barreras contra el duplicado y no son redundantes: atacan casos distintos.
+
+**En el dispositivo.** El `origenId` es el UUID que se genero al crear el caso y no se
+regenera nunca; el reintento viaja con el mismo. Y la cola solo devuelve casos en estado
+`Pendiente` o `Error`, asi que un caso ya confirmado no vuelve a enviarse.
+
+**En la API.** Upsert por `origen_id`, que tiene indice unico, devolviendo `xmax = 0`
+para distinguir alta de actualizacion, y respondiendo `yaExistia` al dispositivo.
+
+### La primera falla justo en el caso que importa
+
+Si el envio **llega al servidor pero la respuesta se pierde** —el corte de senal a mitad,
+que en zona veredal es lo corriente— el dispositivo no recibe confirmacion, marca el caso
+como `Error` y **vuelve a enviarlo**. La barrera del dispositivo esta disenada para no
+reenviar lo confirmado, y este caso nunca se confirmo.
+
+Ahi entra el upsert. Sin el, ese reintento crea una segunda fila para la misma familia,
+el total se infla, y el total consolidado es la palanca ante la entidad.
+
+Dicho corto: **la del dispositivo evita trafico innecesario en el caso normal; la de la
+API evita el duplicado en el caso anormal, que es el unico donde puede ocurrir.**
+
+Queda escrito porque es de las cosas que alguien quita en seis meses por parecer
+duplicada. La prueba `entorno/pruebas/idempotencia.sql` falla si se quita.

@@ -27,6 +27,14 @@ export interface CasoStoragePort {
   pendientesDeSync(limite?: number): Promise<Caso[]>;
   marcarSync(params: MarcarSyncParams): Promise<void>;
   contarPendientes(): Promise<number>;
+  /**
+   * Borra un caso y sus fotografias del dispositivo.
+   *
+   * Solo tiene sentido sobre un caso que NO se ha enviado. Un caso ya sincronizado
+   * existe en el servidor y borrarlo aqui no lo borra alla: eso es supresion de datos
+   * y se pide por el canal del custodio, no desde un boton en el celular.
+   */
+  eliminar(casoId: string): Promise<void>;
   eliminarSincronizadosAntesDe(fechaIso: string): Promise<number>;
 }
 
@@ -37,6 +45,8 @@ export interface FotoStoragePort {
   pendientesDeSync(limite?: number): Promise<FotoLocal[]>;
   marcarSync(params: { fotoId: string; urlRemota?: string; error?: string }): Promise<void>;
   contarPendientes(): Promise<number>;
+  /** Peso total de lo pendiente, para avisar cuanto se va a gastar antes de gastarlo. */
+  bytesPendientes(): Promise<number>;
   eliminar(fotoId: string): Promise<void>;
 }
 

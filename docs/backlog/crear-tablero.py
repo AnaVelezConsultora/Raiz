@@ -11,7 +11,8 @@ Las credenciales se leen del entorno y NUNCA se escriben en ningun archivo:
     export TRELLO_TOKEN=...    # el enlace "Token" al lado de la clave
     ./crear-tablero.py
 
-    ./crear-tablero.py --simular    # muestra que haria, sin tocar Trello
+    ./crear-tablero.py --simular      # muestra que haria, sin credenciales ni red
+    ./crear-tablero.py --verificar    # lee el tablero real y dice que difiere, sin escribir
 
 Solo usa la biblioteca estandar: no hay que instalar nada.
 
@@ -31,6 +32,9 @@ import urllib.request
 API = "https://api.trello.com/1"
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SIMULAR = "--simular" in sys.argv
+# Lee el tablero y dice que difiere, sin escribir una sola vez. Sirve para revisar
+# antes de tocar algo compartido, que es donde una escritura de mas cuesta explicaciones.
+VERIFICAR = "--verificar" in sys.argv
 
 
 def credenciales():
@@ -70,6 +74,14 @@ def pedir(metodo, ruta, **parametros):
         print(f"    [simulado] {metodo} {ruta} {str(parametros.get('name', ''))[:60]}")
         return {"id": f"sim-{abs(hash(str(parametros))) % 10**8}"}
 
+    # La garantia de --verificar se hace cumplir AQUI, en el unico punto por donde
+    # pasa toda escritura. Comprobarla en cada sitio que llama seria confiar en que
+    # nadie olvide una, y el dia que alguien olvide una, el modo que promete no
+    # escribir escribe.
+    if VERIFICAR:
+        print(f"    [no se escribe] {metodo} {ruta}")
+        return {"id": "verificacion"}
+
     parametros.update(AUTH)
     datos = urllib.parse.urlencode(parametros).encode()
 
@@ -96,8 +108,24 @@ def consultar(ruta, **parametros):
         return []
     parametros.update(AUTH)
     url = f"{API}{ruta}?{urllib.parse.urlencode(parametros)}"
-    with urllib.request.urlopen(url, timeout=30) as respuesta:
-        return json.loads(respuesta.read() or "[]")
+    try:
+        with urllib.request.urlopen(url, timeout=30) as respuesta:
+            return json.loads(respuesta.read() or "[]")
+    except urllib.error.HTTPError as e:
+        # El token se genera con expiration=1day, asi que caduca solo y esto pasa
+        # seguido. Antes salia un volcado de Python de veinte lineas que no decia
+        # nada; un error que no dice como arreglarse cuesta media hora a quien lo ve.
+        if e.code == 401:
+            sys.exit(
+                "\nTrello respondio 401: el token no sirve o ya caduco.\n\n"
+                "Genere uno nuevo abriendo esta URL con su sesion de Trello:\n\n"
+                "  https://trello.com/1/authorize?expiration=1day"
+                "&name=Raiz%20backlog&scope=read,write&response_type=token&key=$TRELLO_KEY\n\n"
+                "Y expórtelo:  export TRELLO_TOKEN=...\n"
+            )
+        sys.exit(f"Error {e.code} consultando {ruta}: {e.read().decode()[:300]}")
+    except urllib.error.URLError as e:
+        sys.exit(f"No se pudo alcanzar Trello: {e}")
 
 
 def nombre_lista(hito):
@@ -131,6 +159,11 @@ def descripcion(hu, apartado, personas):
         f"**Apartado {apartado['numero']} · {apartado['nombre']}**",
         f"**Como** {hu['como']}\n**quiero** {hu['quiero']}\n**para** {hu['para']}.",
     ]
+
+    # Va antes de los criterios: si dice que la historia esta hecha o que se puede
+    # tomar ya, esa es la primera cosa que necesita saber quien abre la tarjeta.
+    if hu.get("nota"):
+        partes.append("\n".join(f"> {linea}" for linea in hu["nota"].split("\n")))
 
     if hu.get("criterios"):
         partes.append(
@@ -278,11 +311,17 @@ def main():
                 ids.append(cuentas[handle])
         return list(dict.fromkeys(ids))
 
+    # Etiquetas cuyo dueno es el tablero y no el modelo. Ver el comentario de mas
+    # abajo, donde se decide que se conserva.
+    ESTADO_LO_MANDA_TRELLO = {etiquetas[n] for n in ("hecha",) if n in etiquetas}
+    nombre_de_etiqueta = {v: k for k, v in etiquetas.items()}
+
     # --- historias -----------------------------------------------------------
     print("\nHistorias")
     ya_estan = {}
     for id_lista in listas.values():
-        for tarjeta in consultar(f"/lists/{id_lista}/cards", fields="name,desc,idMembers"):
+        for tarjeta in consultar(f"/lists/{id_lista}/cards",
+                                 fields="name,desc,idMembers,idLabels"):
             ya_estan[tarjeta["name"].split(" · ")[0]] = tarjeta
 
     creadas = actualizadas = iguales = 0
@@ -295,16 +334,69 @@ def main():
             actuales = existente.get("idMembers", [])
             # Union, no reemplazo: si alguien se asigno a mano en Trello, no se le quita.
             faltan = [i for i in quienes if i not in actuales]
-            if existente.get("desc") == texto and not faltan:
+
+            # QUIEN MANDA SOBRE CADA ETIQUETA
+            #
+            # Las de CLASIFICACION (FrontEnd, BackEnd, defecto, bloqueada...) las manda
+            # el modelo: describen la historia y viven en el repositorio.
+            #
+            # Las de ESTADO —hoy solo `hecha`— las manda quien hace el trabajo, y ese
+            # trabajo se marca en Trello, que es donde el equipo mira. Por eso NUNCA se
+            # quitan desde aqui.
+            #
+            # Antes se reemplazaban todas, y eso significaba que si alguien marcaba su
+            # historia como hecha en el tablero, la siguiente corrida se lo borraba sin
+            # decir nada. Casi pasa el 15 de agosto de 2026 con las historias de la API.
+            deseadas = {etiquetas[e] for e in hu["etiquetas"] if e in etiquetas}
+            puestas = set(existente.get("idLabels", []))
+
+            conservadas = {i for i in puestas if i in ESTADO_LO_MANDA_TRELLO}
+            objetivo = deseadas | conservadas
+
+            # Si el tablero dice hecha y el modelo no, el modelo se quedo atras: se
+            # avisa para que alguien lo ponga al dia, en vez de corregirlo por la fuerza.
+            atrasadas = conservadas - deseadas
+            if atrasadas:
+                nombres = ", ".join(sorted(nombre_de_etiqueta[i] for i in atrasadas))
+                print(f"  ! {hu['id']}: el tablero dice '{nombres}' y el modelo no. Se conserva.")
+
+            cambia_etiquetas = objetivo != puestas
+            deseadas = list(objetivo)
+
+            # Se mide la igualdad campo por campo y SOLO se manda lo que difiere. Una
+            # escritura que no cambia nada igual queda en el historial del tablero, y
+            # cuando dos personas revisan quien toco que, ese ruido cuesta.
+            cambia_desc = existente.get("desc") != texto
+
+            if not cambia_desc and not faltan and not cambia_etiquetas:
                 iguales += 1
+            elif VERIFICAR:
+                difiere = []
+                if cambia_desc:
+                    difiere.append("descripción")
+                if faltan:
+                    difiere.append(f"+{len(faltan)} miembro(s)")
+                if cambia_etiquetas:
+                    difiere.append("etiquetas")
+                print(f"  ~ {hu['id']}  diferiría en: {', '.join(difiere)}")
+                actualizadas += 1
+                continue
             else:
-                cambios = {"desc": texto}
+                cambios = {}
+                if cambia_desc:
+                    cambios["desc"] = texto
                 if faltan:
                     cambios["idMembers"] = ",".join(actuales + faltan)
+                if cambia_etiquetas:
+                    cambios["idLabels"] = ",".join(deseadas)
                 pedir("PUT", f"/cards/{existente['id']}", **cambios)
                 actualizadas += 1
-                detalle = f"  → +{len(faltan)} miembro(s)" if faltan else "  descripción"
-                print(f"  ~ {hu['id']}{detalle}")
+                detalle = []
+                if faltan:
+                    detalle.append(f"+{len(faltan)} miembro(s)")
+                if cambia_etiquetas:
+                    detalle.append("etiquetas")
+                print(f"  ~ {hu['id']}  {', '.join(detalle) or 'descripción'}")
             continue
 
         pedir("POST", "/cards",

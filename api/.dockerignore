@@ -1,0 +1,27 @@
+# El contexto de construccion es la raiz del repositorio, asi que lo que se excluya
+# aqui se excluye del envio al motor de Docker. Sin esto se copian node_modules y el
+# historial de git: cientos de megabytes que alargan cada construccion y que ademas
+# terminarian dentro de una capa de la imagen.
+node_modules
+**/node_modules
+dist
+**/dist
+.angular
+.git
+.github
+
+# El frontend no entra: la API no lo sirve. Se publica aparte como sitio estatico.
+frontend
+
+# Nunca, bajo ninguna circunstancia, dentro de una imagen.
+.env
+**/.env
+**/.env.*
+!**/.env.example
+entorno/generado
+
+# Datos con informacion personal de familias.
+datos
+exportes
+*.nominal.csv
+*.nominal.xlsx

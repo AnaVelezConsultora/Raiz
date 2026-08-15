@@ -133,10 +133,10 @@ insert into familias (
 ) values (
   '$ORIGEN_ID', 'Ana Lider (prueba)', 'presencial', true,
   'Valle del Cauca', 'Sevilla', 'rural', 'Vereda Ficticia Tres',
-  4.31234567, -75.91234567, 'gps',
+  4.31234567, -75.91234567, 'sitio',
   'Familia', 'Inventada Tres', 'CC', '10000003',
   '3000000103', 5, 1, 1, 1, 1,
-  'p1', array['agua','techo']
+  'p1', array['agua_potable','carpa']::necesidad_t[]
 )
 on conflict (origen_id) do update set actualizado_en = now()
 returning codigo)
@@ -162,7 +162,7 @@ insert into familias (
 ) values (
   '$ORIGEN_ID', 'Ana Lider (prueba)', 'presencial', true,
   'Valle del Cauca', 'Sevilla', 'rural', 'Vereda Ficticia Tres',
-  4.31234567, -75.91234567, 'gps', '3000000103', 5, 'p1'
+  4.31234567, -75.91234567, 'sitio', '3000000103', 5, 'p1'
 )
 on conflict (origen_id) do update set actualizado_en = now()
 returning codigo)

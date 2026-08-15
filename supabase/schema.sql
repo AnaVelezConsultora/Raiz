@@ -32,6 +32,22 @@ create type rol_t               as enum ('coordinador', 'custodio', 'validador',
 create type estado_remision_t   as enum ('borrador', 'enviado', 'radicado', 'en_tramite', 'atendido', 'rechazado', 'sin_respuesta');
 create type estado_ayuda_t      as enum ('identificada', 'gestionada', 'programada', 'entregada', 'no_procede');
 
+-- Vocabularios cerrados de dos campos que se AGREGAN en los reportes.
+--
+-- Con texto libre, "agua", "agua potable" y "Agua Potable" son tres necesidades
+-- distintas, y el consolidado deja de ser sumable justo cuando hay que sustentar una
+-- peticion ante una entidad. Lo mismo con el origen de la coordenada: distinguir el
+-- dato medido del aproximado es lo que permite ponderar la fuente, y no sirve si cada
+-- cliente escribe el valor a su manera.
+--
+-- Los valores replican los codigos del XLSForm y del paquete @raiz/dominio, que es el
+-- mismo contrato de siempre: un solo vocabulario para Kobo, la PWA, la API y la base.
+create type gps_fuente_t as enum ('sitio', 'compartida', 'aprox', 'no_disp');
+
+create type necesidad_t  as enum ('alimentos', 'agua_potable', 'aseo', 'cocina', 'dormir',
+                                  'carpa', 'ropa', 'medicamentos', 'panales', 'psicosocial',
+                                  'transporte', 'documentos');
+
 -- =============================================================================
 -- 2. CATALOGOS Y USUARIOS
 -- =============================================================================
@@ -67,7 +83,7 @@ create table entidades (
 );
 
 -- =============================================================================
--- 3. FAMILIAS (el caso). Codigo SV-AAAA-NNNNNN autogenerado.
+-- 3. FAMILIAS (el caso). Codigo RZ-AAAA-NNNNNN autogenerado.
 -- =============================================================================
 
 create sequence seq_caso start 1;
@@ -117,7 +133,7 @@ create table familias (
                                then st_setsrid(st_makepoint(lon, lat), 4326)::geography
                              end
                            ) stored,
-  gps_fuente             text,
+  gps_fuente             gps_fuente_t,
 
   -- bloque 2: hogar. Identidad solo si consentimiento = true.
   jefe_nombres           text,
@@ -153,7 +169,7 @@ create table familias (
 
   -- bloque 7: triaje
   prioridad              prioridad_t not null,
-  necesidades_inmediatas text[],
+  necesidades_inmediatas necesidad_t[] not null default '{}',
   ya_recibio_ayuda       boolean,
   ayuda_cual             text,
   ayuda_quien            text,
@@ -167,6 +183,40 @@ create table familias (
 
   creado_en              timestamptz not null default now(),
   actualizado_en         timestamptz not null default now()
+);
+
+-- HU 1.5.2 — la base rechaza identidad sin autorizacion de la familia.
+--
+-- POR QUE UNA RESTRICCION Y NO SOLO CODIGO
+--
+-- La regla ya se aplica dos veces: el cliente no persiste identidad sin marca, y la
+-- API la retira en el borde de escritura (aplicarConsentimiento, en @raiz/dominio).
+-- Las dos son codigo, y el codigo se puede rodear: un script de carga, una consulta
+-- manual del dia de la emergencia, un importador de Kobo escrito con prisa. Esta
+-- restriccion es la unica capa que no depende de que quien escriba se acuerde.
+--
+-- POR QUE AHORA Y NO DESPUES
+--
+-- Se agrega mientras la tabla esta vacia. Con filas adentro, esto deja de ser una
+-- linea y pasa a ser una migracion que hay que negociar con los datos ya escritos de
+-- familias reales.
+--
+-- POR QUE EL TELEFONO NO ESTA AQUI
+--
+-- tel_1 es obligatorio y viaja siempre, con autorizacion o sin ella. Es un dato
+-- personal de contacto directo y por lo tanto una contradiccion abierta con lo que
+-- promete la documentacion. Es la decision HU 1.5.1, y sigue sin resolverse: no se
+-- mete en la restriccion por decision de alguien que programa. El dia que se resuelva
+-- a favor de protegerlo, se agrega a esta lista y a CAMPOS_NOMINALES.
+--
+-- Se compara contra cadena vacia ademas de nulo porque un cliente que "limpia"
+-- escribiendo '' estaria cumpliendo la letra y no la regla.
+alter table familias add constraint identidad_exige_consentimiento check (
+  consentimiento
+  or (coalesce(jefe_nombres, '')   = ''
+  and coalesce(jefe_apellidos, '') = ''
+  and coalesce(tipo_doc, '')       = ''
+  and coalesce(num_doc, '')        = '')
 );
 
 -- Derivados utiles, calculados por la base y no por el frontend.

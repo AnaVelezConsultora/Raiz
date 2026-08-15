@@ -5,11 +5,15 @@
  * servidor de desarrollo de Angular no permite verificar: en desarrollo el service
  * worker viene desactivado a proposito, asi que `npm start` da un falso negativo.
  *
- * Reproduce dos comportamientos de Netlify:
+ * Reproduce dos comportamientos de la distribucion de CloudFront que sirve la
+ * aplicacion publicada (entorno/aws/desplegar-front.sh):
  *   1. Cualquier ruta desconocida devuelve index.html, para que /casos funcione al
  *      recargar en vez de dar 404.
  *   2. El service worker y su manifiesto se sirven sin cache, para que una version
  *      vieja no se quede pegada en el navegador.
+ *
+ * Decia "de Netlify" y era cierto hasta el 15 de agosto de 2026. Los dos
+ * comportamientos son los mismos; lo que cambio es quien los aplica.
  *
  * Uso:  npm run servir
  * Sin dependencias: solo Node.

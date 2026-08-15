@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
-import { invitadoGuard, sesionGuard } from './core/guards/sesion.guard';
+import { invitadoGuard, rolGuard, sesionGuard } from './core/guards/sesion.guard';
+import { Rol } from './core/domain/enums';
 
 /**
  * Rutas de Raíz.
@@ -42,6 +43,15 @@ export const routes: Routes = [
       import('./features/formulario/formulario-caso.component').then(
         (m) => m.FormularioCasoComponent
       )
+  },
+  {
+    path: 'voluntarios',
+    title: 'Voluntarios · Raíz',
+    // La guarda es comodidad de navegacion. Lo que impide que otro cambie un rol es la
+    // politica de acceso por fila del servidor, no esta linea.
+    canActivate: [sesionGuard, rolGuard(Rol.Custodio, Rol.Coordinador)],
+    loadComponent: () =>
+      import('./features/admin/voluntarios.component').then((m) => m.VoluntariosComponent)
   },
   { path: '**', redirectTo: 'casos' }
 ];

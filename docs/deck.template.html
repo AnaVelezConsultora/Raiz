@@ -138,6 +138,14 @@
   .capa .v { color: var(--tinta-2); font-size: 0.95rem; }
   @media (max-width: 700px) { .capa { grid-template-columns: 1fr; } }
 
+  /* etapa actual de la ruta */
+  .capa.aqui { background: var(--acento-2); }
+  .capa.aqui .k { color: #fff; }
+  .capa.aqui .v { color: #eaf6f6; }
+  .capa.hecha .k { color: var(--ok); }
+  .capa.futura .k { color: var(--tinta-3); }
+  .capa.futura .v { color: var(--tinta-3); }
+
   /* ---------- consola ---------- */
   .consola {
     background: #050907; border: 1px solid var(--linea); border-radius: 6px;
@@ -196,6 +204,32 @@
 <!-- 02 --------------------------------------------------------------------->
 <section class="slide">
   <div class="interior">
+    <p class="eyebrow">Urgencia</p>
+    <h2>Lo que no se documenta hoy<br>ya no se recupera</h2>
+    <p class="lead">No es una herramienta que convenga tener. El objeto de la documentación se está desvaneciendo mientras se decide.</p>
+    <div class="capas">
+      <div class="capa">
+        <span class="k">Hoy</span>
+        <span class="v">La familia está en el sitio del daño. Se documenta la vivienda, se mide la coordenada, se fotografía la grieta. <strong>Es un caso con evidencia.</strong></span>
+      </div>
+      <div class="capa">
+        <span class="k">En dos semanas</span>
+        <span class="v">La familia se dispersó donde parientes. Los escombros se removieron, el techo se reparó provisionalmente. <strong>Queda un testimonio, no una evidencia.</strong></span>
+      </div>
+      <div class="capa">
+        <span class="k">Cuando lleguen los recursos</span>
+        <span class="v">Se formulan proyectos de reconstrucción y se pregunta cuántas familias y dónde. <strong>La asignación se hace sobre la información que exista en ese momento.</strong></span>
+      </div>
+    </div>
+    <div class="nota alerta">
+      <p style="margin:0">Y mientras no exista un registro único, se consolidan listados paralelos que después no van a cuadrar. Un total que no cuadra invalida el ejercicio completo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 03 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
     <p class="eyebrow">El problema</p>
     <h2>El obstáculo no es la ayuda.<br>Es el dato.</h2>
     <p class="lead">Una entidad no asigna recursos sobre información que no puede verificar. Un organismo de cooperación no formula un proyecto sobre una lista de nombres en un cuaderno.</p>
@@ -219,13 +253,13 @@
 <section class="slide">
   <div class="interior">
     <p class="eyebrow">Decisión de arquitectura</p>
-    <h2>Una base de datos.<br>Tres reportes.</h2>
-    <p class="lead">Se pidieron tres bases: vivienda rural, vivienda urbana y convenio de cooperación. Se rechazó.</p>
-    <p>Una familia rural afiliada entraría en dos listados. Al comparar cifras entre entidades, los totales no cuadrarían — y el total consolidado es toda la palanca de negociación que tiene la comunidad.</p>
+    <h2>Un registro único.<br>Los reportes son cortes.</h2>
+    <p class="lead">Se pidieron bases separadas por zona y por convenio. Se rechazó.</p>
+    <p>Una misma familia entraría en dos listados. Al comparar cifras entre entidades, los totales no cuadrarían — y el total consolidado es toda la palanca de negociación que tiene la comunidad.</p>
     <ul class="limpia">
       <li>Registro único de <strong>hogares</strong>, no de viviendas. Un inmueble puede alojar tres familias damnificadas.</li>
-      <li>Marcadores de zona, afiliación y postulación. Los reportes por entidad son <em>filtros</em>, no bases distintas.</li>
-      <li>Una cuarta entidad se atiende en diez minutos, sin volver al terreno.</li>
+      <li>Los reportes de <strong>vivienda rural</strong> y <strong>vivienda urbana</strong> son <em>filtros</em> sobre el mismo dato, no bases distintas.</li>
+      <li>Un destinatario nuevo se atiende en diez minutos, sin volver al terreno.</li>
     </ul>
   </div>
 </section>
@@ -286,7 +320,7 @@
       <h2>Red apagada.<br>El caso sigue ahí.</h2>
       <p class="lead">Esta es la única demostración que importa. Con la conexión cortada, la aplicación abre, muestra los casos capturados y permite seguir registrando.</p>
       <div class="consola">
-        <div>GPS capturado: <span class="at">4.3283783, -75.9029183</span> · precision 11 m</div>
+        <div>GPS capturado: <span class="at">4.2712345, -75.9412345</span> · precision 11 m</div>
         <div>caso en la lista: <span class="at">L-B833-001</span> P0 SIN ENVIAR</div>
         <div>tras recargar la pagina siguen <span class="ok">1 caso(s)</span> en IndexedDB</div>
         <div><span class="ok">SIN CONEXION:</span> la app abre y muestra 1 caso(s)</div>
@@ -302,13 +336,13 @@
   <div class="interior duo">
     <div>
       <p class="eyebrow">Producto · Sincronización</p>
-      <h2>El voluntario decide cuándo enviar</h2>
-      <p class="lead">Nunca se sincroniza automáticamente. En zona rural la señal aparece y desaparece, y un envío automático consume los datos del voluntario sin que él lo decida.</p>
+      <h2>Los casos salen solos.<br>Las fotos esperan.</h2>
+      <p class="lead">Un caso pesa unos 3 KB. Una fotografía, doscientas veces más. Tratarlos igual era el error: lo barato se envía solo, lo caro lo autoriza el voluntario.</p>
       <ul class="limpia">
-        <li><strong>Casos antes que fotos.</strong> Si la ventana de señal alcanza para una sola cosa, que sea el registro que permite atender a la familia.</li>
+        <li><strong>El registro nunca se queda represado por un olvido.</strong> Pedirle a quien caminó hasta una vereda que además se acuerde de tocar un botón al bajar es cargarle trabajo a quien menos le sobra — y el costo de ese olvido lo pagaba la familia, no él.</li>
         <li><strong>Riesgo de vida primero</strong> dentro de la cola.</li>
-        <li><strong>Envío secuencial.</strong> Una conexión móvil débil se degrada con peticiones concurrentes y termina fallando todas.</li>
-        <li><strong>Idempotente.</strong> Si el envío llega pero la respuesta se pierde, el reintento actualiza la misma fila. Nunca duplica.</li>
+        <li><strong>Uno a la vez.</strong> Enviar todo al tiempo tumba una conexión móvil débil y termina fallando el envío completo.</li>
+        <li><strong>Nunca duplica.</strong> Si el envío llega al servidor pero la respuesta se pierde por un corte, al reintentar se actualiza el mismo registro en vez de crear otro.</li>
       </ul>
     </div>
     <div class="marco-tel"><img src="{{IMG_LISTA}}" alt="Listado de casos con el contador de pendientes y el botón de sincronizar"></div>
@@ -320,7 +354,7 @@
   <div class="interior">
     <p class="eyebrow">Evidencia</p>
     <h2>La cifra que sustenta la petición</h2>
-    <p class="lead" style="margin-bottom:1.6rem">Tablero público con datos agregados y coordenada degradada a cien metros: ubica la afectación, nunca la vivienda de una familia.</p>
+    <p class="lead" style="margin-bottom:1.6rem">Contadores y consolidados agregados. El mapa ubica cada afectación con la coordenada redondeada a unos cien metros, sin nombre, sin documento y sin teléfono.</p>
     <div class="marco-ancho"><img src="{{IMG_TABLERO}}" alt="Tablero con contadores de familias, personas y daño severo, y mapa de afectación sobre Sevilla"></div>
   </div>
 </section>
@@ -328,28 +362,45 @@
 <!-- 11 --------------------------------------------------------------------->
 <section class="slide">
   <div class="interior">
-    <p class="eyebrow">Por dentro</p>
-    <h2>Arquitectura hexagonal</h2>
-    <p class="lead">El dominio no conoce a ningún proveedor. Todo lo externo entra por un puerto.</p>
-    <div class="capas">
-      <div class="capa"><span class="k">Dominio</span><span class="v">Tipos, enumeraciones y puertos. Cero dependencias.</span></div>
-      <div class="capa"><span class="k">Infraestructura</span><span class="v">IndexedDB en el dispositivo. Adaptadores de transporte y autenticación.</span></div>
-      <div class="capa"><span class="k">Servicios</span><span class="v">Cola de sincronización, GPS, compresión de imágenes, sesión.</span></div>
-      <div class="capa"><span class="k">Funcionalidades</span><span class="v">Formulario por pasos, listado, acceso.</span></div>
-    </div>
-    <div class="nota">
-      <p style="margin:0">Tres interfaces —<span class="mono">CasoStoragePort</span>, <span class="mono">SincronizacionPort</span>, <span class="mono">AuthPort</span>— se enlazan en un solo archivo. Cambiar de proveedor de backend es cambiar dos líneas: <strong>la decisión de hoy no hay que acertarla, hay que poder revertirla.</strong></p>
-    </div>
+    <p class="eyebrow">Respaldo técnico</p>
+    <h2>Construido para sostenerse<br>en el tiempo</h2>
+    <p class="lead">No es un desarrollo improvisado. El equipo ya asumió por su cuenta las decisiones y los costos que permiten sostenerlo.</p>
+    <ul class="limpia">
+      <li><strong>Dominio propio adquirido y costeado por el equipo</strong>, para que el sistema tenga una dirección estable y verificable y no dependa de plataformas prestadas.</li>
+      <li><strong>Arquitectura definida y documentada, con revisión entre pares.</strong> Todo lo que se construye lo revisa alguien distinto de quien lo escribió, y cada decisión queda registrada con su justificación.</li>
+      <li><strong>Infraestructura prevista sobre servicios de nube de Amazon Web Services</strong>, con copias de seguridad, control de acceso por perfil y registro permanente de quién creó o modificó cada dato.</li>
+      <li><strong>Separación estricta</strong> entre la información pública, agregada y sin identidad, y la información con nombre, que queda restringida.</li>
+    </ul>
+    <p style="margin-top:1.4rem">Todo lo anterior <strong>sin costo alguno para el municipio, el departamento ni las organizaciones participantes.</strong></p>
     <div class="cifras">
-      <div class="cifra"><span class="n">100 kB</span><span class="t">Carga inicial</span></div>
-      <div class="cifra"><span class="n">0</span><span class="t">Tipos any</span></div>
-      <div class="cifra"><span class="n">200 kB</span><span class="t">Por fotografía, comprimida en el dispositivo</span></div>
+      <div class="cifra"><span class="n">0</span><span class="t">Señal necesaria para capturar</span></div>
+      <div class="cifra"><span class="n">4 min</span><span class="t">Por familia registrada</span></div>
       <div class="cifra"><span class="n">0 USD</span><span class="t">Costo de infraestructura hoy</span></div>
+      <div class="cifra"><span class="n">0</span><span class="t">Equipos por comprar</span></div>
     </div>
+
   </div>
 </section>
 
 <!-- 12 --------------------------------------------------------------------->
+<section class="slide">
+  <div class="interior">
+    <p class="eyebrow">Fundamento jurídico</p>
+    <h2>Por qué una fuente comunitaria<br>tiene peso</h2>
+    <p class="lead">El origen no estatal de la información no la invalida. Su peso depende de la independencia, la confiabilidad, la objetividad y el rigor con que se recolectó y verificó.</p>
+    <ul class="limpia">
+      <li>La <strong>Corte Interamericana</strong> contempla informes de organizaciones no gubernamentales, investigaciones independientes y reportes de quienes documentan directamente. Su utilidad depende de su relación con los hechos y su pertinencia temporal.</li>
+      <li>El <strong>Tribunal Europeo</strong> valora materiales según origen, relevancia y fuerza probatoria, y toma en consideración informes de observadores y organizaciones sociales para esclarecer o corroborar hechos.</li>
+      <li>En <strong>Budayeva y otros vs. Rusia</strong> se establece que el derecho a la vida impone obligaciones positivas al Estado frente a desastres naturales.</li>
+    </ul>
+    <p class="grande" style="margin-top:1.8rem">De cada registro se puede responder quién lo reportó, cuándo, dónde, qué observó, con qué instrumento, con qué evidencia, si fue verificado y por quién.</p>
+    <div class="nota">
+      <p style="margin:0"><strong>Precisión que sostiene el resto:</strong> el estándar dice que estas fuentes <em>pueden ser ponderadas</em>, no que constituyan prueba. Por eso el sistema produce <strong>documentación con trazabilidad verificable</strong>, y nunca se presenta como prueba. Ese es exactamente el criterio contra el que se diseñó el modelo de datos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------------>
 <section class="slide">
   <div class="interior">
     <p class="eyebrow">Datos sensibles</p>
@@ -357,9 +408,9 @@
     <p class="lead">Se manejan nombre, documento, composición del hogar, discapacidad y condición de víctima, de población vulnerable, bajo la Ley 1581 de 2012.</p>
     <ul class="limpia">
       <li><strong>El consentimiento se aplica en el borde de salida</strong> hacia el servidor, no en la pantalla. Sin autorización la identidad no viaja, y ninguna ruta de la aplicación puede saltarse esa validación.</li>
-      <li><strong>Acceso por fila en la base de datos.</strong> Cada líder ve únicamente lo que él mismo reportó. Ocultar un botón no protege un dato.</li>
+      <li><strong>Quien controla el acceso es la base de datos, no la pantalla.</strong> Cada líder ve únicamente lo que él mismo reportó. Ocultar un botón no protege un dato.</li>
       <li><strong>Revisión previa al despliegue:</strong> seis fallos de control de acceso corregidos antes de crear el proyecto, incluidas dos vistas que exponían identidad saltándose las políticas.</li>
-      <li><strong>Toda vista pública es agregada</strong> y con la coordenada degradada.</li>
+      <li><strong>La vista pública no lleva nombre, documento ni teléfono</strong>, y la coordenada va redondeada a unos cien metros.</li>
     </ul>
     <div class="nota alerta">
       <p style="margin:0">Un error de control de acceso en una base ya poblada es mucho más caro que antes de crearla. Por eso la auditoría de seguridad se hizo primero.</p>
@@ -370,30 +421,35 @@
 <!-- 13 --------------------------------------------------------------------->
 <section class="slide">
   <div class="interior">
-    <p class="eyebrow">Estado</p>
-    <h2>Qué está listo y qué falta</h2>
-    <div class="duo" style="align-items:start;margin-top:1.2rem">
-      <div>
-        <h3>Funcionando y verificado</h3>
-        <ul class="limpia" style="margin-top:0.8rem">
-          <li>Captura sin conexión con fotos y coordenada</li>
-          <li>Cola de sincronización idempotente</li>
-          <li>Identidad y control de acceso por rol</li>
-          <li>Modelo de datos, auditoría y vista pública</li>
-        </ul>
+    <p class="eyebrow">Ruta</p>
+    <h2>Dónde estamos</h2>
+    <p class="lead">El instrumento está construido. No está probado en campo, y esa es la diferencia que importa.</p>
+
+    <div class="capas">
+      <div class="capa hecha">
+        <span class="k">1 · Construido</span>
+        <span class="v">Formulario, captura sin conexión con fotos y coordenada, modelo de datos, control de acceso y registro de remisiones. <strong>Probado en laboratorio</strong>: navegador emulando un celular, con ubicación simulada.</span>
       </div>
-      <div style="max-width:none">
-        <h3>Pendiente</h3>
-        <ul class="limpia" style="margin-top:0.8rem">
-          <li>Prueba en celulares reales de gama baja</li>
-          <li>Servidor y despliegue</li>
-          <li>Tablero y mapa en vivo</li>
-          <li>Remisiones con radicado y seguimiento</li>
-        </ul>
+      <div class="capa aqui">
+        <span class="k">2 · Aquí estamos</span>
+        <span class="v"><strong>Prueba en celulares reales, con líderes reales.</strong> Gama baja, poca memoria, pantalla bajo el sol, un pulgar de verdad. Es lo único que puede decir si sirve, y todavía no ha ocurrido.</span>
+      </div>
+      <div class="capa futura">
+        <span class="k">3 · Sigue</span>
+        <span class="v">Servidor y sincronización real. Hoy el dato nunca ha viajado del celular a una base central, porque esa base todavía no existe.</span>
+      </div>
+      <div class="capa futura">
+        <span class="k">4 · Después</span>
+        <span class="v">Tablero y mapa en vivo. Remisión con radicado, respuesta registrada y mora medida.</span>
+      </div>
+      <div class="capa futura">
+        <span class="k">5 · Escala</span>
+        <span class="v">Otro municipio lo usa sin tocar código.</span>
       </div>
     </div>
+
     <div class="nota alerta">
-      <p style="margin:0"><strong>El levantamiento masivo aún no comienza.</strong> Lo que se presenta es el método y el instrumento, no un resultado. Las cifras se reportarán cuando existan y estén verificadas.</p>
+      <p style="margin:0"><strong>Ningún líder ha registrado todavía a una familia real con esta herramienta.</strong> Lo que se presenta es el método y el instrumento, no un resultado. Las cifras se reportarán cuando existan y estén verificadas.</p>
     </div>
   </div>
 </section>

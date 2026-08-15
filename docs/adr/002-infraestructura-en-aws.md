@@ -54,8 +54,13 @@ es negociable por conveniencia de la nube:
 
 1. **La aplicación funciona sin el servidor.** La captura ocurre en el
    dispositivo. La disponibilidad del backend no es crítica.
-2. **La sincronización nunca es automática.** El botón es explícito porque los
-   datos móviles los paga el voluntario.
+2. **Los datos móviles los paga el voluntario y la aplicación lo respeta.**
+   [Actualizado por la HU 1.3.3, agosto de 2026. La versión original de este ADR
+   decía "la sincronización nunca es automática". Se corrigió al distinguir los
+   dos pesos: el caso son unos 3 KB y viaja solo al reconectar; la fotografía son
+   unos 200 KB y sigue esperando el botón. Retener el caso no ahorraba datos y sí
+   retrasaba la atención. Con el ahorro de datos activo no se manda nada sin
+   pedirlo, y nunca hay envío en segundo plano con la aplicación cerrada.]
 3. **Iniciar sesión exige conexión; capturar, no.** Un token vencido en el monte
    no puede costar una jornada.
 4. **Una sola base de datos, tres reportes.** El total consolidado es la palanca
@@ -73,10 +78,10 @@ contenido en cuatro puntos:
 | `auth.uid()`, en 9 usos, todos dentro de políticas | Función que lee `current_setting('app.user_id')` |
 | `references auth.users(id)` | Tabla local `auth.users`, espejo de Cognito |
 | Roles `anon` y `authenticated` | Son roles corrientes de PostgreSQL |
-| Disparador `after insert on auth.users` | Lambda de Post-Confirmation de Cognito |
+| Disparador `after insert on auth.users` | La API escribe en `auth.users` al dar de alta (ver más abajo) |
 
 Con un shim de unas 40 líneas —[`entorno/postgres/00-shim-auth.sql`](../../entorno/postgres/00-shim-auth.sql)—
-**las 12 tablas, las 5 vistas, todas las políticas RLS y los seis hallazgos
+**las 13 tablas, las 7 vistas, todas las políticas RLS y los seis hallazgos
 corregidos en [SEGURIDAD.md](../../supabase/SEGURIDAD.md) sobreviven sin
 reescribirse.** El disparador que crea el perfil con el rol menos privilegiado
 sigue funcionando tal cual.
@@ -84,6 +89,53 @@ sigue funcionando tal cual.
 Se conserva también el contrato con KoboToolbox: las columnas siguen replicando
 los nombres del XLSForm, así que la vía paralela de la fase 0 no se interrumpe y
 migrar de Kobo sigue siendo una carga, no una reescritura.
+
+### Qué tiene que traer el pool de Cognito
+
+La API ya está escrita contra Cognito, así que el pool no se puede configurar «como
+salga»: hay cuatro cosas que si no coinciden, el ingreso falla. Se dejan aquí para que
+quien monte la infraestructura (HU 1.1.1) no las adivine, y porque el entorno local ya
+las cumple y sirve de referencia — ver [`entorno/aws/bootstrap.sh`](../../entorno/aws/bootstrap.sh).
+
+| Qué | Por qué |
+|---|---|
+| Cliente con `ALLOW_USER_PASSWORD_AUTH` | Es el flujo que usa `POST /sesion`. Sin él, Cognito rechaza todo ingreso |
+| Correo como nombre de usuario | El voluntario escribe su correo, no un alias |
+| Si el cliente lleva **secreto**, hay que darle `COGNITO_CLIENT_SECRET` a la API | Con secreto, Cognito exige `SECRET_HASH`. El entorno local crea el cliente **sin** secreto, así que este es el punto donde algo funciona en la máquina de quien programa y falla en la nube |
+| Sin segundo factor, por ahora | La API detecta el desafío y responde con un mensaje claro, pero no lo resuelve |
+
+Variables que la API espera: `COGNITO_CLIENT_ID`, `COGNITO_JWKS_URI`, `COGNITO_ISSUER`,
+`AWS_REGION`, y `COGNITO_CLIENT_SECRET` solo si aplica. En local basta con
+`COGNITO_ENDPOINT` apuntando a cognito-local.
+
+### Cómo llega un voluntario a tener perfil — resuelto sin Lambda
+
+En Supabase, crear un usuario disparaba solo la fila de `perfiles`. Este ADR propuso
+reemplazar ese disparador con una **Lambda de post-confirmación** de Cognito.
+
+**Esa Lambda no se construyó, y ya no hace falta.** El 15 de agosto de 2026 se resolvió
+por un camino más simple: el alta de voluntarios pasa por la API, y es la API la que
+escribe en `auth.users`.
+
+```
+POST /voluntarios   (solo el custodio)
+   └─> Cognito: crea la cuenta
+   └─> insert en auth.users
+         └─> disparador tr_crear_perfil
+               └─> fila en perfiles, con rol lider
+```
+
+Las dos escrituras son idempotentes, de modo que un corte a mitad se arregla repitiendo
+el alta.
+
+**Por qué esto es mejor que la Lambda y no solo más rápido:** una Lambda de
+post-confirmación solo se dispara cuando alguien se registra por su cuenta, y aquí
+**no hay registro abierto a propósito** — lo que se escribe con esa cuenta es el padrón
+de familias damnificadas. Una pieza que reacciona a un evento que decidimos que nunca
+ocurra es una pieza que sobra, y una más que mantener, desplegar y auditar.
+
+Volvería a hacer falta el día que se abra el registro por fuera de la API, y ese día la
+decisión de fondo a revisar no sería la Lambda sino el registro abierto.
 
 ## Arquitectura
 
@@ -111,8 +163,9 @@ Un servicio pequeño en contenedor, no Lambda. Tres razones, todas operativas:
 - **Un solo código y desarrollo local trivial**, que es lo que permite que un
   voluntario con dos horas semanales aporte sin aprenderse la nube.
 
-Lambda queda para lo episódico: el disparador post-confirmación de Cognito y la
-regeneración del JSON del mapa.
+Lambda queda para lo episódico. Hoy eso es una sola cosa: regenerar el JSON del mapa
+público cada tanto. El alta de voluntarios se resolvió dentro de la API y no necesita
+funciones.
 
 ### La frontera no se mueve
 

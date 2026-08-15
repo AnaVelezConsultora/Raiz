@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION } from '../domain/ports';
+import { RedService } from './red.service';
 
 /** Resultado de una pasada completa de la cola. */
 export interface ResultadoSincronizacion {
@@ -39,10 +40,12 @@ export class SincronizacionService {
   private readonly casos = inject(CASO_STORAGE);
   private readonly fotos = inject(FOTO_STORAGE);
   private readonly transporte = inject(SINCRONIZACION);
+  private readonly red = inject(RedService);
 
   private readonly _estado = signal<EstadoSincronizacion>('inactiva');
   private readonly _casosPendientes = signal(0);
   private readonly _fotosPendientes = signal(0);
+  private readonly _bytesFotosPendientes = signal(0);
   private readonly _ultimoError = signal<string | null>(null);
   private readonly _ultimaSincronizacion = signal<string | null>(null);
   private readonly _enLinea = signal(navigator.onLine);
@@ -63,23 +66,51 @@ export class SincronizacionService {
     () => this._enLinea() && this._estado() !== 'en_curso' && this.totalPendientes() > 0
   );
 
+  /** Peso de las fotografias por subir. Se muestra ANTES de gastarlo, no despues. */
+  readonly bytesFotosPendientes = this._bytesFotosPendientes.asReadonly();
+
+  /** El peso en palabras: "unos 1,2 MB". Vacio si no hay nada pendiente. */
+  readonly pesoFotosPendientes = computed(() => {
+    const bytes = this._bytesFotosPendientes();
+    if (bytes <= 0) return '';
+    if (bytes < 1024 * 1024) return `unos ${Math.round(bytes / 1024)} KB`;
+    return `unos ${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
+  });
+
+  /**
+   * True si conviene ofrecer el envio de fotografias sin rodeos.
+   *
+   * En wifi se OFRECE, no se manda solo: un wifi domestico con tope tambien se paga, y
+   * el navegador no distingue uno de otro.
+   */
+  readonly buenMomentoParaFotos = computed(
+    () => this.red.esGratis() && this._fotosPendientes() > 0
+  );
+
   constructor() {
     window.addEventListener('online', () => this.alRecuperarConexion());
     window.addEventListener('offline', () => {
       this._enLinea.set(false);
       this._estado.set('sin_conexion');
     });
-    void this.refrescarContadores();
+    // Tambien al abrir, no solo al reconectar: el evento `online` no se dispara si la
+    // aplicacion arranca con senal, y ese es el caso corriente del voluntario que baja
+    // al pueblo y abre Raiz ya conectado.
+    void this.refrescarContadores().then(() => {
+      if (this._enLinea() && this.convieneEnviarCasosSolo()) void this.sincronizar(true);
+    });
   }
 
   /** Recalcula los contadores de pendientes desde el almacenamiento local. */
   async refrescarContadores(): Promise<void> {
-    const [casos, fotos] = await Promise.all([
+    const [casos, fotos, bytes] = await Promise.all([
       this.casos.contarPendientes(),
-      this.fotos.contarPendientes()
+      this.fotos.contarPendientes(),
+      this.fotos.bytesPendientes()
     ]);
     this._casosPendientes.set(casos);
     this._fotosPendientes.set(fotos);
+    this._bytesFotosPendientes.set(bytes);
   }
 
   /**
@@ -88,7 +119,7 @@ export class SincronizacionService {
    * Es idempotente y segura de invocar varias veces: si ya hay una pasada en curso,
    * retorna sin hacer nada.
    */
-  async sincronizar(): Promise<ResultadoSincronizacion> {
+  async sincronizar(soloCasos = false): Promise<ResultadoSincronizacion> {
     const vacio: ResultadoSincronizacion = {
       casosEnviados: 0,
       casosFallidos: 0,
@@ -110,9 +141,10 @@ export class SincronizacionService {
 
     try {
       const resultadoCasos = await this.enviarCasos();
-      const resultadoFotos = resultadoCasos.interrumpida
-        ? { enviadas: 0, fallidas: 0, interrumpida: true }
-        : await this.enviarFotos();
+      const resultadoFotos =
+        soloCasos || resultadoCasos.interrumpida
+          ? { enviadas: 0, fallidas: 0, interrumpida: resultadoCasos.interrumpida }
+          : await this.enviarFotos();
 
       await this.refrescarContadores();
       this._ultimaSincronizacion.set(new Date().toISOString());
@@ -202,13 +234,47 @@ export class SincronizacionService {
     return { enviadas, fallidas, interrumpida: false };
   }
 
+  /**
+   * Al volver la senal: los CASOS salen solos. Las FOTOS esperan.
+   *
+   * La regla anterior era no enviar nada sin que el voluntario tocara el boton, para
+   * no gastarle los datos sin permiso. La intencion era correcta pero el corte estaba
+   * en el lugar equivocado, porque trata igual dos cosas que no cuestan igual:
+   *
+   *   un caso   ~3 KB    veinte casos son unos 60 KB: un mensaje de texto largo
+   *   una foto  ~200 KB  veinte fotos son 4 MB, y eso si es el plan del voluntario
+   *
+   * Con el boton unico, el costo real de olvidarlo no lo pagaba el voluntario sino la
+   * familia: el caso se quedaba en el celular y nadie sabia que existia. Pedirle a
+   * alguien que camino hasta una vereda que ademas se acuerde de tocar un boton al
+   * bajar es cargarle trabajo a quien menos sobra.
+   *
+   * Asi que el registro que permite atender a la familia viaja solo, y el binario
+   * pesado sigue necesitando una decision. Es el mismo principio que ya rige el orden
+   * de la cola: casos antes que fotos, porque si la ventana de senal alcanza para una
+   * sola cosa, que sea el registro.
+   *
+   * No se toca la regla de que iniciar sesion exige conexion y capturar no.
+   */
   private alRecuperarConexion(): void {
     this._enLinea.set(true);
     this._estado.set('inactiva');
-    // No se sincroniza solo: en zona rural la senal aparece y desaparece, y un envio
-    // automatico consume los datos del voluntario sin que el lo decida. El boton
-    // "Sincronizar" es explicito y muestra cuantos elementos hay pendientes.
-    void this.refrescarContadores();
+
+    void this.refrescarContadores().then(() => {
+      if (this.convieneEnviarCasosSolo()) void this.sincronizar(true);
+    });
+  }
+
+  /**
+   * Si el envio automatico de casos esta permitido ahora mismo.
+   *
+   * El ahorro de datos manda sobre todo lo demas. Es una peticion explicita de alguien
+   * que esta cuidando su plan, y pesa mas que nuestra idea de que 3 KB no se notan:
+   * quien lo activo sabe por que lo hizo. Con eso puesto, ni siquiera los casos salen
+   * sin que lo pidan.
+   */
+  private convieneEnviarCasosSolo(): boolean {
+    return this._casosPendientes() > 0 && this.red.permiteEnvioAutomatico();
   }
 
   private mensajeDeError(error: unknown): string {

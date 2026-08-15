@@ -238,7 +238,8 @@
                 "pkill2913",
                 "Frank-Apotheosis"
               ],
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "nota": "PARCIAL. Cognito montado en AWS real desde entorno/aws/desplegar-cognito.sh, idempotente, con las variables generadas en entorno/generado/nube.env, que no se versiona. Alta de voluntarios con crear-voluntario.sh.\n\nFALTA todo lo demas del despliegue: Dockerfile de la API, registro de imagenes, VPC con tres grupos de seguridad, RDS PRIVADA, cluster de ECS y balanceador. Son unas 3 a 4 horas con verificacion real.\n\nDOS DECISIONES QUE NO SE DEBEN REABRIR A MITAD DE CAMINO: la API va en contenedor sobre Fargate y no en la maquina de nadie —se intento lo segundo por celeridad y se descarto porque obligaba a exponer la base a internet—; y la base no recibe trafico publico, su grupo de seguridad solo acepta al contenedor. Sesion del 15 de agosto de 2026."
             },
             {
               "id": "HU 1.1.2",
@@ -401,10 +402,13 @@
               "quiero": "que la fotografía vaya directo al almacenamiento",
               "para": "que la subida sea lo más liviana y rápida posible",
               "criterios": [
-                "URL de subida de vida corta, limitada a la ruta del caso",
-                "La fotografía no atraviesa la API en ningún momento",
-                "Sin consentimiento no se emite URL: la regla en el borde, no en la interfaz",
-                "El objeto no queda legible sin firma"
+                "Politica de subida firmada y de vida corta, limitada a la ruta del caso",
+                "La politica lleva content-length-range con el tamano que el dispositivo declaro",
+                "La fotografia no atraviesa la API en ningun momento",
+                "Sin consentimiento no se emite autorizacion: la regla en el borde, no en la interfaz",
+                "El objeto no queda legible sin firma",
+                "Hay ruta de confirmacion, idempotente, que VERIFICA el objeto contra el almacenamiento",
+                "La confirmacion consulta el objeto concreto, nunca listando un prefijo"
               ],
               "etiquetas": [
                 "BackEnd"
@@ -413,7 +417,8 @@
               "depende_de": "HU 1.2.3",
               "sugerido": [
                 "lDavidSantiago"
-              ]
+              ],
+              "nota": "EL LADO DEL CLIENTE YA ESTA. El adaptador declara fotoId, casoOrigenId, tipo, bytes y tipoMime; sube por POST multiparte con los campos firmados, poniendo el archivo de ultimo; y despues llama a POST /fotos/{id}/confirmar. Falta construir esos dos endpoints.\n\nEl contrato completo quedo escrito en el ADR 003 seccion 5, reescrita el 15 de agosto de 2026. Incluye por que son tres pasos y no dos: que el almacenamiento responda 204 no es que el objeto este ahi y completo, y sin confirmacion el dispositivo podria liberar la foto de su memoria creyendo que ya viajo.\n\nNO usar subida multiparte de objetos grandes: su parte minima es de 5 MB, asi que una foto de 200 KB seria una sola parte con dos viajes de red de mas."
             },
             {
               "id": "HU 1.2.6",
@@ -428,13 +433,15 @@
                 "Iniciar sesión exige conexión; capturar, no"
               ],
               "etiquetas": [
-                "BackEnd"
+                "BackEnd",
+                "hecha"
               ],
               "origen": "ADR 002, ADR 003",
               "depende_de": "HU 1.2.2",
               "sugerido": [
                 "DdeDiegoA"
-              ]
+              ],
+              "nota": "HECHA. La verificacion de token vive detras de una interfaz, con implementacion de nube y modo local que AVISA en el arranque que no esta verificando. Entra ademas SesionGuard como guarda global: toda ruta pide token salvo tres marcadas con `@RutaAbierta()`. El valor por defecto queda invertido a proposito, porque una ruta que alguien olvide marcar debe pedir token, no quedar abierta. El rol NO se lee del token: se lee de perfiles en cada peticion, asi revocar surte efecto de inmediato. Sesion del 15 de agosto de 2026."
             },
             {
               "id": "HU 1.2.7",
@@ -450,13 +457,38 @@
               ],
               "etiquetas": [
                 "Infra",
-                "BackEnd"
+                "BackEnd",
+                "hecha"
               ],
               "origen": "ADR 002, schema.sql §10.b",
               "sugerido": [
                 "EdwarMontano"
               ],
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "nota": "HECHA POR OTRO CAMINO. El ADR 002 asignaba esta cadena a una Lambda de post-confirmacion; en vez de eso, POST /voluntarios crea la cuenta en Cognito Y refleja el usuario en auth.users, de donde el disparador crea el perfil con rol lider. Ambas escrituras son idempotentes, asi que reintentar el alta arregla un corte a mitad.\n\nLa Lambda NO se construyo y ya no hace falta: solo se disparia con registro por cuenta propia, y aqui no lo hay a proposito. no hay registro abierto, porque lo que se escribe con esa cuenta es el padron de familias damnificadas. Da de alta el custodio. Sesion del 15 de agosto de 2026."
+            },
+            {
+              "id": "HU 1.2.8",
+              "titulo": "Entrar desde el celular sin que el navegador hable con el proveedor",
+              "como": "lider territorial",
+              "quiero": "entrar con mi correo y mi clave contra la API de Raiz",
+              "para": "no depender de una pantalla de un tercero ni de que mi celular sepa hablarle",
+              "criterios": [
+                "POST /sesion valida contra el proveedor y devuelve token, vencimiento, correo y perfil",
+                "El perfil viaja resuelto en la MISMA respuesta, no en una segunda llamada",
+                "GET /sesion responde 200 si el token sirve para enviar y 401 si no",
+                "DELETE /sesion cierra del lado del servidor y responde 204",
+                "El rol se lee de perfiles en cada peticion, nunca del token",
+                "Un usuario con activo en false no entra aunque la clave sea correcta",
+                "401 es respuesta legitima y se traduce a clase sesion, nunca a clase rechazo"
+              ],
+              "etiquetas": [
+                "BackEnd",
+                "hecha"
+              ],
+              "origen": "ADR 003 seccion 8, ampliada el 15 de agosto de 2026",
+              "depende_de": "HU 1.2.6 (verificacion de token) y HU 1.2.7 (perfil creado al alta)",
+              "nota": "HECHA. Las tres rutas de sesion contra Cognito real. Verificado contra AWS, no supuesto: token de acceso de 12 horas, emisor correcto, llaves publicas alcanzables. Es el mismo protocolo HTTPS directo que usa el adaptador, asi que lo probado es el camino real y no una simulacion.\n\nEl SDK de AWS se agrego SOLO para el alta de voluntarios, porque AdminCreateUser exige firma SigV4 y firmarla a mano es donde un error no da la cara. InitiateAuth no va firmada y sigue yendo por fetch. Sesion del 15 de agosto de 2026."
             }
           ]
         },
@@ -510,20 +542,24 @@
               "id": "HU 1.3.3",
               "titulo": "Decidir yo cuándo se gastan mis datos",
               "como": "líder territorial",
-              "quiero": "que en datos móviles se manden sólo los casos y las fotos esperen al wifi",
-              "para": "que sincronizar no me consuma el plan del mes",
+              "quiero": "que los casos salgan solos al haber senal y que las fotografias esperen mi decision",
+              "para": "que sincronizar no me consuma el plan del mes ni dependa de que yo me acuerde",
               "criterios": [
-                "En datos móviles sólo casos; en wifi casos y fotografías; con ahorro de datos, nada sin pedirlo",
-                "El botón dice qué va a mandar y cuánto pesa antes de mandarlo",
-                "Nada de sincronización automática en segundo plano"
+                "Los casos se envian solos al reconectar y al abrir la aplicacion: pesan unos 3 KB",
+                "Las fotografias, de unos 200 KB, siguen esperando el boton",
+                "En wifi se ofrece mandar tambien las fotografias",
+                "Con ahorro de datos activo no se manda nada sin pedirlo",
+                "Nada de sincronizacion automatica en segundo plano: solo con la aplicacion abierta"
               ],
               "etiquetas": [
-                "FrontEnd"
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "ADR 003",
               "sugerido": [
                 "johan1113"
-              ]
+              ],
+              "nota": "HECHA. Los casos salen solos al reconectar y al abrir; las fotografias siguen pidiendo el boton. Se agrego RedService, que lee la API de informacion de red: en wifi la tarjeta invita a mandar las fotos, y con ahorro de datos activo no sale NADA sin que lo pidan, ni siquiera los casos. La tarjeta dice cuanto pesa lo pendiente antes de gastarlo.\n\nLimite conocido y aceptado: navigator.connection solo existe en navegadores Chromium. En iOS y Firefox el tipo queda 'desconocida' y se aplica la regla conservadora, que es la de datos moviles. Se prefiere un boton de mas a un consumo que el voluntario descubre despues.\n\nREEMPLAZA la decision anterior de que la sincronizacion nunca es automatica: el corte trataba igual un caso de 3 KB y una foto de 200 KB, y el costo de olvidar el boton lo pagaba la familia, no el voluntario. ESTADO.md ya corregido; falta la lamina 10 del pitch."
             },
             {
               "id": "HU 1.3.4",
@@ -537,14 +573,16 @@
                 "La aplicación sigue corriendo completa en modo local sin backend"
               ],
               "etiquetas": [
-                "FrontEnd"
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "ADR 002",
               "depende_de": "HU 1.2.1",
               "sugerido": [
                 "luigiands-tech"
               ],
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "nota": "HECHA. Se reemplazaron los dos adaptadores de Supabase por adaptadores contra la API propia. Costo dos lineas y dos importaciones en app.config.ts; ningun componente ni servicio de dominio se modifico, y la aplicacion sigue corriendo completa en modo local con apiUrl vacio. Se retiro @supabase/supabase-js de las dependencias. Sesion del 15 de agosto de 2026, rama del frontend."
             },
             {
               "id": "HU 1.3.5",
@@ -566,6 +604,183 @@
                 "johan1113"
               ],
               "asignado": "yonathangutierrez"
+            },
+            {
+              "id": "HU 1.3.6",
+              "titulo": "Que lo que lleno de la vivienda llegue al servidor",
+              "como": "lider territorial",
+              "quiero": "que el bloque de vivienda y los anexos rural y urbano viajen con el caso",
+              "para": "que el paso mas largo del formulario no sea trabajo descartado en silencio",
+              "criterios": [
+                "El caso viaja como un solo documento y el servidor lo reparte entre familias, viviendas y produccion",
+                "El reparto ocurre en una transaccion: no quedan hogares a medias si la senal se cae",
+                "Ningun campo que el formulario captura se queda sin enviar"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Revision del adaptador de sincronizacion, 15 de agosto de 2026",
+              "nota": "HECHA del lado del cliente. El adaptador anterior solo escribia en la tabla familias: 13 campos de vivienda, 16 del anexo rural y 5 del urbano nunca viajaban. No se habia notado porque no hay servidor. Falta el lado del servidor, que es HU 1.2.1 y HU 1.2.2. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.7",
+              "titulo": "Llenar el hogar sin pelear con el teclado",
+              "como": "lider territorial",
+              "quiero": "contar personas con botones y no con diez campos numericos",
+              "para": "no abandonar el formulario en el bloque que las entidades mas exigen",
+              "criterios": [
+                "La rejilla de edad y sexo se llena sin abrir el teclado",
+                "Se ve la rejilla completa mientras se llena, y el aviso de descuadre no queda tapado",
+                "Ningun campo numerico cambia de valor al deslizar el dedo encima",
+                "Los objetivos tactiles usan la medida del sistema, no una menor"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision de ergonomia del paso 2, 15 de agosto de 2026",
+              "nota": "HECHA. Diez campos numericos eran diez aperturas de teclado, y el teclado tapa la mitad inferior de la pantalla. Se reemplazaron por un contador de menos y mas. Se cambio type=number por texto con teclado numerico en todo el paso, porque el campo numerico cambia de valor al deslizar. El aviso de descuadre subio sobre la rejilla. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.8",
+              "titulo": "Que abrir un caso y arrepentirse no deje un registro fantasma",
+              "como": "lider territorial",
+              "quiero": "que un caso sin nada del hogar no se guarde",
+              "para": "que la lista muestre familias y no filas vacias que despues inflan el total",
+              "criterios": [
+                "Un caso nuevo no se escribe hasta que haya telefono, nombre, lugar, personas, foto o coordenada",
+                "Los datos que vienen rellenados de antemano no cuentan como dato del hogar",
+                "Un caso que ya existe se sigue guardando aunque quede vacio",
+                "Guardar caso sin nada escrito avisa que falta, en vez de no hacer nada en silencio"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Defecto encontrado en revision de flujo, 15 de agosto de 2026",
+              "nota": "HECHA. persistir() escribia en IndexedDB sin preguntar si habia algo, y lo llamaban tanto Salir como Continuar. Los fantasmas se contaban como pendientes de envio y el dia que exista servidor habrian viajado, inflando el total consolidado. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.9",
+              "titulo": "Borrar del celular un registro equivocado",
+              "como": "lider territorial",
+              "quiero": "poder decidir si guardo o descarto, y borrar despues lo que quedo mal",
+              "para": "que no viaje a la entidad un registro que se creo por error",
+              "criterios": [
+                "Al salir con algo escrito se pregunta: guardar, descartar o seguir llenando",
+                "Descartar borra tambien lo que ya se habia guardado en pasadas anteriores",
+                "La lista tiene boton de borrar en cada caso sin enviar",
+                "La confirmacion ocurre en la misma tarjeta, para ver cual caso se borra",
+                "Borrar se lleva las fotografias en la misma transaccion",
+                "Un caso ya sincronizado NO se puede borrar desde el celular"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision de flujo, 15 de agosto de 2026",
+              "nota": "HECHA. Se agrego eliminar() al puerto de almacenamiento, que no existia. Borrar un caso ya enviado es supresion de datos y va por el canal del custodio, no por un boton en el celular. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.10",
+              "titulo": "Que mi nombre no se aprenda de un caso que descarte",
+              "como": "lider territorial",
+              "quiero": "que la aplicacion recuerde quien soy, pero solo de un registro que decidi conservar",
+              "para": "no encontrar rellenado lo que escribi por error y despues borre",
+              "criterios": [
+                "El perfil se guarda al conservar un caso, nunca en el guardado automatico",
+                "El campo dice que el dato es del voluntario y no de la familia",
+                "Sigue sin pedirse el nombre en cada registro"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Defecto reportado en pruebas manuales, 15 de agosto de 2026",
+              "nota": "HECHA. guardarPerfil corria en cada persistir(), asi que un caso borrado seguia ensenandole a la aplicacion. Persistir el nombre es correcto y es buen UX: el dato es del voluntario, no del registro. Sesion del 15 de agosto de 2026, rama del frontend."
+            },
+            {
+              "id": "HU 1.3.11",
+              "titulo": "Que un paso sin llenar no describa una familia sin problema",
+              "como": "coordinador de la mesa",
+              "quiero": "que los campos de dano no vengan con un valor por defecto",
+              "para": "que el silencio no entre a la base como una casa en buen estado",
+              "criterios": [
+                "Nivel de afectacion, habitabilidad y donde duerme la familia arrancan sin responder",
+                "La habitabilidad se pregunta con dos opciones, no con una casilla",
+                "Se distingue 'no se puede vivir ahi' de 'nadie pregunto'"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. El formulario traia afectacion en 'moderado', habitable en true y donde duerme en 'la misma vivienda'. Un paso que nadie llenaba describia una familia sin problema, y en un censo de damnificados el silencio no puede leerse como que la casa esta bien. La habitabilidad pasa de casilla a dos botones porque una casilla sin marcar no distingue 'no es habitable' de 'no me preguntaron', y de ese dato depende si la familia entra en la lista de quienes necesitan techo esta noche. Sesion del 15 de agosto de 2026."
+            },
+            {
+              "id": "HU 1.3.12",
+              "titulo": "Que el riesgo de colapso no dependa de que alguien se acuerde",
+              "como": "lider territorial",
+              "quiero": "que marcar riesgo de colapso deje el caso en P0 automaticamente",
+              "para": "que una familia bajo una estructura que se puede caer no quede en la cola normal",
+              "criterios": [
+                "Marcar riesgo de colapso fija prioridad P0 al guardar",
+                "El aviso dice que ya quedo en P0, no pide recordarlo",
+                "Se mantiene el aviso de avisar al coordinador el mismo dia"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "defecto",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. El aviso decia 'Marque prioridad P0 en el ultimo paso'. Una advertencia que hay que recordar un paso despues es una advertencia que se pierde, y lo que se pierde aqui es una familia durmiendo bajo algo que se puede caer. Sesion del 15 de agosto de 2026."
+            },
+            {
+              "id": "HU 1.3.13",
+              "titulo": "Avisar cuando el dano y la habitabilidad se contradicen",
+              "como": "coordinador de la mesa",
+              "quiero": "que el formulario avise si dice dano severo y a la vez que si se puede vivir ahi",
+              "para": "que no entre a la base un dato que decide si la familia recibe techo",
+              "criterios": [
+                "Avisa con severo, destruida o riesgo de colapso mas habitable en si",
+                "Avisa y no bloquea: en campo puede haber una razon",
+                "El aviso queda arriba, donde el teclado no lo tapa"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. Mismo criterio que el descuadre de personas del paso 2: avisar sin bloquear, porque un formulario que bloquea es un formulario que se abandona. Sesion del 15 de agosto de 2026."
+            },
+            {
+              "id": "HU 1.3.14",
+              "titulo": "Registrar la siguiente familia de la misma casa sin repetir la ubicacion",
+              "como": "lider territorial",
+              "quiero": "crear el caso de otra familia de la misma estructura con el lugar ya puesto",
+              "para": "no escribir cuatro veces la misma vereda cuando una casa alojaba cuatro familias",
+              "criterios": [
+                "Al guardar un caso donde vivian varias familias se ofrece registrar la siguiente",
+                "Se copia el lugar completo, incluida la coordenada ya tomada",
+                "Se copia el estado del INMUEBLE: afectacion, riesgo de colapso, materiales y servicios",
+                "NO se copia nada del hogar: ni nombre, ni documento, ni telefono, ni composicion",
+                "NO se copia la autorizacion: cada familia la da por separado",
+                "NO se copian tenencia ni donde duerme: son de cada familia",
+                "El paso 3 avisa que el estado del inmueble viene del registro anterior",
+                "El caso nuevo es independiente y tiene su propio identificador de origen"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "hecha"
+              ],
+              "origen": "Revision del paso 3, 15 de agosto de 2026",
+              "nota": "HECHA. El ofrecimiento aparece al guardar, no en la lista: el voluntario todavia esta parado frente a la casa y en la lista ya no lo esta.\n\nQue se copia el estado del inmueble fue una correccion sobre la marcha. La primera version solo copiaba el lugar, y eso dejaba el registro parcial y obligaba a re-responder el dano de la MISMA casa: la grieta es la misma grieta, y volver a preguntarla invita a que un inmueble quede con 'severo' en una familia y 'moderado' en la siguiente, de modo que la entidad recibe dos verdades del mismo predio y ninguna sirve. Lo copiado queda editable y avisado.\n\nLa navegacion va por /nuevo?desde=<id> para que la creacion siga estando en un solo lugar. Se reacciona a los parametros de la ruta y no se leen una sola vez, porque Angular reutiliza el componente cuando solo cambian y el voluntario se quedaria mirando el caso que acaba de guardar."
             }
           ]
         },

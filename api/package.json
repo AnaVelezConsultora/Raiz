@@ -10,6 +10,7 @@
     "test": "npm run build && node --test 'dist/**/*.prueba.js'"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1111.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
