@@ -187,7 +187,25 @@ fi
 #
 # style-src sigue admitiendo estilos en linea. Es la concesion consciente que ya
 # estaba declarada, y se cierra el dia que esos estilos se muevan a la hoja.
-CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.$DOMINIO; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+#
+# -----------------------------------------------------------------------------
+# EL BUCKET DE FOTOGRAFIAS TIENE QUE ESTAR EN connect-src
+# -----------------------------------------------------------------------------
+#
+# El celular sube cada bloque DIRECTO al almacenamiento, no a traves de la API, y
+# para el navegador eso es otro origen. Sin este permiso el navegador cancela cada
+# bloque antes de que salga, y el error que muestra habla de la politica de
+# seguridad, no de fotografias: se ve como una foto que no sube y nadie sabe por
+# que.
+#
+# Va el bucket EXACTO, con su region, no `https:` ni un comodin sobre
+# `*.amazonaws.com`. Un comodin ahi seria permitir que un script inyectado mande
+# los casos de las familias a cualquier bucket de cualquier cuenta de AWS, que es
+# justamente lo que esta politica existe para impedir.
+BUCKET_FOTOS="${S3_BUCKET_FOTOS:-raiz-fotos-$CUENTA}"
+ORIGEN_FOTOS="https://$BUCKET_FOTOS.s3.$REGION.amazonaws.com"
+
+CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.$DOMINIO $ORIGEN_FOTOS; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 cat >"$TMP/cabeceras.json" <<JSON
 {
@@ -316,9 +334,20 @@ cat >"$TMP/distribucion.json" <<JSON
     "SSLSupportMethod": "sni-only",
     "MinimumProtocolVersion": "TLSv1.2_2021",
     "CertificateSource": "acm"
-  }
+  },
+  "Logging": { "Enabled": false, "IncludeCookies": false, "Bucket": "", "Prefix": "" }
 }
 JSON
+
+# `Logging` va explicito aunque este apagado, y no sobra: CREAR una distribucion
+# sin ese bloque funciona, pero ACTUALIZARLA falla con «Logging is missing for the
+# resource». Es decir, el guion servia la primera vez y se rompia la segunda —
+# justo cuando hay que cambiar algo con la aplicacion ya publicada.
+#
+# Apagado a proposito: los registros de acceso de CloudFront guardan la IP de cada
+# visitante en un bucket propio. Aqui eso seria acumular datos de quien consulta el
+# mapa publico sin haberlo decidido, y sin ninguna pregunta que responder con
+# ellos. El dia que haga falta, se enciende con una decision escrita.
 
 # PriceClass_100 son los puntos de presencia de America del Norte y Europa. Los de
 # America del Sur estan en las clases caras, y desde Colombia se sale igual por
@@ -344,20 +373,62 @@ if [ -z "$DIST_ID" ] || [ "$DIST_ID" = "None" ]; then
     --query 'Distribution.Id' --output text)"
   echo "    creada: $DIST_ID"
 else
-  ETAG="$(aws_ cloudfront get-distribution-config --id "$DIST_ID" --query 'ETag' --output text)"
-  # CallerReference no se puede cambiar y tiene que ser el que ya tiene la
-  # distribucion, no el que dice este archivo. Se lee y se sustituye.
-  REF_ACTUAL="$(aws_ cloudfront get-distribution-config --id "$DIST_ID" \
-    --query 'DistributionConfig.CallerReference' --output text)"
-  python3 - "$TMP/distribucion.json" "$REF_ACTUAL" <<'PY'
+  # -----------------------------------------------------------------------------
+  # Se FUNDE la plantilla sobre la configuracion actual, no se reemplaza.
+  #
+  # `update-distribution` exige la configuracion COMPLETA: cualquier campo que no
+  # se mande se toma como intento de quitarlo y responde «X is missing for the
+  # resource». Mandando solo lo que este archivo declara, el guion funcionaba la
+  # primera vez —al crear— y fallaba la segunda, que es cuando hace falta.
+  #
+  # Se descubrio agregando el bucket de fotografias a la politica de seguridad, con
+  # la aplicacion ya publicada. Primero falto `Logging`, y al ponerlo aparecio
+  # `WebACLId`: la lista es larga y no vale la pena adivinarla.
+  #
+  # Fundir tiene ademas la propiedad correcta: este guion manda sobre lo que
+  # declara —origenes, alias, politicas, certificado— y no toca lo que no conoce.
+  # -----------------------------------------------------------------------------
+  aws_ cloudfront get-distribution-config --id "$DIST_ID" > "$TMP/actual.json"
+  ETAG="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["ETag"])' "$TMP/actual.json")"
+
+  python3 - "$TMP/actual.json" "$TMP/distribucion.json" <<'PY'
 import json, sys
-ruta, ref = sys.argv[1], sys.argv[2]
-with open(ruta) as f:
-    cfg = json.load(f)
-cfg["CallerReference"] = ref
-with open(ruta, "w") as f:
-    json.dump(cfg, f)
+
+
+def fundir(actual, nuestro):
+    """Lo que este archivo declara manda; lo que no declara se conserva.
+
+    Recursiva porque los campos obligatorios que CloudFront exige estan ANIDADOS:
+    el primero que falto fue `Logging`, arriba del todo, pero el siguiente fue
+    `OriginCustomHeaders`, dentro del origen. Una fusion de primer nivel deja
+    igual de rota la segunda corrida.
+
+    Las listas se funden por posicion. En esta configuracion son listas de una
+    sola entrada —un origen, un comportamiento— asi que la posicion es identidad
+    suficiente; si algun dia hay dos origenes, esto hay que mirarlo de nuevo.
+    """
+    if isinstance(actual, dict) and isinstance(nuestro, dict):
+        salida = dict(actual)
+        for clave, valor in nuestro.items():
+            salida[clave] = fundir(actual.get(clave), valor)
+        return salida
+
+    if isinstance(actual, list) and isinstance(nuestro, list) and len(actual) == len(nuestro):
+        return [fundir(a, n) for a, n in zip(actual, nuestro)]
+
+    return nuestro
+
+
+actual = json.load(open(sys.argv[1]))["DistributionConfig"]
+nuestra = json.load(open(sys.argv[2]))
+
+# CallerReference no se puede cambiar: manda siempre el que ya tiene la
+# distribucion, no el que este archivo genero.
+nuestra["CallerReference"] = actual["CallerReference"]
+
+json.dump(fundir(actual, nuestra), open(sys.argv[2], "w"))
 PY
+
   aws_ cloudfront update-distribution --id "$DIST_ID" --if-match "$ETAG" \
     --distribution-config "file://$TMP/distribucion.json" >/dev/null
   echo "    ya existia, reconciliada: $DIST_ID"

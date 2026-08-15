@@ -6,30 +6,79 @@
  * verificacion de HU 1.2.4 en el lado del servidor: la prueba SQL comprueba el
  * upsert, esta comprueba el camino entero desde una peticion HTTP.
  *
- * Uso:
- *   node entorno/pruebas/ciclo-api.mjs [urlApi] [sub]
+ * Uso, contra el entorno local:
+ *   node entorno/pruebas/ciclo-api.mjs http://localhost:3021 <sub>
  *
- * El `sub` es el identificador del usuario en Cognito. Se obtiene con:
+ * Uso, contra un despliegue real:
+ *   node entorno/pruebas/ciclo-api.mjs https://api.apoyo-colombia.com <correo> <clave>
+ *
+ * La diferencia esta en el segundo argumento. Con un `sub` se arma un token sin
+ * firma, que solo sirve donde el verificador corre en modo local; con un correo y
+ * una clave se abre sesion de verdad contra la API, que es lo unico que vale
+ * contra la nube.
+ *
+ * El `sub` local se obtiene con:
  *   docker compose exec -T db psql -U postgres -d raiz -t -A \
  *     -c "select id from auth.users where email='ana@ejemplo.test';"
+ *
+ * OJO AL CORRERLA CONTRA PRODUCCION. Registra casos de prueba en la base real, con
+ * `Prueba de ciclo (API)` como registrador para que se puedan encontrar y borrar
+ * despues. Los identificadores que creo se imprimen al final, justamente para eso.
  */
 import { createHash } from 'node:crypto';
 
 const API = process.argv[2] ?? 'http://localhost:3021';
-const SUB = process.argv[3];
+const QUIEN = process.argv[3];
+const CLAVE = process.argv[4];
 
-/** El almacenamiento local. Solo se consulta para verificar lo que quedo guardado. */
+/**
+ * El almacenamiento, para mirar lo que quedo guardado.
+ *
+ * Contra el entorno local se lee el objeto y se compara byte por byte, que es lo
+ * unico que demuestra que los bloques se unieron EN ORDEN. LocalStack lo sirve sin
+ * firma, y eso es una carencia suya, no un permiso nuestro.
+ *
+ * Contra un despliegue real esa misma lectura tiene que FALLAR, y ahi se comprueba
+ * lo contrario: que una peticion anonima a una fotografia no la entrega. Es el
+ * punto 6 de SEGURIDAD.md, el que el propio documento llama «el que mas se
+ * olvida», y no se puede verificar en local.
+ */
+const LOCAL = /localhost|127\.0\.0\.1/.test(API);
 const S3 = process.env.S3_ENDPOINT ?? 'http://localhost:4566';
 const BUCKET = process.env.S3_BUCKET_FOTOS ?? 'raiz-fotos';
+const urlObjeto = (ruta) =>
+  LOCAL ? `${S3}/${BUCKET}/${ruta}` : `https://${BUCKET}.s3.amazonaws.com/${ruta}`;
 
-if (!SUB) {
-  console.error('Falta el sub del usuario. Ver el encabezado de este archivo.');
+if (!QUIEN) {
+  console.error('Falta el sub del usuario, o su correo y clave. Ver el encabezado.');
   process.exit(1);
 }
 
-/** Token sin firma: el verificador corre en modo local cuando no hay proveedor. */
-const base64url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
-const token = `eyJhbGciOiJub25lIn0.${base64url({ sub: SUB })}.`;
+/**
+ * El token con el que corre toda la prueba.
+ *
+ * Con correo y clave se abre sesion contra la API, que ademas comprueba de paso que
+ * el camino de identidad funciona. Sin ellos se arma un token sin firma, que el
+ * verificador acepta solo en modo local.
+ */
+const token = await (async () => {
+  if (!QUIEN.includes('@')) {
+    const base64url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+    return `eyJhbGciOiJub25lIn0.${base64url({ sub: QUIEN })}.`;
+  }
+
+  const r = await fetch(`${API}/sesion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ correo: QUIEN, clave: CLAVE })
+  });
+
+  if (!r.ok) {
+    console.error(`No se pudo abrir sesion como ${QUIEN}: ${r.status} ${await r.text()}`);
+    process.exit(1);
+  }
+  return (await r.json()).token;
+})();
 
 /**
  * Los identificadores se generan en cada corrida, y no son fijos.
@@ -45,7 +94,9 @@ const ORIGEN_SIN_CONSENTIMIENTO = crypto.randomUUID();
 const CASO = {
   origenId: ORIGEN_CASO,
   control: {
-    registradorNombre: 'Ana Lider (prueba)',
+    // Nombre reconocible A PROPOSITO: es lo que permite encontrar y borrar lo que
+    // esta prueba deja, sobre todo cuando corre contra la base real.
+    registradorNombre: 'Prueba de ciclo (API)',
     registradorOrg: 'Mesa de sistematizacion',
     registradorTel: null,
     fuenteDato: 'presencial',
@@ -293,16 +344,28 @@ comprobar(
   'la suma de lo guardado es la de la imagen original: se unio en orden y sin danarse'
 );
 
-// El objeto guardado, byte por byte. LocalStack sirve sin firma —eso NO pasa en
-// AWS, y es la salvedad conocida de este entorno— y aqui se aprovecha para
-// comprobar el contenido, que es lo que ninguna cabecera puede afirmar.
-const guardada = Buffer.from(
-  await (await fetch(`${S3}/${BUCKET}/${cerrada.cuerpo.ruta}`)).arrayBuffer()
-);
-comprobar(
-  guardada.equals(DATOS),
-  `lo guardado es identico a lo capturado (${guardada.length} bytes)`
-);
+// Lo que quedo en el almacenamiento. Dos comprobaciones distintas, cada una en el
+// entorno donde significa algo.
+if (LOCAL) {
+  const guardada = Buffer.from(
+    await (await fetch(urlObjeto(cerrada.cuerpo.ruta))).arrayBuffer()
+  );
+  comprobar(
+    guardada.equals(DATOS),
+    `lo guardado es identico a lo capturado (${guardada.length} bytes)`
+  );
+} else {
+  // Lo que se exige es que NO la entregue. El codigo exacto puede variar: un bucket
+  // recien creado responde 404 durante unos minutos, mientras propaga el nombre de
+  // estilo virtual host, y despues pasa a 403 AccessDenied. Atarse a uno de los dos
+  // haria fallar la prueba por una razon que no tiene que ver con el permiso.
+  const anonima = await fetch(urlObjeto(cerrada.cuerpo.ruta));
+  const cuerpoAnonimo = await anonima.text();
+  comprobar(
+    !anonima.ok && !cuerpoAnonimo.includes('\uFFFD') && cuerpoAnonimo.includes('<Error>'),
+    `una peticion anonima a la fotografia NO la entrega (${anonima.status})`
+  );
+}
 
 // --- reintentos: confirmar y pedir permiso son idempotentes -----------------
 const reconfirma = await api('POST', `/fotos/${FOTO}/confirmar`, { ruta: cerrada.cuerpo.ruta });
@@ -338,11 +401,22 @@ comprobar(
   `una imagen danada NO se da por guardada (${rechazada.estado}/${rechazada.cuerpo?.clase})`
 );
 
-const noQuedo = await fetch(`${S3}/${BUCKET}/${permisoMalo.cuerpo.ruta}`);
+// Que no quede guardada se comprueba por la API, que sirve en los dos entornos: la
+// fotografia sigue sin confirmar y sin un solo bloque, o sea que hay que subirla
+// entera otra vez.
+const trasRechazo = await api('GET', `/fotos/${FOTO_MALA}/estado`);
 comprobar(
-  noQuedo.status === 404,
-  `y no queda guardada a medias en el almacenamiento (${noQuedo.status})`
+  trasRechazo.cuerpo?.confirmada === false && trasRechazo.cuerpo?.recibidos?.length === 0,
+  'la imagen danada no queda a medias: se descartan tambien sus bloques'
 );
+
+if (LOCAL) {
+  const noQuedo = await fetch(urlObjeto(permisoMalo.cuerpo.ruta));
+  comprobar(
+    noQuedo.status === 404,
+    `y no queda nada guardado en el almacenamiento (${noQuedo.status})`
+  );
+}
 
 // --- sin autorizacion de la familia no se firma nada ------------------------
 const sinPermiso = await pedirPermiso(
@@ -363,10 +437,12 @@ const urlBloque1 = permisoBotado.cuerpo.pendientes[0].url.split('?')[0];
 
 const cancelada = await api('DELETE', `/fotos/${FOTO_BOTADA}`);
 comprobar(cancelada.estado === 204, `se cancela una subida a medias (${cancelada.estado})`);
-comprobar(
-  (await fetch(urlBloque1)).status === 404,
-  'los bloques ya transmitidos se borran: no se quedan pagando alquiler'
-);
+if (LOCAL) {
+  comprobar(
+    (await fetch(urlBloque1)).status === 404,
+    'los bloques ya transmitidos se borran: no se quedan pagando alquiler'
+  );
+}
 comprobar(
   (await api('GET', `/fotos/${FOTO_BOTADA}/estado`)).estado === 422,
   'cancelada, la fotografia ya no existe para la API'
@@ -382,3 +458,7 @@ if (fallos.length) {
   process.exit(1);
 }
 console.log('Ciclo completo verificado contra la API, la base y el almacenamiento reales.');
+console.log('');
+console.log('Casos que dejo esta corrida, por si hay que borrarlos:');
+console.log(`  ${ORIGEN_CASO}`);
+console.log(`  ${ORIGEN_SIN_CONSENTIMIENTO}`);

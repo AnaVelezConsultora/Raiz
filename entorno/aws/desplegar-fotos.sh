@@ -155,15 +155,16 @@ cat >"$TMP/ciclo.json" <<'JSON'
 {
   "Rules": [
     {
-      "ID": "abortar-subidas-a-medias",
+      "ID": "barrer-bloques-abandonados",
       "Status": "Enabled",
-      "Filter": { "Prefix": "" },
-      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+      "Filter": { "Prefix": "partes/" },
+      "Expiration": { "Days": 7 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
     },
     {
-      "ID": "retirar-versiones-viejas",
+      "ID": "retirar-versiones-viejas-de-fotos",
       "Status": "Enabled",
-      "Filter": { "Prefix": "" },
+      "Filter": { "Prefix": "casos/" },
       "NoncurrentVersionExpiration": { "NoncurrentDays": 90 }
     }
   ]
@@ -171,40 +172,74 @@ cat >"$TMP/ciclo.json" <<'JSON'
 JSON
 aws_ s3api put-bucket-lifecycle-configuration \
   --bucket "$BUCKET" --lifecycle-configuration "file://$TMP/ciclo.json" >/dev/null
-echo "    subidas a medias: se abortan a los 7 dias"
-echo "    versiones desplazadas: se retiran a los 90 dias"
+echo "    bloques abandonados bajo partes/: se borran a los 7 dias"
+echo "    versiones desplazadas de fotos: se retiran a los 90 dias"
 
 # -----------------------------------------------------------------------------
 # 5. Lo que la API puede hacer aqui
 # -----------------------------------------------------------------------------
 # Las acciones son exactamente las que hace api/src/infra/almacenamiento/s3.ts y
-# ni una mas. En particular NO esta `s3:ListBucket`: la API nunca lista el bucket
-# —el ADR 003 lo prohibe expresamente, porque listar es de consistencia eventual—
-# y sin ese permiso una consulta por prefijo falla en vez de devolver algo
-# incompleto que parezca cierto.
+# ni una mas.
 #
-# `s3:ListMultipartUploadParts` no es listar el bucket: es preguntar por las
-# partes de UNA subida concreta, por su identificador, y es lo que sostiene la
-# reanudacion.
+# -----------------------------------------------------------------------------
+# POR QUE `s3:ListBucket` SI ESTA, AUNQUE LA API NUNCA LISTE NADA
+# -----------------------------------------------------------------------------
+#
+# Este permiso se dejo fuera al principio, con el argumento de que el ADR 003
+# prohibe listar prefijos. El argumento sigue en pie —la API pregunta por cada
+# objeto y no lista— pero el permiso hace algo mas que autorizar listados: decide
+# QUE RESPONDE S3 cuando el objeto NO existe.
+#
+#   sin ListBucket -> 403 Forbidden, indistinguible de un permiso mal puesto
+#   con ListBucket -> 404 Not Found, que es la verdad
+#
+# Y la API pregunta por objetos que todavia no existen todo el tiempo: asi es como
+# sabe que bloques faltan. Sin este permiso, la primera autorizacion de cada
+# fotografia moria con 503 en produccion.
+#
+# Se descubrio desplegando, porque LocalStack responde 404 en los dos casos y en el
+# entorno local esto funciona igual de bien con permiso o sin el.
+#
+# La alternativa era tratar el 403 como «no esta», y es peor: convertiria un
+# permiso mal configurado en una subida que se reintenta para siempre sin decir
+# por que.
+# Para saber que bloques llegaron se pregunta por cada objeto, que es exacto.
+#
+# DOS PREFIJOS Y NO UNO. `casos/*` son las fotografias completas y `partes/*` los
+# bloques mientras viajan. Estan separados para que la regla de ciclo de vida
+# pueda barrer los segundos sin acercarse a los primeros — y sin `partes/*` aqui,
+# la API no puede firmar ni un solo bloque: la subida falla entera con un error de
+# permisos que no menciona la fotografia por ninguna parte.
 echo ""
 echo "==> permiso de la API"
 aws_ iam put-role-policy --role-name raiz-ecs-tarea \
   --policy-name raiz-fotografias \
   --policy-document "{
     \"Version\": \"2012-10-17\",
-    \"Statement\": [{
-      \"Effect\": \"Allow\",
-      \"Action\": [
-        \"s3:PutObject\",
-        \"s3:GetObject\",
-        \"s3:DeleteObject\",
-        \"s3:AbortMultipartUpload\",
-        \"s3:ListMultipartUploadParts\"
-      ],
-      \"Resource\": \"arn:aws:s3:::$BUCKET/casos/*\"
-    }]
+    \"Statement\": [
+      {
+        \"Sid\": \"EscribirYLeerFotografias\",
+        \"Effect\": \"Allow\",
+        \"Action\": [
+          \"s3:PutObject\",
+          \"s3:GetObject\",
+          \"s3:DeleteObject\"
+        ],
+        \"Resource\": [
+          \"arn:aws:s3:::$BUCKET/casos/*\",
+          \"arn:aws:s3:::$BUCKET/partes/*\"
+        ]
+      },
+      {
+        \"Sid\": \"SaberSiUnObjetoNoExiste\",
+        \"Effect\": \"Allow\",
+        \"Action\": \"s3:ListBucket\",
+        \"Resource\": \"arn:aws:s3:::$BUCKET\"
+      }
+    ]
   }"
-echo "    raiz-ecs-tarea puede firmar y verificar bajo casos/*, y nada mas"
+echo "    raiz-ecs-tarea escribe y lee bajo casos/* y partes/*, y nada mas"
+echo "    y puede distinguir un objeto ausente de uno prohibido"
 
 # -----------------------------------------------------------------------------
 # 6. Variables

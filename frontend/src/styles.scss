@@ -134,9 +134,16 @@ a:focus-visible {
 }
 
 /* Rejilla del desagregado por sexo y edad. */
+/* La columna del rango NO puede ceder su ancho.
+   Con `1fr auto auto`, en una pantalla angosta los dos contadores se quedan con
+   todo el espacio —su ancho intrinseco manda sobre el `1fr`— y el rotulo se parte
+   una letra por renglon: «0 / a / 5». Se vio en un iPhone, en el paso 2, y hace
+   ilegible justo la rejilla donde se cuenta a la familia.
+   El piso de 3.5rem cabe «60 o mas» sin partirse, y los contadores pasan a
+   minmax(0, 1fr) para que sean ELLOS los que encogen. */
 .rejilla-edades {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(3.5rem, max-content) minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
@@ -147,12 +154,20 @@ a:focus-visible {
   color: var(--ink-faint);
   text-align: center;
 }
-.rejilla-edades .rango { font-size: 0.85rem; color: var(--ink-soft); }
+.rejilla-edades .rango {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  /* Un rango de edad partido en dos renglones se lee mal y descuadra la fila. */
+  white-space: nowrap;
+}
 
 /* Condiciones especiales: mismas dos columnas, sin cabecera de sexo. */
+/* Mismo problema que arriba, con rotulos mas largos: aqui si se deja envolver por
+   palabras —«Enfermedad / cronica»—, que se lee bien; lo que no puede es partirse
+   por letras. */
 .rejilla-condiciones {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
@@ -169,6 +184,9 @@ a:focus-visible {
   border-radius: 999px;
   background: var(--surface);
   overflow: hidden;
+  /* Encoge con su columna en vez de empujar al rotulo fuera de la pantalla. Lo que
+     NO encoge son los botones: su tamano es el que un pulgar acierta sin mirar. */
+  max-width: 100%;
 }
 .contador-boton {
   width: var(--alto-toque);
@@ -190,6 +208,9 @@ a:focus-visible {
 
 .contador-valor {
   width: 44px;
+  /* Sin esto un input no baja de su ancho por defecto y el contador no encoge. */
+  min-width: 0;
+  flex: 1 1 44px;
   min-height: var(--alto-toque);
   padding: 0;
   border: 0;
