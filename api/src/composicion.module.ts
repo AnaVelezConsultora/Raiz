@@ -1,10 +1,22 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { RegistrarCasoService } from './aplicacion/registrar-caso.service';
-import { CASO_REPOSITORIO, SALUD, VERIFICADOR_TOKEN } from './dominio/puertos';
+import { SesionService } from './aplicacion/sesion.service';
+import {
+  CASO_REPOSITORIO,
+  PERFIL_REPOSITORIO,
+  PROVEEDOR_IDENTIDAD,
+  SALUD,
+  VERIFICADOR_TOKEN
+} from './dominio/puertos';
 import { CasosController } from './entrada/casos.controller';
 import { SaludController } from './entrada/salud.controller';
+import { SesionController } from './entrada/sesion.controller';
+import { SesionGuard } from './entrada/sesion.guard';
+import { CognitoIdentidad } from './infra/identidad/cognito';
 import { VerificadorToken } from './infra/identidad/verificador-token';
 import { CasoRepositorioPostgres } from './infra/postgres/caso-repositorio.postgres';
+import { PerfilRepositorioPostgres } from './infra/postgres/perfil-repositorio.postgres';
 import { PostgresPool } from './infra/postgres/pool';
 import { SaludPostgres } from './infra/postgres/salud.postgres';
 
@@ -16,13 +28,20 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
  * de identidad se hace en este archivo, y ningun servicio se entera.
  */
 @Module({
-  controllers: [CasosController, SaludController],
+  controllers: [CasosController, SaludController, SesionController],
   providers: [
     PostgresPool,
     RegistrarCasoService,
+    SesionService,
     { provide: CASO_REPOSITORIO, useClass: CasoRepositorioPostgres },
     { provide: VERIFICADOR_TOKEN, useClass: VerificadorToken },
-    { provide: SALUD, useClass: SaludPostgres }
+    { provide: SALUD, useClass: SaludPostgres },
+    { provide: PROVEEDOR_IDENTIDAD, useClass: CognitoIdentidad },
+    { provide: PERFIL_REPOSITORIO, useClass: PerfilRepositorioPostgres },
+
+    // Global: toda ruta pide token salvo las marcadas con @RutaAbierta(). Registrarla
+    // controlador por controlador dejaria abierta la que alguien olvide.
+    { provide: APP_GUARD, useClass: SesionGuard }
   ]
 })
 export class ComposicionModule {}

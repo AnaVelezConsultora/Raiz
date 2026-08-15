@@ -1,5 +1,6 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { SALUD, SaludPort } from '../dominio/puertos';
+import { RutaAbierta } from './ruta-abierta.decorador';
 
 /** Respuesta de disponibilidad. La consulta el dispositivo antes de vaciar la cola. */
 interface EstadoServicio {
@@ -18,6 +19,7 @@ export class SaludController {
    * servidor esta vivo pero su base no». En el primer caso reintenta mas tarde; en el
    * segundo, tampoco envia, pero sabe que el problema no es su conexion.
    */
+  @RutaAbierta()
   @Get()
   async consultar(): Promise<EstadoServicio> {
     const alcanzable = await this.salud.baseAlcanzable();
