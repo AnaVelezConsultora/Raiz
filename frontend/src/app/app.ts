@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Rol } from './core/domain/enums';
 import { AlmacenamientoService } from './core/services/almacenamiento.service';
 import { SesionService } from './core/services/sesion.service';
 import { SincronizacionService } from './core/services/sincronizacion.service';
@@ -16,7 +17,7 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header style="background:var(--accent);color:#fff;padding:.5rem 1rem">
@@ -36,6 +37,11 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
           <span style="font-size:.78rem;opacity:.9">
             {{ sesion.nombre() }} · {{ sesion.rol() }}
           </span>
+          @if (puedeAdministrar()) {
+            <a routerLink="/voluntarios"
+               style="color:#fff;font-size:.75rem;text-decoration:underline;
+                      text-underline-offset:.2rem">Voluntarios</a>
+          }
           <button type="button" (click)="salir()"
                   style="background:transparent;border:1px solid rgba(255,255,255,.5);
                          color:#fff;min-height:30px;padding:.1rem .6rem;font-size:.75rem">
@@ -75,6 +81,17 @@ export class App implements OnInit {
     void this.almacenamiento.asegurarPersistencia();
     void this.almacenamiento.medirUso();
   }
+
+  /**
+   * Muestra el enlace de administracion solo a quien puede usarlo.
+   *
+   * Es comodidad, no proteccion: quien llegue a esa ruta sin permiso recibira un no
+   * del servidor, que es donde de verdad se decide.
+   */
+  readonly puedeAdministrar = computed(() => {
+    const rol = this.sesion.rol();
+    return rol === Rol.Custodio || rol === Rol.Coordinador;
+  });
 
   async salir(): Promise<void> {
     await this.sesion.cerrarSesion();

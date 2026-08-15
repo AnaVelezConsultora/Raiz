@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import {
   AuthPort,
+  CambioPerfil,
   CredencialesAcceso,
+  PerfilAdministrable,
   PerfilUsuario,
   ResultadoAcceso,
   Sesion
@@ -88,6 +90,26 @@ export class ApiAuthAdapter implements AuthPort {
         sinConexion: true
       };
     }
+  }
+
+  async listarVoluntarios(soloInactivos = false): Promise<PerfilAdministrable[]> {
+    if (!environment.apiUrl) return [];
+
+    const ruta = soloInactivos ? '/perfiles?estado=inactivos' : '/perfiles';
+    const r = await this.pedir('GET', ruta);
+
+    if (!r.ok) throw new Error(await this.detalle(r));
+    return (await r.json()) as PerfilAdministrable[];
+  }
+
+  async cambiarVoluntario(id: string, cambio: CambioPerfil): Promise<PerfilAdministrable> {
+    if (!environment.apiUrl) {
+      throw new Error('El servidor no esta configurado.');
+    }
+
+    const r = await this.pedir('PATCH', `/perfiles/${id}`, cambio);
+    if (!r.ok) throw new Error(await this.detalle(r));
+    return (await r.json()) as PerfilAdministrable;
   }
 
   async cerrarSesion(): Promise<void> {
