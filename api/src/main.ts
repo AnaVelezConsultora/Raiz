@@ -30,8 +30,16 @@ async function arrancar(): Promise<void> {
   // envio anomalo antes de que llegue a la base.
   app.use((await import('express')).json({ limit: '256kb' }));
 
-  const puerto = Number(process.env['PUERTO'] ?? 3000);
-  await app.listen(puerto);
+  // PUERTO es el nombre del proyecto; PORT es el que inyectan las plataformas de
+  // contenedores. Se aceptan los dos para que la misma imagen sirva sin tocarla en
+  // local, en App Runner o donde la pongan.
+  const puerto = Number(process.env['PUERTO'] ?? process.env['PORT'] ?? 3000);
+
+  // Se ata a todas las interfaces explicitamente. Dentro de un contenedor, atarse
+  // solo a localhost hace que el servicio arranque bien, responda bien desde adentro
+  // y nadie de afuera lo alcance: la comprobacion de salud falla y la plataforma
+  // recicla la tarea en bucle sin decir por que.
+  await app.listen(puerto, '0.0.0.0');
 
   log.log(`API escuchando en el puerto ${puerto}`);
   if (!process.env['DATABASE_URL']) {

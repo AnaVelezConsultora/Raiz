@@ -1,6 +1,6 @@
 # Raíz — Estado del proyecto
 
-Corte: 14 de agosto de 2026. Sevilla, Valle del Cauca.
+Corte: 15 de agosto de 2026. Sevilla, Valle del Cauca.
 
 Documento para el equipo técnico voluntario. Se actualiza cuando cambie algo
 sustantivo, no cada día.
@@ -42,7 +42,7 @@ Están cerradas. Si alguien quiere reabrir una, que traiga argumentos nuevos.
 | **Las familias no afiliadas se registran** | El censo se levanta por comités y asociaciones, pero la familia sin organización es la que más riesgo tiene de quedar invisible. |
 | **El código del caso lo asigna el servidor** | Dos voluntarios sin señal generarían el mismo consecutivo. En el dispositivo se usa un código local `L-XXXX-NNN` hasta que el servidor confirme. |
 | **Iniciar sesión exige conexión, capturar no** | Un token que caduca en el monte no puede costar una jornada de trabajo. Solo sincronizar exige sesión vigente. |
-| **El caso viaja solo; la fotografía espera el botón** | Un caso pesa unos 3 KB y una fotografía unos 200 KB. Retener el caso no ahorra datos y sí retrasa la atención, así que se envía al reconectar y al abrir la aplicación. La fotografía sí espera una decisión explícita, y en wifi se ofrece mandarla. Con el ahorro de datos activo no se manda nada sin pedirlo, y nunca hay envío en segundo plano con la aplicación cerrada. |
+| **El caso viaja solo; la fotografía espera el botón** | Reemplaza a «la sincronización nunca es automática», que trataba igual un caso de 3 KB y una fotografía de 200 KB. El costo de olvidar el botón no lo pagaba el voluntario sino la familia: el caso se quedaba en el celular y nadie sabía que existía. El caso se envía al reconectar y al abrir la aplicación; la fotografía sí espera una decisión explícita, y en wifi se ofrece mandarla. Con el ahorro de datos activo no se manda nada sin pedirlo, y nunca hay envío en segundo plano con la aplicación cerrada. |
 | **KoboToolbox corre en paralelo y no se detiene** | La emergencia no espera a que terminemos. Las columnas de PostgreSQL replican los nombres del formulario de Kobo, así que migrar es una carga, no una reescritura. |
 | **La infraestructura va sobre AWS, no sobre Supabase** | [ADR 002](adr/002-infraestructura-en-aws.md). El acoplamiento a Supabase estaba contenido en cuatro puntos, de modo que las tablas, vistas y políticas se portan con un adaptador de unas cuarenta líneas. |
 | **El contrato de sincronización no depende del proveedor** | [ADR 003](adr/003-contrato-de-sincronizacion.md). Incluye la taxonomía de error —transporte, sesión, rechazo— que el cliente necesita para saber si reintentar, detenerse o marcar para revisión. |
@@ -80,7 +80,9 @@ sesión y rechazo. Corre contra el entorno local; no está desplegado.
 derivados del rol y disparador que crea el perfil al dar de alta un usuario, con el rol
 menos privilegiado por defecto. Las tres rutas de sesión —entrar, comprobar y salir—
 responden contra Cognito, y el rol se lee del perfil en cada petición, nunca del token,
-para que la custodia pueda cambiarlo sin esperar a que caduque nada.
+para que la custodia pueda cambiarlo sin esperar a que caduque nada. Desde el 15 de
+agosto el pool de Cognito existe en AWS real, y el alta de voluntarios también pasa por
+la API; ver más abajo.
 
 **Modelo de datos.** 13 tablas, 7 vistas, 19 políticas de acceso por fila y auditoría de
 cambios. Sin autorización de la familia, la identidad no entra: además del cliente y del
@@ -173,8 +175,8 @@ creara la base.
 | Frente | Estado | Depende de |
 |---|---|---|
 | F1 Captura offline | Funcionando | — |
-| F2 Identidad y acceso | Código listo, falta servidor | — |
-| F3 Sincronización y servidor | Puertos y dominio escritos; falta la API | — |
+| F2 Identidad y acceso | **Cognito montado en AWS; registro y acceso hechos en la API** | — |
+| F3 Sincronización y servidor | API escrita; **falta desplegarla** | Fargate |
 | F4 Tablero y mapa | Abierto, bloqueado por una decisión | F7 |
 | F5 Remisiones y seguimiento | Abierto | F3 |
 | F6 Calidad y prueba en campo | **Empieza ya, no depende de nada** | — |
@@ -221,14 +223,54 @@ Un noveno hallazgo ya se corrigió: **el esquema no se podía crear** (H14). Una
 generada usaba una expresión no inmutable y abortaba el archivo completo a media
 carga. Nunca se detectó porque nadie lo había ejecutado.
 
+### Identidad: qué quedó montado el 15 de agosto
+
+**Cognito existe en AWS real**, no emulado. Pool `raiz-voluntarios`, cliente `raiz-pwa`
+sin secreto, con flujo de usuario y clave. Se creó desde
+[`entorno/aws/desplegar-cognito.sh`](../entorno/aws/desplegar-cognito.sh), que es
+idempotente: correrlo otra vez no duplica nada. Los identificadores quedan en
+`entorno/generado/nube.env`, que no se versiona.
+
+Verificado contra AWS, no supuesto: el inicio de sesión devuelve un token de acceso de
+12 horas —una jornada de campo completa—, con el emisor correcto, y las llaves públicas
+responden. Es el mismo protocolo que usa el adaptador de la API, así que lo probado es
+el camino real.
+
+**La API tiene registro y acceso.** Cuatro rutas: abrir sesión, comprobar si el token
+sirve, cerrarla, y dar de alta voluntarios. Toda ruta pide token salvo tres marcadas
+explícitamente, y el valor por defecto está invertido a propósito: si alguien olvida
+marcar una ruta nueva, el resultado es que pide token, no que quede abierta.
+
+**No hay registro abierto**, y es deliberado. Da de alta el custodio, o el coordinador.
+Lo que se escribe con esa cuenta es el padrón de familias damnificadas: un formulario
+público significa que cualquiera con el enlace mete casos, y un censo contaminado no se
+limpia — se descarta, y con él el trabajo de quienes sí fueron a la vereda.
+
+El alta desde la API crea la cuenta en Cognito **y** refleja el usuario en `auth.users`,
+de donde el disparador crea el perfil con el rol menos privilegiado. Eso resuelve de
+paso el eslabón que el ADR 002 proponía resolver con una Lambda de post-confirmación.
+Esa Lambda ya no se necesita: no hay registro abierto, así que no hay ningún alta que
+ocurra fuera de la API. No usamos funciones para nada del flujo de identidad.
+
 ### Los dos bloqueos reales
 
 **Nadie ha probado esto en campo.** El código puede estar perfecto y el formulario
 seguir siendo inusable de pie, bajo el sol, con la familia esperando. Eso no lo detecta
 ninguna prueba automática. Ya no hay excusa técnica: no requiere servidor.
 
-**No existe el servidor.** Los puertos del dominio y el contrato están escritos; la API
-que los implementa, no. Hasta que exista, F3 y F5 no cierran.
+**La API no está desplegada.** Está escrita y compila, pero vive solo en el
+repositorio. Falta todo lo de la nube: empaquetarla en contenedor, el registro de
+imágenes, la red, la base en RDS, el clúster y el balanceador. Hasta que exista, el
+dato sigue sin viajar del celular a una base central.
+
+Dos cosas quedaron decididas sobre ese despliegue y conviene que no se reabran por
+error a mitad de camino:
+
+- **La API va en contenedor sobre Fargate, no en la máquina de nadie.** Se intentó lo
+  segundo por celeridad y se descartó: obligaba a exponer la base a internet.
+- **La base no recibe tráfico público.** Su grupo de seguridad solo acepta al
+  contenedor. Es lo que el ADR 002 ya decía y lo que hace que exponerla no sea
+  necesario.
 
 El bloqueo anterior —«no hay proyecto de Supabase»— ya no aplica: el entorno local
 levanta todo lo necesario para trabajar, y la infraestructura de producción es trabajo

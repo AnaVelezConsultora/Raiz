@@ -78,7 +78,7 @@ contenido en cuatro puntos:
 | `auth.uid()`, en 9 usos, todos dentro de políticas | Función que lee `current_setting('app.user_id')` |
 | `references auth.users(id)` | Tabla local `auth.users`, espejo de Cognito |
 | Roles `anon` y `authenticated` | Son roles corrientes de PostgreSQL |
-| Disparador `after insert on auth.users` | Lambda de Post-Confirmation de Cognito |
+| Disparador `after insert on auth.users` | La API escribe en `auth.users` al dar de alta (ver más abajo) |
 
 Con un shim de unas 40 líneas —[`entorno/postgres/00-shim-auth.sql`](../../entorno/postgres/00-shim-auth.sql)—
 **las 13 tablas, las 7 vistas, todas las políticas RLS y los seis hallazgos
@@ -108,28 +108,34 @@ Variables que la API espera: `COGNITO_CLIENT_ID`, `COGNITO_JWKS_URI`, `COGNITO_I
 `AWS_REGION`, y `COGNITO_CLIENT_SECRET` solo si aplica. En local basta con
 `COGNITO_ENDPOINT` apuntando a cognito-local.
 
-### La pieza que hoy falta y bloquea el ingreso real
+### Cómo llega un voluntario a tener perfil — resuelto sin Lambda
 
-En Supabase, crear un usuario disparaba solo la fila de `perfiles`. En AWS esa cadena
-tiene un eslabón que **todavía no está construido**:
+En Supabase, crear un usuario disparaba solo la fila de `perfiles`. Este ADR propuso
+reemplazar ese disparador con una **Lambda de post-confirmación** de Cognito.
+
+**Esa Lambda no se construyó, y ya no hace falta.** El 15 de agosto de 2026 se resolvió
+por un camino más simple: el alta de voluntarios pasa por la API, y es la API la que
+escribe en `auth.users`.
 
 ```
-usuario confirmado en Cognito
-   └─> Lambda de post-confirmación        ← NO EXISTE
-         └─> insert en auth.users
-               └─> disparador tr_crear_perfil
-                     └─> fila en perfiles, con rol lider
+POST /voluntarios   (solo el custodio)
+   └─> Cognito: crea la cuenta
+   └─> insert en auth.users
+         └─> disparador tr_crear_perfil
+               └─> fila en perfiles, con rol lider
 ```
 
-Sin ese primer paso, `perfiles` queda vacía y **todo ingreso real falla**, aunque las
-credenciales sean correctas. La API lo dice con todas las letras —«su cuenta existe
-pero todavía no tiene perfil asignado»— en vez de dejar entrar a alguien sin rol, que
-sería peor. Pero conviene saber que ese mensaje no es un caso raro: hoy es lo que
-recibiría el primer voluntario que entre en la nube.
+Las dos escrituras son idempotentes, de modo que un corte a mitad se arregla repitiendo
+el alta.
 
-Es **HU 1.2.7**, y es requisito de HU 1.2.8. En el entorno local no se nota porque
-`bootstrap.sh` inserta los usuarios de prueba directamente en `auth.users`, que es
-justamente lo que la Lambda tendrá que hacer.
+**Por qué esto es mejor que la Lambda y no solo más rápido:** una Lambda de
+post-confirmación solo se dispara cuando alguien se registra por su cuenta, y aquí
+**no hay registro abierto a propósito** — lo que se escribe con esa cuenta es el padrón
+de familias damnificadas. Una pieza que reacciona a un evento que decidimos que nunca
+ocurra es una pieza que sobra, y una más que mantener, desplegar y auditar.
+
+Volvería a hacer falta el día que se abra el registro por fuera de la API, y ese día la
+decisión de fondo a revisar no sería la Lambda sino el registro abierto.
 
 ## Arquitectura
 
@@ -157,8 +163,9 @@ Un servicio pequeño en contenedor, no Lambda. Tres razones, todas operativas:
 - **Un solo código y desarrollo local trivial**, que es lo que permite que un
   voluntario con dos horas semanales aporte sin aprenderse la nube.
 
-Lambda queda para lo episódico: el disparador post-confirmación de Cognito y la
-regeneración del JSON del mapa.
+Lambda queda para lo episódico. Hoy eso es una sola cosa: regenerar el JSON del mapa
+público cada tanto. El alta de voluntarios se resolvió dentro de la API y no necesita
+funciones.
 
 ### La frontera no se mueve
 

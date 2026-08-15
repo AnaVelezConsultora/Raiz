@@ -238,7 +238,8 @@
                 "pkill2913",
                 "Frank-Apotheosis"
               ],
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "nota": "PARCIAL. Cognito montado en AWS real desde entorno/aws/desplegar-cognito.sh, idempotente, con las variables generadas en entorno/generado/nube.env, que no se versiona. Alta de voluntarios con crear-voluntario.sh.\n\nFALTA todo lo demas del despliegue: Dockerfile de la API, registro de imagenes, VPC con tres grupos de seguridad, RDS PRIVADA, cluster de ECS y balanceador. Son unas 3 a 4 horas con verificacion real.\n\nDOS DECISIONES QUE NO SE DEBEN REABRIR A MITAD DE CAMINO: la API va en contenedor sobre Fargate y no en la maquina de nadie —se intento lo segundo por celeridad y se descarto porque obligaba a exponer la base a internet—; y la base no recibe trafico publico, su grupo de seguridad solo acepta al contenedor. Sesion del 15 de agosto de 2026."
             },
             {
               "id": "HU 1.1.2",
@@ -432,13 +433,15 @@
                 "Iniciar sesión exige conexión; capturar, no"
               ],
               "etiquetas": [
-                "BackEnd"
+                "BackEnd",
+                "hecha"
               ],
               "origen": "ADR 002, ADR 003",
               "depende_de": "HU 1.2.2",
               "sugerido": [
                 "DdeDiegoA"
-              ]
+              ],
+              "nota": "HECHA. La verificacion de token vive detras de una interfaz, con implementacion de nube y modo local que AVISA en el arranque que no esta verificando. Entra ademas SesionGuard como guarda global: toda ruta pide token salvo tres marcadas con `@RutaAbierta()`. El valor por defecto queda invertido a proposito, porque una ruta que alguien olvide marcar debe pedir token, no quedar abierta. El rol NO se lee del token: se lee de perfiles en cada peticion, asi revocar surte efecto de inmediato. Sesion del 15 de agosto de 2026."
             },
             {
               "id": "HU 1.2.7",
@@ -454,13 +457,15 @@
               ],
               "etiquetas": [
                 "Infra",
-                "BackEnd"
+                "BackEnd",
+                "hecha"
               ],
               "origen": "ADR 002, schema.sql §10.b",
               "sugerido": [
                 "EdwarMontano"
               ],
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "nota": "HECHA POR OTRO CAMINO. El ADR 002 asignaba esta cadena a una Lambda de post-confirmacion; en vez de eso, POST /voluntarios crea la cuenta en Cognito Y refleja el usuario en auth.users, de donde el disparador crea el perfil con rol lider. Ambas escrituras son idempotentes, asi que reintentar el alta arregla un corte a mitad.\n\nLa Lambda NO se construyo y ya no hace falta: solo se disparia con registro por cuenta propia, y aqui no lo hay a proposito. no hay registro abierto, porque lo que se escribe con esa cuenta es el padron de familias damnificadas. Da de alta el custodio. Sesion del 15 de agosto de 2026."
             },
             {
               "id": "HU 1.2.8",
@@ -479,11 +484,11 @@
               ],
               "etiquetas": [
                 "BackEnd",
-                "bloqueada"
+                "hecha"
               ],
               "origen": "ADR 003 seccion 8, ampliada el 15 de agosto de 2026",
               "depende_de": "HU 1.2.6 (verificacion de token) y HU 1.2.7 (perfil creado al alta)",
-              "nota": "EL CLIENTE YA LAS LLAMA. El adaptador de identidad del frontend (api-auth.adapter.ts) esta escrito contra estas tres rutas y hoy no existe ninguna: la aplicacion opera en modo local porque apiUrl esta vacio, y el dia que se llene, entrar falla.\n\nEl contrato completo, con el porque de cada decision, quedo en el ADR 003 seccion 8. Dos puntos que no son detalle: el perfil viaja en la misma respuesta porque un corte de senal entre dos llamadas deja a alguien autenticado y sin perfil; y el rol se lee de perfiles y no del token porque si no, retirar a un voluntario no surte efecto hasta que su token caduque.\n\nOJO DE COORDINACION: api/src lo esta construyendo la rama feature/paridad-dominio-compartido, que ya tiene el verificador de token. Acordar quien toma esta antes de empezar."
+              "nota": "HECHA. Las tres rutas de sesion contra Cognito real. Verificado contra AWS, no supuesto: token de acceso de 12 horas, emisor correcto, llaves publicas alcanzables. Es el mismo protocolo HTTPS directo que usa el adaptador, asi que lo probado es el camino real y no una simulacion.\n\nEl SDK de AWS se agrego SOLO para el alta de voluntarios, porque AdminCreateUser exige firma SigV4 y firmarla a mano es donde un error no da la cara. InitiateAuth no va firmada y sigue yendo por fetch. Sesion del 15 de agosto de 2026."
             }
           ]
         },

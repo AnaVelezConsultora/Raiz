@@ -77,7 +77,7 @@ confunda una cosa con la otra.
 | `aws` — LocalStack | S3 | solo S3 habilitado |
 | `cognito` — cognito-local | Cognito User Pool | LocalStack solo trae Cognito en el plan pago |
 | `bootstrap` — CLI de AWS | Terraform | los comandos son los mismos |
-| `siembra` — psql | Lambda de Post-Confirmation | mismo camino: Cognito asigna el `sub`, la base lo recibe |
+| `siembra` — psql | `POST /voluntarios` de la API | mismo camino: Cognito asigna el `sub`, la base lo recibe |
 
 ### El esquema no se bifurca
 

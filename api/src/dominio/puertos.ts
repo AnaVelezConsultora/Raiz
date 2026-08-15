@@ -92,6 +92,40 @@ export interface Perfil {
  */
 export interface PerfilRepositorioPort {
   porSub(sub: string): Promise<Perfil | null>;
+
+  /**
+   * Refleja en la base un usuario que acaba de crearse en el proveedor.
+   *
+   * Escribe en `auth.users`, el espejo local de Cognito, y de ahi el disparador
+   * `tr_crear_perfil` crea la fila de `perfiles` con el rol menos privilegiado. Es la
+   * misma cadena que el ADR 002 proponia resolver con una Lambda de post-confirmacion.
+   * No se construyo y no hace falta: como no hay registro abierto, el alta siempre pasa
+   * por la API, y entonces la API puede escribir aqui directamente.
+   *
+   * Es idempotente: repetirlo con el mismo `sub` no duplica ni pisa lo que haya.
+   */
+  reflejarDelProveedor(usuario: UsuarioNuevo): Promise<void>;
+}
+
+/** Datos con los que nace un voluntario. */
+export interface UsuarioNuevo {
+  sub: string;
+  correo: string;
+  nombre: string;
+  telefono: string | null;
+}
+
+/**
+ * Alta de voluntarios en el proveedor de identidad.
+ *
+ * Separado de {@link ProveedorIdentidadPort} a proposito: autenticarse lo hace el
+ * voluntario con sus propias credenciales, mientras que dar de alta lo hace la
+ * organizacion con credenciales de cuenta. Son dos poderes muy distintos y conviene
+ * que se vean distintos tambien en el codigo.
+ */
+export interface AdministradorIdentidadPort {
+  /** Crea la cuenta y le fija clave definitiva. Devuelve el `sub` asignado. */
+  crearVoluntario(correo: string, nombre: string, telefono: string | null, clave: string): Promise<string>;
 }
 
 // =============================================================================
@@ -140,3 +174,4 @@ export const VERIFICADOR_TOKEN = Symbol('VERIFICADOR_TOKEN');
 export const SALUD = Symbol('SALUD');
 export const PROVEEDOR_IDENTIDAD = Symbol('PROVEEDOR_IDENTIDAD');
 export const PERFIL_REPOSITORIO = Symbol('PERFIL_REPOSITORIO');
+export const ADMINISTRADOR_IDENTIDAD = Symbol('ADMINISTRADOR_IDENTIDAD');
