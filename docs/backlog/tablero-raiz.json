@@ -786,6 +786,25 @@
               ],
               "origen": "Revision del paso 3, 15 de agosto de 2026",
               "nota": "HECHA. El ofrecimiento aparece al guardar, no en la lista: el voluntario todavia esta parado frente a la casa y en la lista ya no lo esta.\n\nQue se copia el estado del inmueble fue una correccion sobre la marcha. La primera version solo copiaba el lugar, y eso dejaba el registro parcial y obligaba a re-responder el dano de la MISMA casa: la grieta es la misma grieta, y volver a preguntarla invita a que un inmueble quede con 'severo' en una familia y 'moderado' en la siguiente, de modo que la entidad recibe dos verdades del mismo predio y ninguna sirve. Lo copiado queda editable y avisado.\n\nLa navegacion va por /nuevo?desde=<id> para que la creacion siga estando en un solo lugar. Se reacciona a los parametros de la ruta y no se leen una sola vez, porque Angular reutiliza el componente cuando solo cambian y el voluntario se quedaria mirando el caso que acaba de guardar."
+            },
+            {
+              "id": "HU 1.3.15",
+              "titulo": "Que las fotografias suban solas cuando la red es gratis",
+              "como": "lider territorial",
+              "quiero": "no tener que acordarme de tocar un boton para que las fotos viajen",
+              "para": "dedicar el tiempo a atender a la familia y no a manejar la aplicacion",
+              "criterios": [
+                "En wifi las fotografias salen solas, sin pedir nada",
+                "En datos moviles se sigue preguntando: ese plan lo paga el voluntario",
+                "Con el ahorro de datos activo no sale nada sin pedirlo",
+                "Nunca hay envio en segundo plano con la aplicacion cerrada",
+                "El caso completo —texto y fotos— deja de aparecer como pendiente sin que nadie toque nada"
+              ],
+              "etiquetas": [
+                "FrontEnd"
+              ],
+              "origen": "prueba en iPhone del 15 de agosto de 2026; enmienda a ESTADO.md seccion 2",
+              "nota": "CAMBIA UNA DECISION ESCRITA, y por eso es una historia y no un ajuste. ESTADO.md dice «el caso viaja solo; la fotografia espera el boton», y la razon sigue en pie: un caso son 3 KB y veinte fotografias son 4 MB del plan de datos de alguien.\n\nLo que cambia es el corte. La aplicacion ya sabe distinguir una red gratuita —es el «buen momento» que hoy solo se ANUNCIA en la tarjeta de envio— asi que se puede quitar la tarea sin gastarle el plan a nadie: en wifi suben solas, en datos moviles se pregunta.\n\nPedido en campo con estas palabras: «la carga de las imagenes deberia ser desatendida y no por medio de un boton, para quitarle tareas al voluntario»."
             }
           ]
         },
@@ -1020,6 +1039,27 @@
               ],
               "origen": "ADR 002",
               "asignado": "yonathangutierrez"
+            },
+            {
+              "id": "HU 2.1.4",
+              "titulo": "Ver la fotografia del dano desde el caso",
+              "como": "integrante de la mesa",
+              "quiero": "abrir las fotografias de una familia desde su caso",
+              "para": "sustentar la remision ante la entidad con la prueba del dano",
+              "criterios": [
+                "Una ruta de lectura devuelve enlaces firmados de vida corta, nunca la imagen por la API",
+                "Las politicas de acceso mandan: un lider ve las suyas y la mesa las de su alcance",
+                "El bucket sigue sin lectura anonima, verificado contra la nube real",
+                "El enlace caduca y no sirve reenviado horas despues",
+                "Queda registro de quien pidio ver que fotografia"
+              ],
+              "etiquetas": [
+                "BackEnd",
+                "FrontEnd"
+              ],
+              "origen": "HU 1.2.5: la subida quedo hecha y la lectura no existe",
+              "depende_de": "HU 1.2.5 (hecha)",
+              "nota": "HOY LA FOTOGRAFIA ENTRA Y NO SE PUEDE VOLVER A VER. El bucket es privado y sin lectura anonima —comprobado contra AWS— y la API solo tiene rutas de escritura: autorizar, confirmar y cancelar.\n\nLa relacion con el caso ya esta: `fotos.familia_id` apunta a la familia, `fotos.url` guarda la ruta del objeto y el prefijo es el consecutivo institucional, de modo que todas las imagenes de un hogar se encuentran por `casos/RZ-2026-000014/`. La politica `hija_fotos` hace que hereden el permiso de la familia.\n\nLo que falta es una ruta de lectura que firme enlaces temporales. La necesitan el tablero (F4) y, sobre todo, el paquete de la remision (F5): una entidad que recibe un caso pide ver el dano."
             }
           ]
         },
