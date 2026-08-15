@@ -2,17 +2,10 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, describe, test } from 'node:test';
 import { Pool } from 'pg';
-import { ErrorRechazo, ErrorSesion } from '../../dominio/puertos';
+import { ErrorRechazo, ErrorTransporte } from '../../dominio/puertos';
+import { CasoRepositorioPostgres } from './caso-repositorio.postgres';
 import { casoDePrueba } from './caso-de-prueba';
-import { PostgresCasoRepositorio } from './postgres-caso.repositorio';
-
-/**
- * HU 1.2.4 — Que un corte de senal no duplique a una familia.
- *
- * Requiere el entorno local (`cd entorno && make arriba`). Si la base no
- * responde, se omiten las pruebas para no romper el build de quien solo
- * trabaja el frontend.
- */
+import { PostgresPool } from './pool';
 
 const DATABASE_URL =
   process.env['DATABASE_URL'] ?? 'postgres://raiz_api:raiz_local@localhost:5432/raiz';
@@ -20,17 +13,17 @@ const DATABASE_URL =
 const ADMIN_URL =
   process.env['DATABASE_ADMIN_URL'] ?? 'postgres://postgres:postgres@localhost:5432/raiz';
 
-describe('PostgresCasoRepositorio.registrar (HU 1.2.4)', () => {
-  let pool: Pool;
+describe('CasoRepositorioPostgres.registrar (HU 1.2.4)', () => {
   let admin: Pool;
-  let repo: PostgresCasoRepositorio;
+  let conexion: PostgresPool;
+  let repo: CasoRepositorioPostgres;
   let subAna: string;
   let subBeto: string;
   let disponible = false;
   let origenId: string;
 
   before(async () => {
-    pool = new Pool({ connectionString: DATABASE_URL });
+    process.env['DATABASE_URL'] = DATABASE_URL;
     admin = new Pool({ connectionString: ADMIN_URL });
 
     try {
@@ -59,7 +52,8 @@ describe('PostgresCasoRepositorio.registrar (HU 1.2.4)', () => {
       ]
     );
 
-    repo = new PostgresCasoRepositorio(pool);
+    conexion = new PostgresPool();
+    repo = new CasoRepositorioPostgres(conexion);
   });
 
   after(async () => {
@@ -67,8 +61,9 @@ describe('PostgresCasoRepositorio.registrar (HU 1.2.4)', () => {
       await admin.query(`DELETE FROM familias WHERE origen_id = $1::uuid`, [origenId]);
       await admin.query(`DELETE FROM perfiles WHERE id = ANY($1::uuid[])`, [[subAna, subBeto]]);
       await admin.query(`DELETE FROM auth.users WHERE id = ANY($1::uuid[])`, [[subAna, subBeto]]);
+      await conexion?.onModuleDestroy();
     }
-    await Promise.allSettled([pool?.end(), admin?.end()]);
+    await Promise.allSettled([admin?.end()]);
   });
 
   test('reintento conserva codigo RZ, una sola fila, y nadie mas puede firmarlo', async (t) => {
@@ -84,7 +79,6 @@ describe('PostgresCasoRepositorio.registrar (HU 1.2.4)', () => {
     assert.equal(primero.origenId, origenId);
     assert.equal(primero.yaExistia, false);
 
-    // Senal perdida: el dispositivo reenvia el mismo origenId.
     const reintento = await repo.registrar(
       casoDePrueba(origenId, {
         hogar: { ...caso.hogar, personasTotal: 5, tel1: '3000000888' }
@@ -114,7 +108,14 @@ describe('PostgresCasoRepositorio.registrar (HU 1.2.4)', () => {
     assert.equal(fila.rows[0]?.tel_1, '3000000888');
     assert.equal(fila.rows[0]?.registrador_perfil_id, subAna);
 
-    // Beto no puede apropiarse del origen_id de Ana.
+    const produccion = await admin.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM produccion p
+         JOIN familias f ON f.id = p.familia_id
+        WHERE f.origen_id = $1::uuid`,
+      [origenId]
+    );
+    assert.equal(produccion.rows[0]?.n, '1', 'el anexo rural debe persistir');
+
     await assert.rejects(
       () =>
         repo.registrar(
@@ -123,7 +124,7 @@ describe('PostgresCasoRepositorio.registrar (HU 1.2.4)', () => {
           }),
           { sub: subBeto }
         ),
-      (error: unknown) => error instanceof ErrorRechazo || error instanceof ErrorSesion
+      (error: unknown) => error instanceof ErrorRechazo || error instanceof ErrorTransporte
     );
 
     const dueno = await admin.query<{ registrador_perfil_id: string }>(

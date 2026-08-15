@@ -112,7 +112,7 @@ export function casoDePrueba(origenId: string, ajustes: Partial<CasoParaSincroni
     },
     triaje: {
       prioridad: Prioridad.P1,
-      necesidadesInmediatas: ['techo', 'agua'],
+      necesidadesInmediatas: ['alimentos', 'agua_potable'],
       yaRecibioAyuda: false,
       ayudaCual: null,
       ayudaQuien: null,
