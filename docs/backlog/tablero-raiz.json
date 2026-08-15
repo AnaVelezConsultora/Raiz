@@ -465,7 +465,7 @@
                 "EdwarMontano"
               ],
               "asignado": "yonathangutierrez",
-              "nota": "HECHA POR OTRO CAMINO. El ADR 002 asignaba esta cadena a una Lambda de post-confirmacion; en vez de eso, POST /voluntarios crea la cuenta en Cognito Y refleja el usuario en auth.users, de donde el disparador crea el perfil con rol lider. Ambas escrituras son idempotentes, asi que reintentar el alta arregla un corte a mitad.\n\nLa Lambda seguira haciendo falta el dia que haya altas por fuera de la API. Hoy no las hay a proposito: no hay registro abierto, porque lo que se escribe con esa cuenta es el padron de familias damnificadas. Da de alta el custodio. Sesion del 15 de agosto de 2026."
+              "nota": "HECHA POR OTRO CAMINO. El ADR 002 asignaba esta cadena a una Lambda de post-confirmacion; en vez de eso, POST /voluntarios crea la cuenta en Cognito Y refleja el usuario en auth.users, de donde el disparador crea el perfil con rol lider. Ambas escrituras son idempotentes, asi que reintentar el alta arregla un corte a mitad.\n\nLa Lambda NO se construyo y ya no hace falta: solo se disparia con registro por cuenta propia, y aqui no lo hay a proposito. no hay registro abierto, porque lo que se escribe con esa cuenta es el padron de familias damnificadas. Da de alta el custodio. Sesion del 15 de agosto de 2026."
             },
             {
               "id": "HU 1.2.8",

@@ -98,9 +98,9 @@ export interface PerfilRepositorioPort {
    *
    * Escribe en `auth.users`, el espejo local de Cognito, y de ahi el disparador
    * `tr_crear_perfil` crea la fila de `perfiles` con el rol menos privilegiado. Es la
-   * misma cadena que el ADR 002 asigna a una Lambda de post-confirmacion; mientras esa
-   * Lambda no exista, este es el unico camino por el que un voluntario llega a tener
-   * perfil, y por eso el alta pasa por la API y no por la consola de AWS.
+   * misma cadena que el ADR 002 proponia resolver con una Lambda de post-confirmacion.
+   * No se construyo y no hace falta: como no hay registro abierto, el alta siempre pasa
+   * por la API, y entonces la API puede escribir aqui directamente.
    *
    * Es idempotente: repetirlo con el mismo `sub` no duplica ni pisa lo que haya.
    */

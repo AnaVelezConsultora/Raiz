@@ -235,8 +235,9 @@ limpia — se descarta, y con él el trabajo de quienes sí fueron a la vereda.
 
 El alta desde la API crea la cuenta en Cognito **y** refleja el usuario en `auth.users`,
 de donde el disparador crea el perfil con el rol menos privilegiado. Eso resuelve de
-paso el eslabón que el ADR 002 asignaba a una Lambda de post-confirmación que no
-existe. La Lambda seguirá haciendo falta el día que haya altas por fuera de la API.
+paso el eslabón que el ADR 002 proponía resolver con una Lambda de post-confirmación.
+Esa Lambda ya no se necesita: no hay registro abierto, así que no hay ningún alta que
+ocurra fuera de la API. No usamos funciones para nada del flujo de identidad.
 
 ### Los dos bloqueos reales
 

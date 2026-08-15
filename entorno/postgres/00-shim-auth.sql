@@ -17,7 +17,7 @@ create schema if not exists auth;
 -- En Supabase la crea el servicio de autenticacion. Aqui es el espejo de Cognito:
 -- una fila por usuario, con el `sub` del User Pool como id.
 --
--- En AWS la escribe el Lambda de Post-Confirmation del User Pool. Esa insercion
+-- En AWS la escribe la API al dar de alta un voluntario. Esa insercion
 -- dispara `tr_crear_perfil` (schema.sql, seccion 10.b), que crea el perfil con el
 -- rol menos privilegiado. Ese disparador NO se modifica: sigue colgado de esta
 -- tabla igual que colgaba de la de Supabase.
@@ -32,7 +32,7 @@ create table if not exists auth.users (
 );
 
 comment on table auth.users is
-  'Espejo de Cognito. La escribe el Lambda de Post-Confirmation, nunca la API.';
+  'Espejo de Cognito. La escribe la API al dar de alta un voluntario.';
 
 -- -----------------------------------------------------------------------------
 -- auth.uid()
