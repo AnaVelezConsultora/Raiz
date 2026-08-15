@@ -73,11 +73,15 @@ export class CasoFormService {
       vivienda: this.fb.group({
         tenencia: [caso.vivienda?.tenencia ?? Tenencia.Propietario, Validators.required],
         hogaresEnEstructura: [caso.vivienda?.hogaresEnEstructura ?? 1, Validators.min(1)],
-        afectacion: [caso.vivienda?.afectacion ?? NivelAfectacion.Moderado, Validators.required],
-        habitable: [caso.vivienda?.habitable ?? true],
+        // Estos tres NO tienen valor por defecto, y es deliberado. Antes venian en
+        // "moderado", "habitable" y "duerme en la misma vivienda": un paso que nadie
+        // llenaba describia una familia sin problema. En un censo de damnificados, el
+        // silencio no puede leerse como que la casa esta bien.
+        afectacion: [caso.vivienda?.afectacion ?? null, Validators.required],
+        habitable: [caso.vivienda?.habitable ?? null],
         riesgoColapso: [caso.vivienda?.riesgoColapso ?? false],
         riesgoColapsoDesc: [caso.vivienda?.riesgoColapsoDesc],
-        dondeDuerme: [caso.vivienda?.dondeDuerme ?? LugarPernocta.MismaVivienda]
+        dondeDuerme: [caso.vivienda?.dondeDuerme ?? null]
       }),
       rural: this.fb.group({
         areaHa: [caso.anexoRural?.areaHa],
@@ -213,7 +217,12 @@ export class CasoFormService {
         convenioObs: caso.anexoConvenio?.convenioObs ?? null
       },
       triaje: {
-        prioridad: v.triaje.prioridad,
+        // El riesgo de colapso es riesgo de vida y manda sobre lo que diga la lista de
+        // prioridad. Antes el formulario le PEDIA al voluntario que se acordara de
+        // marcar P0 un paso despues; una advertencia que hay que recordar es una
+        // advertencia que se pierde, y lo que se pierde aqui es una familia durmiendo
+        // bajo algo que se puede caer.
+        prioridad: v.vivienda.riesgoColapso === true ? Prioridad.P0 : v.triaje.prioridad,
         necesidadesInmediatas: seleccion.necesidades,
         yaRecibioAyuda: caso.triaje?.yaRecibioAyuda ?? null,
         ayudaCual: caso.triaje?.ayudaCual ?? null,
