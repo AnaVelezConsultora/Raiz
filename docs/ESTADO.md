@@ -448,4 +448,8 @@ para no repetir trabajo.
 
 ---
 
+Cómo se cierra una sesión de trabajo —qué se apaga, qué se queda encendido y por
+qué, y cómo comprobar que no quedaron datos de prueba en la base real— está en
+[CIERRE-DE-SESION.md](CIERRE-DE-SESION.md).
+
 Repositorio: <https://github.com/anavelezconsultoria/raiz>
