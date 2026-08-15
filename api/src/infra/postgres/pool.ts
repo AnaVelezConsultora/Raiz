@@ -74,6 +74,26 @@ export class PostgresPool implements OnModuleDestroy {
     }
   }
 
+  /**
+   * Consulta sin poner identidad en la transaccion.
+   *
+   * USO RESTRINGIDO, Y LA RESTRICCION IMPORTA. Sin `app.user_id` las politicas de
+   * acceso por fila no tienen a quien preguntarle y la consulta corre con el rol de la
+   * conexion. Es la puerta por la que se sale toda la proteccion del esquema.
+   *
+   * Se justifica en un solo caso: leer el perfil durante el inicio de sesion, que
+   * ocurre ANTES de que exista una sesion que poner. Cualquier otro uso hay que
+   * discutirlo antes de escribirlo.
+   */
+  async sinIdentidad<T>(trabajo: (cliente: PoolClient) => Promise<T>): Promise<T> {
+    const cliente = await this.conectar();
+    try {
+      return await trabajo(cliente);
+    } finally {
+      cliente.release();
+    }
+  }
+
   /** Consulta sin identidad. Solo para comprobar que la base responde. */
   async responde(): Promise<boolean> {
     try {
