@@ -247,7 +247,13 @@ export class ApiSyncAdapter implements SincronizacionPort {
 
         if (respuesta.ok) return { exito: true, reintentable: false };
 
+        // El cuerpo del error, recortado. Un fallo de S3 llega como XML con su
+        // codigo; uno de un intermediario —un proxy del operador, una retransmision
+        // privada— llega como HTML y con otro nombre. Sin esto, un 504 en la vereda
+        // es un numero y nadie sabe a quien reclamarle.
         ultimo = `el almacenamiento respondio ${respuesta.status}`;
+        const detalle = (await respuesta.text().catch(() => '')).replace(/\s+/g, ' ').trim();
+        if (detalle) ultimo += ` — ${detalle.slice(0, 140)}`;
         if (!this.esReintentable(respuesta.status)) {
           return {
             exito: false,
