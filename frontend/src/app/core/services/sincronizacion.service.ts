@@ -96,6 +96,13 @@ export class SincronizacionService {
     return `bloque ${avance.bloque} de ${avance.totalBloques}`;
   });
 
+  /** El mismo avance en porcentaje, para la barra. */
+  readonly avanceFotoPorcentaje = computed(() => {
+    const avance = this._avanceFoto();
+    if (!avance || avance.bytesTotales <= 0) return 0;
+    return Math.min(100, Math.round((avance.bytesEnviados / avance.bytesTotales) * 100));
+  });
+
   /** El peso en palabras: "unos 1,2 MB". Vacio si no hay nada pendiente. */
   readonly pesoFotosPendientes = computed(() => {
     const bytes = this._bytesFotosPendientes();

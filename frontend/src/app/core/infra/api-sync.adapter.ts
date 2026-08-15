@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { AutorizacionSubida, Caso, FotoLocal } from '../domain/caso.model';
+import { AutorizacionSubida, BloquePendiente, Caso, FotoLocal } from '../domain/caso.model';
 import {
   AvanceFoto,
   ResultadoEnvioCaso,
@@ -55,6 +55,14 @@ export class ApiSyncAdapter implements SincronizacionPort {
    * nunca — gastando, en cada intento, los datos de lo que alcanzo a transmitir.
    */
   private static readonly ESPERA_BLOQUE_MS = 120_000;
+
+  /**
+   * Cuantas veces se insiste con un mismo bloque antes de dejarlo para la proxima.
+   *
+   * Tres y no mas: pasado eso, lo que falla no es un tropiezo sino la red, y seguir
+   * insistiendo gasta bateria y datos del voluntario contra algo que no va a ceder.
+   */
+  private static readonly INTENTOS_POR_BLOQUE = 3;
 
   async disponible(): Promise<boolean> {
     if (!environment.apiUrl) return false;
@@ -178,28 +186,12 @@ export class ApiSyncAdapter implements SincronizacionPort {
     let bytesEnviados = autorizacion.recibidos.reduce((suma, b) => suma + b.bytes, 0);
 
     for (const bloque of autorizacion.pendientes) {
-      const pedazo = foto.blob.slice(bloque.desde, bloque.hasta);
+      const resultado = await this.subirBloque(foto, bloque);
 
-      let respuesta: Response;
-      try {
-        respuesta = await fetch(bloque.url, {
-          method: 'PUT',
-          body: pedazo,
-          signal: AbortSignal.timeout(ApiSyncAdapter.ESPERA_BLOQUE_MS)
-        });
-      } catch (e) {
+      if (!resultado.exito) {
         // El bloque no llego, pero los anteriores si. Se informa cuanto viajo para que
         // la aplicacion no le diga al voluntario que no se envio nada.
-        return { exito: false, error: this.mensaje(e), reintentable: true, bytesEnviados };
-      }
-
-      if (!respuesta.ok) {
-        return {
-          exito: false,
-          error: `El almacenamiento rechazo el bloque ${bloque.numero}: ${respuesta.status}.`,
-          reintentable: this.esReintentable(respuesta.status),
-          bytesEnviados
-        };
+        return { ...resultado, bytesEnviados };
       }
 
       bytesEnviados += bloque.hasta - bloque.desde;
@@ -217,6 +209,68 @@ export class ApiSyncAdapter implements SincronizacionPort {
     // completa una imagen a la que le falta un pedazo.
     const confirmada = await this.confirmar(foto.id, autorizacion.ruta);
     return { ...confirmada, bytesEnviados };
+  }
+
+  /**
+   * Sube UN bloque, insistiendo un poco antes de rendirse.
+   *
+   * POR QUE SE INSISTE AQUI Y NO SOLO EN LA PASADA SIGUIENTE
+   *
+   * Porque hay fallos que duran segundos, no minutos: un corte de wifi al cambiar de
+   * canal, un intermediario que responde 504 sin haber preguntado a nadie, una
+   * conexion movil que se reengancha. Rendirse al primer intento convierte eso en
+   * «no se pudo enviar», el voluntario toca el boton otra vez y la pasada entera se
+   * repite desde la autorizacion.
+   *
+   * Se descubrio probando desde un iPhone: el primer bloque respondia 504 al instante
+   * y la fotografia se daba por fallida en menos de un segundo, sin nada que mirar en
+   * la pantalla.
+   *
+   * Tres intentos con espera creciente, y solo para lo que puede mejorar con el
+   * tiempo: un rechazo del dato —403 por firma vencida, 400 por tamano— no se
+   * reintenta, porque insistir con lo mismo da lo mismo.
+   */
+  private async subirBloque(
+    foto: FotoLocal,
+    bloque: BloquePendiente
+  ): Promise<ResultadoEnvioFoto> {
+    const pedazo = foto.blob.slice(bloque.desde, bloque.hasta);
+    let ultimo = 'no se intento';
+
+    for (let intento = 1; intento <= ApiSyncAdapter.INTENTOS_POR_BLOQUE; intento++) {
+      try {
+        const respuesta = await fetch(bloque.url, {
+          method: 'PUT',
+          body: pedazo,
+          signal: AbortSignal.timeout(ApiSyncAdapter.ESPERA_BLOQUE_MS)
+        });
+
+        if (respuesta.ok) return { exito: true, reintentable: false };
+
+        ultimo = `el almacenamiento respondio ${respuesta.status}`;
+        if (!this.esReintentable(respuesta.status)) {
+          return {
+            exito: false,
+            error: `Bloque ${bloque.numero}: ${ultimo}.`,
+            reintentable: false
+          };
+        }
+      } catch (e) {
+        ultimo = this.mensaje(e);
+      }
+
+      if (intento < ApiSyncAdapter.INTENTOS_POR_BLOQUE) {
+        await new Promise((seguir) => setTimeout(seguir, intento * 1500));
+      }
+    }
+
+    return {
+      exito: false,
+      error:
+        `El bloque ${bloque.numero} no paso despues de ` +
+        `${ApiSyncAdapter.INTENTOS_POR_BLOQUE} intentos: ${ultimo}.`,
+      reintentable: true
+    };
   }
 
   /**

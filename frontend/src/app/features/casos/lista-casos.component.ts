@@ -90,6 +90,19 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
             {{ sync.estado() === 'en_curso' ? 'Enviando...' : 'Enviar las fotografias' }}
           </button>
 
+          <!-- El avance, mientras sube. Sin esto, en una red que falla rapido el
+               boton parpadea «Enviando...» y vuelve, y el voluntario no tiene como
+               saber si paso algo. Con esto ve que bloque va y cuanto lleva. -->
+          @if (sync.estado() === 'en_curso' && sync.avanceFotoTexto()) {
+            <div class="pila-sm">
+              <span class="tenue">Enviando · {{ sync.avanceFotoTexto() }}</span>
+              <div style="height:6px;background:var(--rule);border-radius:999px;overflow:hidden">
+                <div [style.width.%]="sync.avanceFotoPorcentaje()"
+                     style="height:100%;background:var(--accent);transition:width .2s"></div>
+              </div>
+            </div>
+          }
+
           @if (!sync.buenMomentoParaFotos()) {
             <span class="pista">
               {{ red.tipo() === 'movil'
