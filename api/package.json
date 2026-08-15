@@ -4,10 +4,10 @@
   "description": "API de Raiz. Recibe lo que el voluntario capturo sin senal.",
   "license": "MIT",
   "scripts": {
-    "build": "nest build",
-    "dev": "nest start --watch",
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
     "start": "node dist/main.js",
-    "test": "node --test dist/**/*.prueba.js"
+    "test": "npm run build && node --test 'dist/**/*.prueba.js'"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

@@ -5,7 +5,8 @@
   "workspaces": ["dominio", "api"],
   "scripts": {
     "build": "npm run build --workspace @raiz/dominio && npm run build --workspace @raiz/api",
-    "dev:api": "npm run dev --workspace @raiz/api"
+    "dev:api": "npm run dev --workspace @raiz/api",
+    "test:api": "npm run test --workspace @raiz/api"
   },
   "engines": { "node": ">=22.12" }
 }
