@@ -45,6 +45,8 @@ export interface FotoStoragePort {
   pendientesDeSync(limite?: number): Promise<FotoLocal[]>;
   marcarSync(params: { fotoId: string; urlRemota?: string; error?: string }): Promise<void>;
   contarPendientes(): Promise<number>;
+  /** Peso total de lo pendiente, para avisar cuanto se va a gastar antes de gastarlo. */
+  bytesPendientes(): Promise<number>;
   eliminar(fotoId: string): Promise<void>;
 }
 

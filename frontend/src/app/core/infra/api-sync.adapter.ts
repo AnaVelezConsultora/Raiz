@@ -113,12 +113,16 @@ export class ApiSyncAdapter implements SincronizacionPort {
         };
       }
 
-      const { url, ruta } = (await permiso.json()) as { url: string; ruta: string };
+      const { url, campos, ruta } = (await permiso.json()) as {
+        url: string;
+        /** Campos firmados de la politica. Van ANTES del archivo en el formulario. */
+        campos?: Record<string, string>;
+        ruta: string;
+      };
 
       const subida = await fetch(url, {
-        method: 'PUT',
-        body: foto.blob,
-        headers: { 'Content-Type': 'image/jpeg' },
+        method: 'POST',
+        body: this.formulario(campos ?? {}, foto.blob),
         signal: AbortSignal.timeout(ApiSyncAdapter.ESPERA_MS)
       });
 
@@ -130,10 +134,54 @@ export class ApiSyncAdapter implements SincronizacionPort {
         };
       }
 
-      return { exito: true, urlRemota: ruta, reintentable: false };
+      // Que el almacenamiento haya respondido bien NO es que el objeto este ahi.
+      // Quien lo afirma es la API, que lo verifica contra el almacenamiento. Sin este
+      // paso el dispositivo borraria la foto de su memoria creyendo que ya viajo, y la
+      // evidencia de una familia desapareceria sin que nadie se entere.
+      return await this.confirmar(foto.id, ruta);
     } catch (e) {
       return { exito: false, error: this.mensaje(e), reintentable: true };
     }
+  }
+
+  /**
+   * Le pide a la API que confirme que el objeto existe y pesa lo declarado.
+   *
+   * La API responde con la ruta definitiva. Es la unica fuente de verdad sobre que
+   * llego: el dispositivo no decide que su foto esta a salvo.
+   */
+  private async confirmar(fotoId: string, ruta: string): Promise<ResultadoEnvioFoto> {
+    const r = await this.pedir('POST', `/fotos/${encodeURIComponent(fotoId)}/confirmar`, {
+      ruta
+    });
+
+    if (!r.ok) {
+      return {
+        exito: false,
+        error: await this.detalle(r),
+        // Que no se pueda confirmar ahora no significa que la subida fallara. Se
+        // reintenta: confirmar es idempotente y volver a hacerlo no sube nada de nuevo.
+        reintentable: true
+      };
+    }
+
+    const cuerpo = (await r.json()) as { ruta: string };
+    return { exito: true, urlRemota: cuerpo.ruta, reintentable: false };
+  }
+
+  /**
+   * Arma el formulario que espera una politica de subida por navegador.
+   *
+   * El orden importa y no es un capricho: el almacenamiento evalua la politica con lo
+   * que ya leyo, de modo que el archivo tiene que ir de ultimo. Si va antes, se
+   * rechaza la subida entera despues de haber transmitido los bytes, que en una
+   * conexion rural es justo lo que no se puede permitir.
+   */
+  private formulario(campos: Record<string, string>, blob: Blob): FormData {
+    const datos = new FormData();
+    for (const [clave, valor] of Object.entries(campos)) datos.append(clave, valor);
+    datos.append('file', blob);
+    return datos;
   }
 
   // ---------------------------------------------------------------------------
