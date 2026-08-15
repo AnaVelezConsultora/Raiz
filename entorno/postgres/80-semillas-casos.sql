@@ -63,11 +63,11 @@ select
   'Ana Lider (prueba)', u.id,
   'presencial', true,
   'Valle del Cauca', 'Sevilla', 'rural', 'Vereda Ficticia Uno',
-  4.3210, -75.9010, 'gps',
+  4.3210, -75.9010, 'sitio',
   'Familia', 'Inventada Uno', 'CC', '10000001',
   '3000000101', 4,
   1, 0, 1, 1, 0, 1,
-  'p1', array['agua', 'techo'], 'reportado'
+  'p1', array['agua_potable', 'carpa']::necesidad_t[], 'reportado'
 from auth.users u where u.email = 'ana@ejemplo.test'
 on conflict (origen_id) do nothing;
 
@@ -86,11 +86,11 @@ select
   'Beto Lider (prueba)', u.id,
   'presencial', true,
   'Valle del Cauca', 'Sevilla', 'urbana', 'Barrio Ficticio Dos',
-  4.2680, -75.9350, 'gps',
+  4.2680, -75.9350, 'sitio',
   'Familia', 'Inventada Dos', 'CC', '10000002',
   '3000000102', 3,
   1, 0, 1, 1,
-  'p0', array['alimentos'], 'reportado'
+  'p0', array['alimentos']::necesidad_t[], 'reportado'
 from auth.users u where u.email = 'beto@ejemplo.test'
 on conflict (origen_id) do nothing;
 
