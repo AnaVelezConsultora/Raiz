@@ -32,7 +32,7 @@ async function arrancar(): Promise<void> {
 
   // PUERTO es el nombre del proyecto; PORT es el que inyectan las plataformas de
   // contenedores. Se aceptan los dos para que la misma imagen sirva sin tocarla en
-  // local, en App Runner o donde la pongan.
+  // local, en Fargate o donde la pongan.
   const puerto = Number(process.env['PUERTO'] ?? process.env['PORT'] ?? 3000);
 
   // Se ata a todas las interfaces explicitamente. Dentro de un contenedor, atarse
