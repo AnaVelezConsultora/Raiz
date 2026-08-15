@@ -129,6 +129,44 @@ export class DexieFotoStorageService implements FotoStoragePort {
     return total;
   }
 
+  /**
+   * Fotografias que agotaron los reintentos y por lo tanto YA NO SE ESTAN ENVIANDO.
+   *
+   * Se cuentan aparte porque la aplicacion las seguia sumando a «pendientes»: el
+   * voluntario veia «2 por enviar», tocaba el boton, se intentaba una sola y nadie
+   * decia nada de la otra. Una fotografia que se cae de la cola en silencio es
+   * evidencia del dano que se pierde sin que nadie se entere.
+   */
+  async contarDetenidas(): Promise<number> {
+    return db.fotos
+      .filter(
+        (f) =>
+          f.meta.estadoSync === EstadoSync.Error &&
+          f.meta.intentos >= DexieFotoStorageService.MAX_INTENTOS
+      )
+      .count();
+  }
+
+  async reactivarDetenidas(): Promise<number> {
+    const detenidas = await db.fotos
+      .filter(
+        (f) =>
+          f.meta.estadoSync === EstadoSync.Error &&
+          f.meta.intentos >= DexieFotoStorageService.MAX_INTENTOS
+      )
+      .toArray();
+
+    for (const foto of detenidas) {
+      // El ultimo error NO se borra: sigue siendo lo unico que explica por que se
+      // detuvo, y si vuelve a fallar conviene poder compararlo.
+      await db.fotos.update(foto.id, {
+        meta: { ...foto.meta, estadoSync: EstadoSync.Pendiente, intentos: 0 }
+      });
+    }
+
+    return detenidas.length;
+  }
+
   async eliminar(fotoId: string): Promise<void> {
     await db.transaction('rw', db.fotos, db.imagenes, async () => {
       await db.imagenes.delete(fotoId);

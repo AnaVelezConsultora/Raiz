@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ResumenCaso } from '../../core/domain/caso.model';
 import { EstadoSync, Prioridad, Zona } from '../../core/domain/enums';
@@ -74,6 +74,16 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
             @if (sync.pesoFotosPendientes()) { · {{ sync.pesoFotosPendientes() }} }
           </strong>
 
+          <!-- Una fotografia que agoto sus reintentos ya no la envia nadie, y hasta
+               ahora se seguia contando como pendiente: el contador decia dos y solo
+               se intentaba una. -->
+          @if (sync.fotosDetenidas() > 0) {
+            <span class="error">
+              {{ sync.fotosDetenidas() }} de ellas se detuvieron tras varios intentos
+              fallidos. Al tocar enviar se vuelven a intentar.
+            </span>
+          }
+
           @if (sync.buenMomentoParaFotos()) {
             <span class="tenue">
               Buen momento: {{ red.descripcion() }}. Los casos ya se enviaron solos.
@@ -127,8 +137,22 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
         </p>
       }
 
+      <!-- Un caso ENTREGADO —texto y fotografias en el servidor— sale del feed.
+           No se borra: el borrado tiene su propio plazo y su propia regla. Lo que
+           cambia es que la pantalla deje de pedir atencion sobre algo que ya no la
+           necesita, y que lo que queda arriba sea, sin excepcion, lo que todavia
+           depende de que alguien haga algo. -->
+      @if (entregados().length > 0) {
+        <button type="button" class="btn-secundario btn-ancho"
+                (click)="verEntregados.set(!verEntregados())">
+          {{ verEntregados()
+              ? 'Ocultar los ' + entregados().length + ' ya entregados'
+              : entregados().length + ' caso(s) ya entregados · ver' }}
+        </button>
+      }
+
       <ul class="pila-sm" style="list-style:none;padding:0;margin:0">
-        @for (c of casos(); track c.id) {
+        @for (c of visibles(); track c.id) {
           <li class="tarjeta pila-sm">
             <div class="fila" style="justify-content:space-between">
               <span class="mono">{{ c.codigo }}</span>
@@ -221,6 +245,23 @@ export class ListaCasosComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly casos = signal<ResumenCaso[]>([]);
+  /** Si se despliegan los casos que ya estan completos en el servidor. */
+  readonly verEntregados = signal(false);
+
+  /**
+   * ENTREGADO es el caso completo: su texto llego y ninguna fotografia le falta.
+   *
+   * Con el texto arriba y las fotos pendientes NO cuenta, y esa es la definicion que
+   * importa: la imagen del dano es parte del registro, no un adjunto.
+   */
+  private readonly estaEntregado = (c: ResumenCaso): boolean =>
+    c.estadoSync === EstadoSync.Sincronizado && c.fotosPendientes === 0;
+
+  readonly pendientes = computed(() => this.casos().filter((c) => !this.estaEntregado(c)));
+  readonly entregados = computed(() => this.casos().filter((c) => this.estaEntregado(c)));
+  readonly visibles = computed(() =>
+    this.verEntregados() ? this.casos() : this.pendientes()
+  );
   readonly mensaje = signal<string>('');
   /** Caso con la confirmacion de borrado abierta. Null si no hay ninguna. */
   readonly porBorrar = signal<string | null>(null);
@@ -282,9 +323,22 @@ export class ListaCasosComponent implements OnInit {
     await this.recargar();
 
     if (r.casosEnviados === 0 && r.fotosEnviadas === 0) return;
+
+    // Se dice que TERMINO y que ya no depende del celular. Antes el mensaje contaba
+    // cuantos elementos salieron, que es cierto y no es lo que la persona pregunta:
+    // lo que quiere saber es si puede dejar de preocuparse.
+    const partes: string[] = [];
+    if (r.casosEnviados > 0) partes.push(`${r.casosEnviados} caso(s)`);
+    if (r.fotosEnviadas > 0) partes.push(`${r.fotosEnviadas} fotografia(s)`);
+
     this.mensaje.set(
-      `Enviados ${r.casosEnviados} caso(s) y ${r.fotosEnviadas} foto(s).` +
-        (r.interrumpida ? ' El envio quedo incompleto: vuelva a intentar con mejor senal.' : '')
+      r.interrumpida
+        ? `Se enviaron ${partes.join(' y ')}, pero el envio quedo incompleto. ` +
+            'Vuelva a intentar con mejor senal: lo que ya viajo no se repite.'
+        : `Listo: ${partes.join(' y ')} ya estan en el servidor. ` +
+            (this.sync.totalPendientes() === 0
+              ? 'No queda nada por enviar en este celular.'
+              : `Faltan ${this.sync.totalPendientes()} elemento(s).`)
     );
   }
 

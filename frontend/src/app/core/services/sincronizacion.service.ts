@@ -52,6 +52,7 @@ export class SincronizacionService {
   private readonly _enLinea = signal(navigator.onLine);
   private readonly _avanceFoto = signal<AvanceFoto | null>(null);
   private readonly _fotosEsperandoCaso = signal(0);
+  private readonly _fotosDetenidas = signal(0);
 
   readonly estado = this._estado.asReadonly();
   readonly casosPendientes = this._casosPendientes.asReadonly();
@@ -88,6 +89,14 @@ export class SincronizacionService {
    * estan bien, esperando su turno, y no fotos que fallaron.
    */
   readonly fotosEsperandoCaso = this._fotosEsperandoCaso.asReadonly();
+
+  /**
+   * Fotografias que agotaron los reintentos: nadie las esta enviando.
+   *
+   * Se muestran aparte porque hasta ahora se sumaban a las pendientes y el contador
+   * mentia: decia que faltaban dos y solo se intentaba una.
+   */
+  readonly fotosDetenidas = this._fotosDetenidas.asReadonly();
 
   /** El avance en palabras: «bloque 3 de 4». Vacio cuando no hay subida en curso. */
   readonly avanceFotoTexto = computed(() => {
@@ -150,14 +159,16 @@ export class SincronizacionService {
 
   /** Recalcula los contadores de pendientes desde el almacenamiento local. */
   async refrescarContadores(): Promise<void> {
-    const [casos, fotos, bytes] = await Promise.all([
+    const [casos, fotos, bytes, detenidas] = await Promise.all([
       this.casos.contarPendientes(),
       this.fotos.contarPendientes(),
-      this.fotos.bytesPendientes()
+      this.fotos.bytesPendientes(),
+      this.fotos.contarDetenidas()
     ]);
     this._casosPendientes.set(casos);
     this._fotosPendientes.set(fotos);
     this._bytesFotosPendientes.set(bytes);
+    this._fotosDetenidas.set(detenidas);
   }
 
   /**
@@ -185,6 +196,16 @@ export class SincronizacionService {
 
     this._estado.set('en_curso');
     this._ultimoError.set(null);
+
+    // Si quien pide la pasada es una persona —y no el arranque automatico, que solo
+    // manda casos— se devuelven a la cola las fotografias que agotaron sus intentos.
+    // Tocar el boton ES la decision de volver a intentarlo.
+    if (!soloCasos) {
+      const revividas = await this.fotos.reactivarDetenidas();
+      if (revividas > 0) {
+        await this.refrescarContadores();
+      }
+    }
 
     try {
       const resultadoCasos = await this.enviarCasos();

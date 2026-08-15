@@ -47,6 +47,17 @@ export interface FotoStoragePort {
   contarPendientes(): Promise<number>;
   /** Peso total de lo pendiente, para avisar cuanto se va a gastar antes de gastarlo. */
   bytesPendientes(): Promise<number>;
+  /** Cuantas fotografias agotaron sus reintentos y ya nadie esta enviando. */
+  contarDetenidas(): Promise<number>;
+  /**
+   * Devuelve a la cola las fotografias que agotaron sus reintentos.
+   *
+   * Lo dispara una persona, nunca un temporizador: el limite de intentos existe para
+   * no quemar bateria y datos en pasadas automaticas, no para vetar la decision de
+   * quien esta parado frente a la casa. Si alguien toca «enviar», algo cambio —otra
+   * red, otra hora, una version corregida— y merece un intento.
+   */
+  reactivarDetenidas(): Promise<number>;
   eliminar(fotoId: string): Promise<void>;
 }
 
