@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+  signal
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Caso, FotoLocal } from '../../core/domain/caso.model';
 import { FuenteCoordenada, Zona } from '../../core/domain/enums';
 import { CASO_STORAGE, FOTO_STORAGE } from '../../core/domain/ports';
+import { AlmacenamientoService } from '../../core/services/almacenamiento.service';
 import { CasoFactoryService } from '../../core/services/caso-factory.service';
 import { CasoFormService, SeleccionMultiple } from '../../core/services/caso-form.service';
 import { GeolocalizacionService } from '../../core/services/geolocalizacion.service';
@@ -58,6 +67,7 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
           @case (3) {
             <app-paso-vivienda
               [form]="f"
+              [heredado]="heredado()"
               [(requiereVivienda)]="seleccion.requiereVivienda"
               [(serviciosAfectados)]="seleccion.serviciosAfectados"
               [(cultivos)]="seleccion.cultivos"
@@ -80,12 +90,25 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
     </div>
 
     <nav style="position:fixed;left:0;right:0;bottom:0;background:var(--surface);
-                border-top:1px solid var(--rule);padding:.7rem 1rem;">
+                border-top:1px solid var(--rule);padding:.7rem 0;
+                padding-bottom:calc(.7rem + env(safe-area-inset-bottom))">
       @if (aviso()) {
         <p class="contenedor aviso peligro" style="margin:0 0 .6rem">{{ aviso() }}</p>
       }
 
-      @if (preguntandoAlSalir()) {
+      @if (ofreciendoSiguiente()) {
+        <div class="contenedor pila-sm">
+          <strong>Guardado. Esta casa alojaba mas de una familia.</strong>
+          <span class="tenue">
+            Se copia el lugar y el estado de la casa. Los datos de la familia se piden
+            de nuevo.
+          </span>
+          <button type="button" class="btn-primario btn-ancho btn-grande"
+                  (click)="siguienteFamilia()">Registrar la siguiente familia</button>
+          <button type="button" class="btn-secundario btn-ancho"
+                  (click)="terminar()">Terminar por ahora</button>
+        </div>
+      } @else if (preguntandoAlSalir()) {
         <div class="contenedor pila-sm">
           <strong>Que hacemos con este registro?</strong>
           <span class="tenue">
@@ -128,8 +151,10 @@ export class FormularioCasoComponent implements OnInit {
   private readonly formService = inject(CasoFormService);
   private readonly gps = inject(GeolocalizacionService);
   private readonly sync = inject(SincronizacionService);
+  private readonly almacenamiento = inject(AlmacenamientoService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly destruccion = inject(DestroyRef);
 
   readonly titulos = [
     'Quien reporta y donde',
@@ -174,13 +199,46 @@ export class FormularioCasoComponent implements OnInit {
   /** Mensaje para el voluntario cuando una accion no pudo hacer lo que prometia. */
   readonly aviso = signal<string>('');
 
-  async ngOnInit(): Promise<void> {
+  /** True si este caso nacio de otro de la misma casa. Lo avisa el paso 3. */
+  readonly heredado = signal(false);
+
+  /** Se ofrece registrar la siguiente familia cuando la casa alojaba mas de una. */
+  readonly ofreciendoSiguiente = signal(false);
+
+  /**
+   * Se reacciona a los parametros, no se leen una sola vez.
+   *
+   * Registrar la siguiente familia de la misma casa navega de /nuevo a /nuevo?desde=X.
+   * Angular reutiliza el componente cuando solo cambian los parametros, asi que con
+   * `snapshot` el voluntario se quedaria mirando el caso que acaba de guardar.
+   */
+  ngOnInit(): void {
+    this.ruta.queryParamMap
+      .pipe(takeUntilDestroyed(this.destruccion))
+      .subscribe(() => void this.inicializar());
+  }
+
+  private async inicializar(): Promise<void> {
     const id = this.ruta.snapshot.paramMap.get('id');
     const zonaParam = this.ruta.snapshot.queryParamMap.get('zona');
+    // `desde` trae el caso de otra familia de la misma casa: se hereda el lugar y el
+    // estado del inmueble, nunca nada del hogar. Ver crearEnMismaEstructura.
+    const desde = this.ruta.snapshot.queryParamMap.get('desde');
+
+    this.paso.set(1);
+    this.aviso.set('');
+    this.ofreciendoSiguiente.set(false);
+    this.preguntandoAlSalir.set(false);
 
     const existente = id ? await this.almacen.obtener(id) : undefined;
-    const caso = existente ?? this.factory.crear(this.aZona(zonaParam));
+    const base = desde ? await this.almacen.obtener(desde) : undefined;
+
+    const caso =
+      existente ??
+      (base ? this.factory.crearEnMismaEstructura(base) : this.factory.crear(this.aZona(zonaParam)));
+
     this.yaEstaGuardado.set(existente !== undefined);
+    this.heredado.set(existente === undefined && base !== undefined);
 
     this.caso.set(caso);
     this.form.set(this.formService.construir(caso));
@@ -226,6 +284,35 @@ export class FormularioCasoComponent implements OnInit {
     await this.persistir();
     this.recordarPerfil();
     await this.sync.refrescarContadores();
+    void this.router.navigate(['/casos']);
+  }
+
+  /** True si la casa alojaba mas de una familia y vale la pena ofrecer la siguiente. */
+  private faltanFamilias(): boolean {
+    return Number(this.form()?.get('vivienda.hogaresEnEstructura')?.value ?? 1) > 1;
+  }
+
+  /**
+   * Abre un caso nuevo para otra familia de la misma casa.
+   *
+   * Se navega a la misma ruta con `desde`, de modo que la creacion siga estando en un
+   * solo lugar (la fabrica) y no haya dos formas de nacer un caso.
+   */
+  siguienteFamilia(): void {
+    const caso = this.caso();
+    this.ofreciendoSiguiente.set(false);
+    if (!caso) return;
+
+    void this.router.navigate(['/nuevo'], {
+      queryParams: { desde: caso.id },
+      // Sin esto Angular reutiliza el componente y no vuelve a correr ngOnInit, asi
+      // que el voluntario se quedaria mirando el caso que acaba de guardar.
+      onSameUrlNavigation: 'reload'
+    });
+  }
+
+  terminar(): void {
+    this.ofreciendoSiguiente.set(false);
     void this.router.navigate(['/casos']);
   }
 
@@ -314,7 +401,22 @@ export class FormularioCasoComponent implements OnInit {
 
     await this.persistir();
     this.recordarPerfil();
+
+    // Antes de mandarlo a la lista: si la casa alojaba mas de una familia, este es el
+    // momento de registrar la siguiente. El voluntario todavia esta parado frente a
+    // la casa; en la lista ya no lo esta.
+    if (this.faltanFamilias()) {
+      await this.sync.refrescarContadores();
+      this.ofreciendoSiguiente.set(true);
+      return;
+    }
     await this.sync.refrescarContadores();
+
+    // Segundo intento de asegurar el almacenamiento. La primera peticion, al abrir
+    // la aplicacion, suele negarse por falta de senales de uso; despues de guardar
+    // un caso completo ya hay interaccion suficiente y la concesion es probable.
+    void this.almacenamiento.asegurarPersistencia();
+
     void this.router.navigate(['/casos']);
   }
 

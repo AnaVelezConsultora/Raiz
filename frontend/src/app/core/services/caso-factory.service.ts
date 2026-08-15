@@ -6,6 +6,8 @@ import {
   EstadoSync,
   FuenteCoordenada,
   FuenteDato,
+  LugarPernocta,
+  Tenencia,
   Zona
 } from '../domain/enums';
 
@@ -133,6 +135,71 @@ export class CasoFactoryService {
         sincronizadoEn: null
       }
     };
+  }
+
+  /**
+   * Crea el caso de OTRA familia que vivia en la misma casa o estructura.
+   *
+   * La unidad de registro es el hogar y no la vivienda, porque un inmueble puede
+   * alojar tres familias damnificadas y contar viviendas subestima la emergencia. Pero
+   * hasta ahora esa decision se la cobrabamos al voluntario: para la segunda familia
+   * tenia que volver a la lista y reescribir vereda, punto de referencia y coordenada,
+   * de pie y con la gente esperando. Cuatro familias eran cuatro veces lo mismo.
+   *
+   * QUE SE COPIA Y QUE NO, Y POR QUE
+   *
+   * Se copia el LUGAR, que es lo unico que de verdad comparten: departamento,
+   * municipio, zona, vereda, barrio, punto de referencia y la coordenada ya tomada.
+   * Tambien quien registra, que es la misma persona en la misma visita.
+   *
+   * NO se copia nada del hogar: ni nombre, ni documento, ni telefono, ni cuantos son,
+   * ni condiciones especiales. Son otra familia.
+   *
+   * NO se copia la autorizacion de tratamiento de datos, aunque la anterior la haya
+   * dado. El consentimiento es de cada familia y hay que volver a pedirlo; heredarlo
+   * seria registrar identidad de alguien que nunca autorizo nada.
+   *
+   * SI se copia el estado del INMUEBLE: nivel de afectacion, riesgo de colapso, de que
+   * esta hecha la casa, que servicios se interrumpieron y cuantas familias vivian ahi.
+   * La grieta es la misma grieta para las tres familias. Volver a preguntarlo no solo
+   * repite trabajo: invita a que la misma casa quede con "severo" en un registro y
+   * "moderado" en el siguiente, y entonces la entidad recibe dos verdades del mismo
+   * predio y ninguna sirve.
+   *
+   * NO se copia lo que es de cada familia aunque este en el mismo bloque:
+   *
+   *  - TENENCIA. En una misma casa puede haber un propietario y un arrendatario, y de
+   *    ese campo depende si la familia aplica a subsidio de arriendo.
+   *  - DONDE DUERME HOY. Una familia se fue donde un pariente y otra quedo en carpa.
+   *  - QUE REQUIERE LA VIVIENDA. Es la necesidad de cada hogar, no del edificio.
+   *
+   * Todo lo copiado queda editable y el paso 3 avisa que viene del registro anterior,
+   * para que nadie lo herede sin mirar.
+   */
+  crearEnMismaEstructura(base: Caso): Caso {
+    const nuevo = this.crear(base.ubicacion.zona);
+
+    nuevo.ubicacion = { ...base.ubicacion };
+    nuevo.control = {
+      ...nuevo.control,
+      fuenteDato: base.control.fuenteDato,
+      consentimiento: false
+    };
+
+    if (base.vivienda) {
+      nuevo.vivienda = {
+        ...base.vivienda,
+        // De la familia, no del inmueble: quedan sin responder a proposito.
+        // El "sin responder" se representa como null, igual que en el formulario; los
+        // tipos del modelo todavia los declaran obligatorios y eso hay que alinearlo
+        // cuando aterrice la rama que toca caso.model.ts.
+        tenencia: null as unknown as Tenencia,
+        dondeDuerme: null as unknown as LugarPernocta,
+        requiereVivienda: []
+      };
+    }
+
+    return nuevo;
   }
 
   private siguienteCodigoLocal(): string {

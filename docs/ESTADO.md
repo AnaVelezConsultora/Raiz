@@ -52,7 +52,11 @@ Están cerradas. Si alguien quiere reabrir una, que traiga argumentos nuevos.
 
 ## 3. Dónde estamos
 
-### Funcionando y verificado
+### Construido y probado en laboratorio
+
+Probado significa aqui: navegador de escritorio emulando un celular, con ubicacion
+simulada. **Nada de esto se ha ejecutado en un telefono real ni contra un servidor**,
+porque el servidor todavia no existe.
 
 **Captura sin conexión.** Formulario de cuatro pasos con guardado incremental: si se
 cierra la aplicación en el paso 3, al volver el registro sigue ahí. Fotos comprimidas
@@ -96,6 +100,15 @@ campo de un solo lado, deja de compilar en vez de perder el dato en silencio.
 KoboToolbox, plantilla fija de reporte por WhatsApp y tablero estático con mapa. Eso
 permite capturar hoy mientras la aplicación propia madura.
 
+**Entorno local reproducible.** `entorno/` levanta PostgreSQL con el esquema completo,
+almacenamiento de archivos y las pruebas de acceso ejecutables. Sirve para dos cosas:
+verificar el esquema sin depender de ningún proveedor, y comprobar que las políticas de
+acceso hacen lo que dicen. Efecto colateral valioso: **el esquema corre sobre PostgreSQL
+puro**, así que el proyecto no está atado a ningún servicio en particular.
+
+**Rama principal protegida.** Todo cambio entra por propuesta con una aprobación.
+Verificado: un envío directo a `main` es rechazado por el servidor.
+
 ### Evidencia
 
 Prueba de punta a punta en navegador real, resolución de celular, con geolocalización:
@@ -123,6 +136,24 @@ urgente que hay**: no depende del servidor ni de la nube, y se puede empezar hoy
 existe. La cola de sincronización está escrita contra un contrato, no contra un
 servidor que responda.
 
+### Revisión independiente
+
+Un integrante del equipo revisó la documentación contra el código y encontró ocho
+defectos, todos válidos. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
+[SEGURIDAD.md](../supabase/SEGURIDAD.md).
+
+| | Hallazgo | Estado |
+|---|---|---|
+| H14 | El esquema no se podía crear: columna generada sobre una expresión no inmutable | **Corregido** |
+| H11 | El navegador podía desalojar los casos sin sincronizar, en silencio | **Corregido** |
+| H7 | El teléfono viajaba sin autorización de la familia | Pendiente |
+| H9 | La regla de consentimiento no existe en la base, solo en el cliente | Pendiente |
+| H10 | La cola no consulta si la sesión sigue vigente | Pendiente |
+| H8, H12, H13 | Imprecisiones de documentación y ausencia de pruebas automáticas | Pendiente |
+
+H14 era bloqueante: el esquema completo habría fallado al ejecutarse el día que alguien
+creara la base.
+
 ---
 
 ## 4. Qué falta
@@ -137,6 +168,10 @@ servidor que responda.
 | F6 Calidad y prueba en campo | **Empieza ya, no depende de nada** | — |
 | F7 Datos y cumplimiento | Abierto, con cuatro decisiones pendientes | — |
 | F8 Multi-municipio | Abierto | — |
+
+El estándar de confiabilidad que debe cumplir la información está en
+[ESTANDAR-PROBATORIO.md](ESTANDAR-PROBATORIO.md), con nueve brechas identificadas y su
+prioridad.
 
 Detalle de cada frente en [FRENTES.md](FRENTES.md). El desglose en historias está en
 Trello, organizado en cinco hitos con 43 historias; la fuente es

@@ -165,6 +165,38 @@ vereda sigue registrando aunque su token haya expirado.
 Lo único que exige sesión vigente es sincronizar, y esa verificación ocurre
 **antes** de empezar la pasada, no descubriéndolo error por error.
 
+**Las tres rutas.** El navegador nunca habla con el proveedor de identidad: le habla
+a la API, y la API decide.
+
+| Ruta | Qué hace | Respuesta |
+|---|---|---|
+| `POST /sesion` | Valida correo y clave contra el proveedor | `{ token, expiraEn, correo, perfil }` |
+| `GET /sesion` | ¿El token sirve para enviar? | `200` sirve · `401` no |
+| `DELETE /sesion` | Cierra sesión del lado del servidor | `204` |
+
+**El perfil viaja resuelto en la respuesta**, no se pide aparte. El dispositivo necesita
+nombre y rol para pintar la interfaz, y pedirlos en una segunda llamada significa que un
+corte de señal entre las dos deja a alguien autenticado y sin perfil, mirando una
+pantalla que no sabe qué mostrarle.
+
+**El rol NO se lee del token.** Se lee de `perfiles` en cada petición. Si viviera en el
+token, ascender o retirar a un voluntario no surtiría efecto hasta que su token
+caducara, y en una emergencia ese retraso es justo lo que no se puede tener. Es también
+lo que permite desactivar a alguien de inmediato.
+
+**Un usuario con `activo = false` no entra**, aunque sus credenciales sean correctas. Es
+la forma de retirar a un voluntario sin borrar los casos que levantó ni romper la
+trazabilidad de quién reportó qué.
+
+**Cerrar sesión no puede depender de la red.** El dispositivo avisa al servidor si
+puede, pero borra su copia local pase lo que pase: si el voluntario presta el celular,
+cerrar sesión tiene que funcionar sin señal.
+
+> `GET /sesion` responde `401` como respuesta legítima, no como fallo. Es la diferencia
+> entre «el servidor dice que su sesión ya no sirve» y «no alcancé el servidor». Sin esa
+> distinción, un corte de red expulsaría al voluntario en plena vereda. Ver la
+> taxonomía de error de la sección 4.
+
 ## Qué queda fuera, a propósito
 
 **No hay descarga.** El contrato es de un solo sentido: el dispositivo empuja.

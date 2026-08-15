@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ResumenCaso } from '../../core/domain/caso.model';
 import { EstadoSync, Prioridad, Zona } from '../../core/domain/enums';
 import { CASO_STORAGE } from '../../core/domain/ports';
+import { AlmacenamientoService } from '../../core/services/almacenamiento.service';
 import { RedService } from '../../core/services/red.service';
 import { SincronizacionService } from '../../core/services/sincronizacion.service';
 
@@ -34,6 +35,14 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
           se envia cuando haya senal.
         </p>
       }
+
+      @if (almacenamiento.enRiesgoDeDesalojo() && sync.totalPendientes() > 0) {
+        <p class="aviso peligro">
+          El celular no garantiza conservar los casos sin enviar si se queda sin
+          espacio. Libere espacio y envie las fotografias apenas tenga senal.
+        </p>
+      }
+
 
       @if (sync.estado() === 'en_curso') {
         <p class="aviso">Enviando los casos...</p>
@@ -161,9 +170,13 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
       </ul>
     </div>
 
+    <!-- El padding va SOLO en el contenedor interno. Tenerlo aqui y ahi sumaba 64 px
+         en un celular de 440, y con los dos botones sin poder encogerse la barra se
+         salia de la pantalla. -->
     <nav style="position:fixed;left:0;right:0;bottom:0;background:var(--surface);
-                border-top:1px solid var(--rule);padding:.7rem 1rem">
-      <div class="contenedor fila" style="gap:.6rem;flex-wrap:nowrap">
+                border-top:1px solid var(--rule);padding:.7rem 0;
+                padding-bottom:calc(.7rem + env(safe-area-inset-bottom))">
+      <div class="contenedor fila" style="gap:.6rem">
         <a routerLink="/nuevo" [queryParams]="{ zona: zonaRural }"
            class="btn-primario btn-grande"
            style="flex:1;text-align:center;text-decoration:none;display:flex;
@@ -184,6 +197,7 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
 export class ListaCasosComponent implements OnInit {
   private readonly almacen = inject(CASO_STORAGE);
   readonly sync = inject(SincronizacionService);
+  readonly almacenamiento = inject(AlmacenamientoService);
   readonly red = inject(RedService);
 
   readonly casos = signal<ResumenCaso[]>([]);
