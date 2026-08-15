@@ -36,6 +36,27 @@ política al rol de tarea que ese guion crea, y **antes** de `desplegar-api.sh`
 porque deja en `generado/fotos.env` el nombre del bucket que la definición de
 tarea necesita.
 
+## Mirar la base desde un gestor de escritorio
+
+`tunel-a-la-base.sh` no es parte del despliegue: se levanta cuando alguien
+necesita inspeccionar los datos y se apaga al terminar.
+
+```sh
+./tunel-a-la-base.sh --abrir      # la crea o enciende, y abre la sesión
+./tunel-a-la-base.sh --estado     # qué hay y cuánto cuesta ahora
+./tunel-a-la-base.sh --apagar     # ~0,64 USD/mes: sólo el disco
+./tunel-a-la-base.sh --destruir   # 0 USD: no queda nada
+```
+
+**La base no se abre a internet.** Una instancia `t4g.nano` dentro de la VPC
+reenvía el puerto, y esa instancia **no tiene ni una regla de entrada** —ni el
+22—: se entra por Session Manager, que es una conexión saliente del agente, con
+el acceso decidido por IAM y registrado en CloudTrail.
+
+**Se apaga sola.** Un temporizador mira cada cinco minutos si hay sesión abierta
+y, tras quince minutos sin ninguna, ejecuta el apagado. Esto lo paga una persona
+de su bolsillo: olvidarse de `--apagar` cuesta, como mucho, un cuarto de hora.
+
 **El presupuesto va primero y no es formalismo.** AWS evalúa un presupuesto desde
 que existe, así que una alerta configurada el martes no dice nada de lo que se
 gastó el lunes. RDS y el balanceador facturan por hora, haya tráfico o no.
