@@ -345,6 +345,86 @@ begin;
   end $$;
 rollback;
 
+-- =============================================================================
+-- P7 - Sin autorizacion de la familia, la identidad no entra  (HU 1.5.2)
+--
+-- La regla ya vive en el cliente y en la API, y las dos son codigo que se puede
+-- rodear: una carga masiva, un importador de Kobo, una consulta a mano el dia de
+-- la emergencia. Esta prueba verifica la unica capa que no depende de que quien
+-- escriba se acuerde.
+--
+-- Se prueba tambien el camino positivo. Una restriccion que rechaza todo tambien
+-- pasaria la mitad de esta prueba, y romperia la captura de las familias que si
+-- autorizaron.
+-- =============================================================================
+begin;
+  do $$
+  declare rechazado boolean := false; id_ok bigint;
+  begin
+    -- Negativo: consentimiento en false y nombre puesto.
+    begin
+      insert into familias (
+        origen_id, registrador_nombre, fuente_dato, consentimiento,
+        departamento, municipio, zona, tel_1, personas_total, prioridad,
+        jefe_nombres, jefe_apellidos
+      ) values (
+        '00000000-0000-4000-8000-00000000f001', 'Prueba 1.5.2', 'presencial', false,
+        'Valle del Cauca', 'Sevilla', 'rural', '3000000000', 1, 'p3',
+        'Nombre', 'Apellido'
+      );
+    exception when check_violation then rechazado := true;
+    end;
+    if not rechazado then
+      raise exception 'FALLO P7: se guardo identidad sin autorizacion de la familia';
+    end if;
+    raise notice 'OK  P7a  la base rechaza identidad sin autorizacion';
+
+    -- Negativo: la cadena vacia no puede usarse para cumplir la letra.
+    rechazado := false;
+    begin
+      insert into familias (
+        origen_id, registrador_nombre, fuente_dato, consentimiento,
+        departamento, municipio, zona, tel_1, personas_total, prioridad,
+        num_doc
+      ) values (
+        '00000000-0000-4000-8000-00000000f002', 'Prueba 1.5.2', 'presencial', false,
+        'Valle del Cauca', 'Sevilla', 'rural', '3000000000', 1, 'p3',
+        '1234567890'
+      );
+    exception when check_violation then rechazado := true;
+    end;
+    if not rechazado then
+      raise exception 'FALLO P7: se guardo el documento sin autorizacion de la familia';
+    end if;
+    raise notice 'OK  P7b  el documento tampoco entra sin autorizacion';
+
+    -- Positivo: sin identidad, el caso entra igual. El hogar queda contado.
+    insert into familias (
+      origen_id, registrador_nombre, fuente_dato, consentimiento,
+      departamento, municipio, zona, tel_1, personas_total, prioridad
+    ) values (
+      '00000000-0000-4000-8000-00000000f003', 'Prueba 1.5.2', 'presencial', false,
+      'Valle del Cauca', 'Sevilla', 'rural', '3000000000', 4, 'p1'
+    ) returning id into id_ok;
+    if id_ok is null then
+      raise exception 'FALLO P7: un caso sin identidad y sin autorizacion no pudo entrar';
+    end if;
+    raise notice 'OK  P7c  el caso sin identidad se registra: la familia queda contada';
+
+    -- Positivo: con autorizacion, la identidad si entra.
+    insert into familias (
+      origen_id, registrador_nombre, fuente_dato, consentimiento,
+      departamento, municipio, zona, tel_1, personas_total, prioridad,
+      jefe_nombres, jefe_apellidos, tipo_doc, num_doc
+    ) values (
+      '00000000-0000-4000-8000-00000000f004', 'Prueba 1.5.2', 'presencial', true,
+      'Valle del Cauca', 'Sevilla', 'rural', '3000000000', 3, 'p2',
+      'Nombre', 'Apellido', 'CC', '1234567890'
+    );
+    raise notice 'OK  P7d  con autorizacion la identidad si se guarda';
+  end $$;
+rollback;
+
 \echo ''
 \echo '=============================================='
 \echo ' Todas las pruebas de acceso pasaron'

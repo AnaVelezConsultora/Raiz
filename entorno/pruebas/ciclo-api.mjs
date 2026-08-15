@@ -44,8 +44,8 @@ const CASO = {
     barrio: null,
     comuna: null,
     direccionRef: '300 m arriba de la escuela',
-    lat: 4.3283783,
-    lon: -75.9029183,
+    lat: 4.2712345,
+    lon: -75.9412345,
     precisionM: 11,
     gpsFuente: 'sitio'
   },

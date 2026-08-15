@@ -54,8 +54,13 @@ es negociable por conveniencia de la nube:
 
 1. **La aplicación funciona sin el servidor.** La captura ocurre en el
    dispositivo. La disponibilidad del backend no es crítica.
-2. **Los datos móviles los paga el voluntario.** Los casos, de unos 3 KB, salen
-   solos al haber señal; las fotografías, de 200 KB, esperan una decisión suya.
+2. **Los datos móviles los paga el voluntario y la aplicación lo respeta.**
+   [Actualizado por la HU 1.3.3, agosto de 2026. La versión original de este ADR
+   decía "la sincronización nunca es automática". Se corrigió al distinguir los
+   dos pesos: el caso son unos 3 KB y viaja solo al reconectar; la fotografía son
+   unos 200 KB y sigue esperando el botón. Retener el caso no ahorraba datos y sí
+   retrasaba la atención. Con el ahorro de datos activo no se manda nada sin
+   pedirlo, y nunca hay envío en segundo plano con la aplicación cerrada.]
 3. **Iniciar sesión exige conexión; capturar, no.** Un token vencido en el monte
    no puede costar una jornada.
 4. **Una sola base de datos, tres reportes.** El total consolidado es la palanca
@@ -76,7 +81,7 @@ contenido en cuatro puntos:
 | Disparador `after insert on auth.users` | La API escribe en `auth.users` al dar de alta (ver más abajo) |
 
 Con un shim de unas 40 líneas —[`entorno/postgres/00-shim-auth.sql`](../../entorno/postgres/00-shim-auth.sql)—
-**las 12 tablas, las 5 vistas, todas las políticas RLS y los seis hallazgos
+**las 13 tablas, las 7 vistas, todas las políticas RLS y los seis hallazgos
 corregidos en [SEGURIDAD.md](../../supabase/SEGURIDAD.md) sobreviven sin
 reescribirse.** El disparador que crea el perfil con el rol menos privilegiado
 sigue funcionando tal cual.
