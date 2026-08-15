@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const BASE = 'http://localhost:4315';
+const BASE = process.env.BASE ?? process.argv[2] ?? 'http://localhost:4300';
 const OUT = 'c:/tmp/raiz/frontend/preview';
 
 const browser = await chromium.launch();
