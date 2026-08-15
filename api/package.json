@@ -1,11 +1,12 @@
 {
   "name": "@raiz/api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "API de Raiz. Recibe lo que el voluntario capturo sin senal.",
   "license": "MIT",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch",
+    "prebuild": "node tools/estampar-version.mjs",
+    "build": "nest build",
+    "dev": "nest start --watch",
     "start": "node dist/main.js",
     "test": "npm run build && node --test 'dist/**/*.prueba.js'"
   },

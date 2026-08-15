@@ -33,24 +33,34 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- 1. Leer el perfil durante el inicio de sesion
+-- 1. Leer el perfil durante el inicio de sesion — RESUELTO EN EL CODIGO
 -- -----------------------------------------------------------------------------
--- La politica se acota POR ROL: `to raiz_api`. Eso importa mas de lo que parece.
--- Cuando la API atiende una peticion normal hace SET LOCAL ROLE authenticated, y
--- SET ROLE cambia current_user, de modo que esta politica deja de aplicar y el
--- voluntario vuelve a ver solo su propia fila por `perfil_lee`. Solo aplica en el
--- camino sin identidad, que es exactamente donde hace falta.
+-- Aqui vivia la politica `perfil_lee_en_login`, que le permitia a raiz_api leer
+-- `perfiles` en el camino sin identidad. Estaba bien acotada por rol y resolvia el
+-- ingreso, pero su propio comentario nombraba el costo: desde ese camino,
+-- `perfiles` se veia entera.
 --
--- No se puede acotar mas por fila: la gracia del problema es que en ese instante
--- no hay identidad con la cual comparar. Lo que si acota es el codigo, y esta
--- dicho en pool.ts: `sinIdentidad` se justifica en un solo caso, y ese caso lee
--- una fila por clave primaria con un `sub` que viene de un token recien emitido
--- por Cognito, no del cuerpo de la peticion. Cualquier otro uso de esa puerta hay
--- que discutirlo antes de escribirlo, y ahora ademas hay una razon concreta:
--- desde aqui, `perfiles` se ve entera.
+-- Ya no hace falta. La consulta del inicio de sesion pasa a poner identidad, que
+-- se puede porque el proveedor acaba de devolver el `sub`: la premisa de que "al
+-- entrar todavia no hay identidad" no era cierta. Con `app.user_id` puesto, la
+-- politica `perfil_lee` del esquema resuelve el caso sin excepciones.
+--
+-- Se deja el DROP y no solo la ausencia: las bases ya creadas tienen la politica
+-- adentro, y un archivo que solo omite algo no lo retira de donde ya esta.
+--
+-- OJO CON LA BASE QUE YA ESTA DESPLEGADA: este archivo NO la va a tocar. El
+-- aplicador lleva registro por nombre de archivo y `005-acceso-api.sql` ya figura
+-- como aplicada, asi que no vuelve a correr aunque su contenido cambie. Alli la
+-- politica sigue existiendo, y mientras siga, la API funciona igual: la lectura con
+-- identidad no depende de ella.
+--
+-- Retirarla en produccion es una migracion nueva y numerada, y va en un despliegue
+-- POSTERIOR al que lleve este codigo. No por formalidad: el despliegue aplica las
+-- migraciones ANTES de que la version nueva reciba trafico, de modo que soltar el
+-- DROP en la misma entrega dejaria unos minutos a la version vieja —la que lee sin
+-- identidad— sin poder resolver ningun ingreso. Es la misma regla que ya declara la
+-- HU 1.1.3: nada se elimina en la misma entrega en que deja de usarse.
 drop policy if exists perfil_lee_en_login on perfiles;
-create policy perfil_lee_en_login on perfiles
-  for select to raiz_api using (true);
 
 -- -----------------------------------------------------------------------------
 -- 2. Reflejar a Cognito en auth.users
