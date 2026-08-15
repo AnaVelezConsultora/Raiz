@@ -1,0 +1,77 @@
+-- =============================================================================
+-- LO QUE LA API NECESITA PODER HACER CON SU PROPIO ROL
+--
+-- Corre DESPUES de 60-grants.sql.
+--
+-- -----------------------------------------------------------------------------
+-- POR QUE ESTE ARCHIVO EXISTE
+-- -----------------------------------------------------------------------------
+--
+-- La API se conecta como `raiz_api` y por cada peticion hace SET LOCAL ROLE
+-- authenticated. Ese camino ya estaba resuelto. Pero hay dos operaciones que
+-- ocurren ANTES de que exista una sesion que poner, y esas corren con el rol
+-- crudo, sin identidad en la transaccion (pool.ts, sinIdentidad):
+--
+--   1. leer el perfil de quien acaba de autenticarse, para saber su rol
+--   2. escribir en auth.users al dar de alta un voluntario
+--
+-- Ninguna de las dos funcionaba, y las dos fallaban de forma distinta:
+--
+--   La lectura NO daba error: devolvia cero filas. La politica `perfil_lee` pide
+--   `id = auth.uid()`, y auth.uid() es NULL cuando app.user_id no esta puesto, de
+--   modo que RLS filtraba la fila en silencio. Lo que veia el voluntario era "su
+--   cuenta existe pero todavia no tiene perfil asignado" — un mensaje correcto
+--   para un problema que no era el suyo.
+--
+--   La escritura si daba error: raiz_api no tenia ningun permiso sobre
+--   auth.users. 60-grants.sql concede sobre el esquema `public` y auth.users vive
+--   en `auth`.
+--
+-- Ninguno de los dos se ve en el entorno local con el volumen recien creado,
+-- porque alli nadie habia iniciado sesion contra la base todavia. Aparecieron al
+-- desplegar, que es donde tenian que aparecer.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. Leer el perfil durante el inicio de sesion
+-- -----------------------------------------------------------------------------
+-- La politica se acota POR ROL: `to raiz_api`. Eso importa mas de lo que parece.
+-- Cuando la API atiende una peticion normal hace SET LOCAL ROLE authenticated, y
+-- SET ROLE cambia current_user, de modo que esta politica deja de aplicar y el
+-- voluntario vuelve a ver solo su propia fila por `perfil_lee`. Solo aplica en el
+-- camino sin identidad, que es exactamente donde hace falta.
+--
+-- No se puede acotar mas por fila: la gracia del problema es que en ese instante
+-- no hay identidad con la cual comparar. Lo que si acota es el codigo, y esta
+-- dicho en pool.ts: `sinIdentidad` se justifica en un solo caso, y ese caso lee
+-- una fila por clave primaria con un `sub` que viene de un token recien emitido
+-- por Cognito, no del cuerpo de la peticion. Cualquier otro uso de esa puerta hay
+-- que discutirlo antes de escribirlo, y ahora ademas hay una razon concreta:
+-- desde aqui, `perfiles` se ve entera.
+drop policy if exists perfil_lee_en_login on perfiles;
+create policy perfil_lee_en_login on perfiles
+  for select to raiz_api using (true);
+
+-- -----------------------------------------------------------------------------
+-- 2. Reflejar a Cognito en auth.users
+-- -----------------------------------------------------------------------------
+-- SELECT ademas de INSERT, y el SELECT no sobra aunque la API nunca lea esta
+-- tabla. Lo exige `on conflict (id) do nothing`, que es como reflejarDelProveedor
+-- hace idempotente el alta.
+--
+-- Cuesta descubrirlo porque el error no lo insinua. Con INSERT y sin SELECT,
+-- PostgreSQL responde "permission denied for table users" a la sentencia
+-- completa, mientras `has_table_privilege('raiz_api','auth.users','insert')`
+-- sigue devolviendo verdadero. Comprobado: el mismo INSERT sin la clausula
+-- ON CONFLICT entra sin problema. La conclusion es que la clausula necesita mirar
+-- la fila en conflicto, y mirar es leer.
+--
+-- La alternativa era quitar el ON CONFLICT del codigo. Se descarta: esa clausula
+-- es justamente lo que permite repetir un alta que fallo a mitad sin chocar con
+-- una clave duplicada.
+--
+-- Se declara una tabla a la vez, no `all tables in schema auth`, por la misma
+-- razon que 60-grants.sql no usa ALTER DEFAULT PRIVILEGES: la proxima tabla que
+-- alguien agregue en este esquema debe quedar cerrada por defecto y abrirse por
+-- decision, no por herencia.
+grant select, insert on auth.users to raiz_api;

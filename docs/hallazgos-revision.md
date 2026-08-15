@@ -155,7 +155,7 @@ desmarcar la autorización.
 
 ---
 
-## H9 · Alto · La regla de consentimiento no existe en la base
+## H9 · Alto · La regla de consentimiento no existe en la base — CORREGIDO
 
 `supabase/schema.sql:122` comenta *"bloque 2: hogar. Identidad solo si
 consentimiento = true"*, pero **ninguna restricción lo impone**. La regla vive
@@ -177,6 +177,10 @@ alter table familias add constraint identidad_exige_consentimiento
 
 Conviene aplicarla **antes** de que haya datos: después es una migración con filas
 adentro. Si se resuelve H7 incluyendo el teléfono, entra en la misma restricción.
+
+**Aplicado en la HU 1.5.2**, con la tabla todavía vacía, y comparando además contra
+cadena vacía: un cliente que "limpia" escribiendo `''` cumpliría la letra y no la
+regla. La restricción viajó a RDS con la migración `003-schema.sql`.
 
 ---
 
@@ -276,6 +280,90 @@ el comportamiento de la cola.
 
 ---
 
+## H15 · Grave · La API no podía leer perfiles ni escribir en auth.users — CORREGIDO
+
+Apareció al desplegar, no antes, y esa es la parte que conviene entender: el entorno
+local nunca lo ejercitó porque nadie había iniciado sesión contra la base.
+
+La API se conecta como `raiz_api` y por cada petición hace `SET LOCAL ROLE
+authenticated`. Pero dos operaciones ocurren **antes** de que exista sesión que poner,
+y corren con el rol crudo (`pool.ts`, `sinIdentidad`):
+
+**Leer el perfil de quien acaba de autenticarse.** La política `perfil_lee` exige
+`id = auth.uid()`, y `auth.uid()` es `NULL` mientras `app.user_id` no esté puesto. RLS
+no daba error: devolvía **cero filas**. El voluntario veía «su cuenta existe pero
+todavía no tiene perfil asignado» —un mensaje correcto para un problema que no era el
+suyo— y **ningún inicio de sesión podía completarse**.
+
+**Escribir en `auth.users` al dar de alta.** `raiz_api` no tenía ningún permiso sobre
+esa tabla: `60-grants.sql` concede sobre el esquema `public` y `auth.users` vive en
+`auth`. La cuenta se creaba en Cognito y el reflejo fallaba.
+
+Corregido en [`entorno/postgres/65-acceso-api.sql`](../entorno/postgres/65-acceso-api.sql),
+que corre en la nube y en el entorno local.
+
+**El detalle que costó encontrar:** hizo falta conceder `select` además de `insert`
+sobre `auth.users`. Lo exige `on conflict (id) do nothing`. Con `insert` a secas,
+PostgreSQL responde `permission denied for table users` a la sentencia completa
+mientras `has_table_privilege(...,'insert')` sigue devolviendo verdadero. Se comprobó
+que el mismo INSERT sin la cláusula entra sin problema.
+
+---
+
+## H16 · Medio · El alta de voluntarios no es idempotente, aunque su documentación lo afirme — CORREGIDO
+
+`registrar-voluntario.service.ts` dice, sobre el fallo a mitad de camino:
+
+> Repetir el alta lo arregla, porque las dos escrituras son idempotentes.
+
+**No es cierto.** Comprobado contra el despliegue: si Cognito crea la cuenta y la
+escritura en `auth.users` falla, repetir el alta no la repara. La primera escritura es
+la que rechaza — Cognito responde que el correo ya existe y la API devuelve `422 · Ya
+hay un voluntario con ese correo`, sin llegar nunca a reintentar la segunda.
+
+El resultado es una cuenta que puede autenticarse y no puede entrar, y que solo se
+arregla borrándola del proveedor y empezando de nuevo. Es exactamente el estado que el
+propio comentario decía que no iba a quedar.
+
+Es de código, no de esquema, y hay dos salidas: que el alta tolere el «ya existe» de
+Cognito y siga hasta la segunda escritura, o que el mensaje de error diga qué hacer en
+vez de prometer que repetir alcanza. La primera es la que resuelve el problema.
+
+**Corregido con la primera.** El adaptador de Cognito ya no se rinde: consulta la cuenta
+existente y devuelve su identificador. Quien decide qué significa eso es el servicio,
+que es el único que sabe si la persona tiene perfil — con perfil es un duplicado y se
+rechaza; sin perfil es el alta rota y se completa.
+
+**La parte delicada fue la clave.** Reponerla siempre habría convertido «dar de alta» en
+«restablecer la clave de quien sea» sin decirlo: el custodio que da de alta por descuido
+a alguien que ya existe le cambiaría la clave, y esa persona no podría entrar al día
+siguiente sin saber por qué. Se distingue por el estado que escribe el propio Cognito:
+`FORCE_CHANGE_PASSWORD` significa que la clave nunca llegó a fijarse y hay que
+terminarla; `CONFIRMED` significa que la cuenta está completa y su clave es de su dueño.
+
+Verificado contra el despliegue provocando un alta a medias a propósito: repetirla
+devuelve 201 y la cuenta entra; repetirla otra vez devuelve 422; y la clave del intento
+duplicado **no** se aplicó.
+
+---
+
+## H17 · Grave · CORS no permitía DELETE: cerrar sesión no habría funcionado — CORREGIDO
+
+`main.ts` declaraba `methods: ['GET', 'POST']`, pero `sesion.controller.ts` expone
+`DELETE /sesion`. Un navegador consulta antes de mandar una petición así, y esa
+consulta previa habría respondido `access-control-allow-methods: GET,POST`: el
+navegador cancela la petición y **cerrar sesión desde la PWA falla**.
+
+**Por qué no se había visto.** Todas las pruebas de las rutas se hicieron con `curl`,
+que no aplica CORS — es una regla que impone el navegador, no el servidor. `DELETE
+/sesion` respondía 204 en cada prueba y seguiría respondiendo 204 para siempre, sin
+que ningún voluntario pudiera usarla.
+
+Apareció al consultar las cabeceras contra el despliegue con un origen real. La lista
+sigue sin `PUT` ni `PATCH`: ninguna ruta los usa.
+
+---
+
 ## Desajustes menores
 
 No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
@@ -299,9 +387,12 @@ No cambian ninguna decisión; se anotan para que quien llegue no se confunda.
 |---|---|---|
 | Hecho | H14 | Sin esto el esquema no existía |
 | Ya | H11 y H10 | Defectos operativos puros, sin decisión de por medio. Protegen el trabajo del voluntario |
-| Ya, antes de crear la base | H9 | Después es una migración con datos adentro |
+| Hecho | H9 | Se aplicó con la tabla vacía, HU 1.5.2 |
 | F7 decide | H7, H8, H12 | Tienen consecuencia jurídica y de operación; no son llamadas de quien programa |
 | Continuo | H13 | Empieza con las pruebas de acceso ya incluidas |
+| Hecho | H15 | Sin esto no había inicio de sesión posible contra la nube |
+| Hecho | H17 | Cerrar sesión desde la PWA no habría funcionado nunca |
+| Hecho | H16 | Un alta interrumpida ya se repara repitiendola |
 
 ---
 

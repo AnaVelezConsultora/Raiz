@@ -55,10 +55,10 @@ Están cerradas. Si alguien quiere reabrir una, que traiga argumentos nuevos.
 ### Construido y probado en laboratorio
 
 Probado significa aqui: navegador de escritorio emulando un celular con ubicacion
-simulada, y la API corriendo contra PostgreSQL y Cognito reales dentro del entorno
-local. **Nada de esto se ha ejecutado en un telefono real ni sobre infraestructura
-desplegada en la nube.** Lo primero es lo mas urgente que hay y no depende de nadie
-mas; lo segundo es el hito 1.
+simulada, y la API corriendo contra PostgreSQL y Cognito reales — desde el 15 de agosto,
+tambien contra la infraestructura desplegada en AWS y no solo contra el entorno local.
+**Lo que sigue sin ejecutarse es en un telefono real, en la vereda, con senal
+intermitente.** Eso es lo mas urgente que hay y no depende de nadie mas.
 
 **Captura sin conexión.** Formulario de cuatro pasos con guardado incremental: si se
 cierra la aplicación en el paso 3, al volver el registro sigue ahí. Fotos comprimidas
@@ -74,7 +74,8 @@ el reintento está verificado contra la API y la base reales.
 **Servicio de sincronización.** Recibe el caso, fija la identidad del usuario dentro de
 la transacción para que las políticas de acceso sigan corriendo, asigna el consecutivo
 institucional y traduce cualquier fallo a las tres clases del contrato: transporte,
-sesión y rechazo. Corre contra el entorno local; no está desplegado.
+sesión y rechazo. Desde el 15 de agosto corre desplegado en AWS, no solo en el entorno
+local.
 
 **Identidad y roles (F2).** Cinco roles, guardas de ruta, pantalla de acceso, permisos
 derivados del rol y disparador que crea el perfil al dar de alta un usuario, con el rol
@@ -84,7 +85,7 @@ para que la custodia pueda cambiarlo sin esperar a que caduque nada. Desde el 15
 agosto el pool de Cognito existe en AWS real, y el alta de voluntarios también pasa por
 la API; ver más abajo.
 
-**Modelo de datos.** 13 tablas, 7 vistas, 19 políticas de acceso por fila y auditoría de
+**Modelo de datos.** 13 tablas, 7 vistas, 20 políticas de acceso por fila y auditoría de
 cambios. Sin autorización de la familia, la identidad no entra: además del cliente y del
 servidor, la base la rechaza con una restricción propia. La vista del mapa entrega la coordenada redondeada a tres decimales (~111 m).
 Ver la salvedad importante en «Lo que la documentación decía de más».
@@ -153,7 +154,9 @@ intermitente de la vereda, que es donde este sistema tiene que aguantar.
 ### Revisión independiente
 
 Un integrante del equipo revisó la documentación contra el código y encontró ocho
-defectos, todos válidos. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
+defectos, todos válidos. El despliegue del 15 de agosto destapó tres más: dos que solo se
+ven cuando la API corre contra una base donde no es dueña de las tablas, y uno que solo
+se ve desde un navegador. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
 [SEGURIDAD.md](../supabase/SEGURIDAD.md).
 
 | | Hallazgo | Estado |
@@ -161,9 +164,12 @@ defectos, todos válidos. Están en [hallazgos-revision.md](hallazgos-revision.m
 | H14 | El esquema no se podía crear: columna generada sobre una expresión no inmutable | **Corregido** |
 | H11 | El navegador podía desalojar los casos sin sincronizar, en silencio | **Corregido** |
 | H7 | El teléfono viajaba sin autorización de la familia | Pendiente |
-| H9 | La regla de consentimiento no existe en la base, solo en el cliente | Pendiente |
+| H9 | La regla de consentimiento no existe en la base, solo en el cliente | **Corregido**, HU 1.5.2 |
 | H10 | La cola no consulta si la sesión sigue vigente | Pendiente |
 | H8, H12, H13 | Imprecisiones de documentación y ausencia de pruebas automáticas | Pendiente |
+| H15 | La API no podía leer perfiles ni escribir en `auth.users`: ningún inicio de sesión contra la nube era posible | **Corregido** |
+| H16 | El alta de voluntarios no es idempotente, aunque su documentación lo afirma | **Corregido** |
+| H17 | CORS no permitía `DELETE`, así que cerrar sesión desde la PWA no habría funcionado | **Corregido** |
 
 H14 era bloqueante: el esquema completo habría fallado al ejecutarse el día que alguien
 creara la base.
@@ -175,8 +181,8 @@ creara la base.
 | Frente | Estado | Depende de |
 |---|---|---|
 | F1 Captura offline | Funcionando | — |
-| F2 Identidad y acceso | **Cognito montado en AWS; registro y acceso hechos en la API** | — |
-| F3 Sincronización y servidor | API escrita; **falta desplegarla** | Fargate |
+| F2 Identidad y acceso | **Registro y acceso funcionando contra la nube real** | — |
+| F3 Sincronización y servidor | **Desplegada en `api.apoyo-colombia.com`, con TLS** | — |
 | F4 Tablero y mapa | Abierto, bloqueado por una decisión | F7 |
 | F5 Remisiones y seguimiento | Abierto | F3 |
 | F6 Calidad y prueba en campo | **Empieza ya, no depende de nada** | — |
@@ -185,7 +191,9 @@ creara la base.
 
 El estándar de confiabilidad que debe cumplir la información está en
 [ESTANDAR-PROBATORIO.md](ESTANDAR-PROBATORIO.md), con nueve brechas identificadas y su
-prioridad.
+prioridad. Los atajos que se tomaron a sabiendas están en
+[DEUDA-TECNICA.md](DEUDA-TECNICA.md), cada uno con la condición escrita que obliga a
+volver sobre él.
 
 Detalle de cada frente en [FRENTES.md](FRENTES.md). El desglose en historias está en
 Trello, organizado en cinco hitos con 43 historias; la fuente es
@@ -252,25 +260,62 @@ paso el eslabón que el ADR 002 proponía resolver con una Lambda de post-confir
 Esa Lambda ya no se necesita: no hay registro abierto, así que no hay ningún alta que
 ocurra fuera de la API. No usamos funciones para nada del flujo de identidad.
 
-### Los dos bloqueos reales
+### La API está desplegada. Qué quedó montado el 15 de agosto
 
-**Nadie ha probado esto en campo.** El código puede estar perfecto y el formulario
-seguir siendo inusable de pie, bajo el sol, con la familia esperando. Eso no lo detecta
-ninguna prueba automática. Ya no hay excusa técnica: no requiere servidor.
+La infraestructura existe en AWS real, hecha con guiones idempotentes en
+[`entorno/aws/`](../entorno/aws/): red, base, clúster y servicio. Cada guion se puede
+correr las veces que haga falta sin duplicar nada.
 
-**La API no está desplegada.** Está escrita y compila, pero vive solo en el
-repositorio. Falta todo lo de la nube: empaquetarla en contenedor, el registro de
-imágenes, la red, la base en RDS, el clúster y el balanceador. Hasta que exista, el
-dato sigue sin viajar del celular a una base central.
+| Pieza | Qué es |
+|---|---|
+| Red | VPC propia, dos zonas. **Sin puerta de enlace NAT** y sin endpoints de interfaz: los dos cuestan cerca de 30 USD/mes y ninguno hace falta. |
+| Base | RDS PostgreSQL 16.14, `db.t4g.micro`, cifrada, en subredes **sin ruta a internet**. |
+| Esquema | Lo aplica una tarea efímera **dentro** de la VPC, no una persona. Migraciones numeradas con registro: aplicar dos veces no repite ninguna. |
+| API | Fargate, ARM64, una réplica de 0,25 vCPU, detrás de un balanceador. |
+| Borde | HTTPS con certificado comodín; el 80 solo redirige. Nombre propio en Route 53. |
+| Presupuesto | 50 USD/mes con cuatro avisos, configurado **antes** del primer recurso. |
 
-Dos cosas quedaron decididas sobre ese despliegue y conviene que no se reabran por
-error a mitad de camino:
+Verificado contra el despliegue real y sobre HTTPS, no supuesto: el custodio inicia
+sesión y recibe un token de 12 horas con su rol leído del perfil; da de alta un
+voluntario, que nace con el rol menos privilegiado; ese voluntario inicia sesión y
+**no** puede dar de alta a nadie. `GET /salud` responde `disponible: true`, y un
+origen que no está en la lista no recibe permiso de CORS.
+
+**La API tiene nombre propio y TLS: `https://api.apoyo-colombia.com`.** Certificado
+comodín de ACM, TLS 1.3, y el puerto 80 dejó de servir la API — su única acción es
+redirigir con 301. No se cierra, porque un enlace viejo pegado en el grupo de WhatsApp
+acabaría en una conexión rechazada sin ninguna pista; con la redirección esa petición
+llega cifrada. No queda ninguna ruta por la que una clave viaje en claro.
+
+El dominio se administra en Route 53 y el certificado lo renueva ACM solo, mientras el
+registro CNAME de validación siga en la zona. El frente irá en `apoyo-colombia.com` y
+`www`, y ya están en la lista de orígenes que la API acepta.
+
+Dos cosas quedaron decididas y conviene que no se reabran por error:
 
 - **La API va en contenedor sobre Fargate, no en la máquina de nadie.** Se intentó lo
   segundo por celeridad y se descartó: obligaba a exponer la base a internet.
 - **La base no recibe tráfico público.** Su grupo de seguridad solo acepta al
-  contenedor. Es lo que el ADR 002 ya decía y lo que hace que exponerla no sea
-  necesario.
+  contenedor. Por eso el esquema se carga desde adentro: abrir la base «un rato» es la
+  puerta que después nadie cierra.
+- **La base tiene protección contra borrado.** Esto atiende una emergencia humanitaria:
+  un borrado accidental no cuesta una tarde de trabajo sino el padrón de familias que
+  ya fueron caracterizadas una vez. Destruir el entorno sigue siendo posible, pero exige
+  apagarla a propósito primero — ese paso extra **es** la protección.
+
+**El pipeline se autentica sin llaves.** GitHub firma un token que dice de qué rama
+viene; AWS lo verifica y entrega credenciales que duran una hora. No hay ningún secreto
+de AWS en el repositorio, y la confianza está acotada a `refs/heads/main`: una propuesta
+de cambio no puede asumir el rol por mucho que altere el flujo. Queda una llave de larga
+vida —la de quien montó todo esto— y retirarla es la deuda [D3](DEUDA-TECNICA.md), la de
+mayor riesgo que hay abierta.
+
+### El bloqueo real que queda
+
+**Nadie ha probado esto en campo.** El código puede estar perfecto y el formulario
+seguir siendo inusable de pie, bajo el sol, con la familia esperando. Eso no lo detecta
+ninguna prueba automática. Ya no hay excusa técnica: no requiere servidor, y ahora
+tampoco espera a nadie.
 
 El bloqueo anterior —«no hay proyecto de Supabase»— ya no aplica: el entorno local
 levanta todo lo necesario para trabajar, y la infraestructura de producción es trabajo

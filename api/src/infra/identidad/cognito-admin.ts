@@ -1,5 +1,6 @@
 import {
   AdminCreateUserCommand,
+  AdminGetUserCommand,
   AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
   UsernameExistsException
@@ -7,6 +8,7 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import {
   AdministradorIdentidadPort,
+  AltaEnProveedor,
   ErrorRechazo,
   ErrorTransporte
 } from '../../dominio/puertos';
@@ -44,7 +46,7 @@ export class CognitoAdministrador implements AdministradorIdentidadPort {
     nombre: string,
     telefono: string | null,
     clave: string
-  ): Promise<string> {
+  ): Promise<AltaEnProveedor> {
     const poolId = this.exigir('COGNITO_USER_POOL_ID');
     const usuario = correo.trim().toLowerCase();
 
@@ -87,10 +89,10 @@ export class CognitoAdministrador implements AdministradorIdentidadPort {
       );
 
       this.log.log(`Voluntario dado de alta en Cognito: ${sub}`);
-      return sub;
+      return { sub, yaExistia: false };
     } catch (e) {
       if (e instanceof UsernameExistsException) {
-        throw new ErrorRechazo('Ya hay un voluntario con ese correo.');
+        return this.recuperarExistente(poolId, usuario, clave);
       }
       if (e instanceof ErrorTransporte || e instanceof ErrorRechazo) throw e;
 
@@ -105,6 +107,74 @@ export class CognitoAdministrador implements AdministradorIdentidadPort {
       this.log.error(`Cognito rechazo el alta (${nombreError}): ${detalle}`);
       throw new ErrorTransporte('No se pudo dar de alta al voluntario. Reintente.');
     }
+  }
+
+  /**
+   * La cuenta ya estaba en Cognito. Se averigua su `sub` en vez de rendirse.
+   *
+   * ESTO ES EL HALLAZGO H16. Antes, un correo repetido terminaba aqui en un
+   * rechazo seco, y eso rompia la promesa que el propio servicio hacia: que
+   * repetir un alta interrumpida la arregla. No la arreglaba — la primera
+   * escritura era la que se negaba, asi que la segunda no llegaba a intentarse
+   * nunca y quedaba una cuenta capaz de autenticarse e incapaz de entrar.
+   *
+   * POR QUE LA CLAVE SOLO SE TOCA A VECES, Y ESTO ES LO IMPORTANTE
+   *
+   * Reponer la clave siempre convertiria «dar de alta» en «restablecer la clave de
+   * quien sea» sin decirlo: el custodio que da de alta por descuido a alguien que
+   * ya existe le cambiaria la clave a esa persona, que al dia siguiente no puede
+   * entrar y no sabe por que.
+   *
+   * El estado de la cuenta distingue los dos casos sin ambiguedad, porque lo
+   * escribe el propio Cognito:
+   *
+   *   FORCE_CHANGE_PASSWORD  AdminCreateUser corrio y AdminSetUserPassword no.
+   *                          El alta quedo a medias: hay que terminarla.
+   *   CONFIRMED              las dos corrieron. La cuenta esta completa y su clave
+   *                          es de su dueno. No se toca.
+   *
+   * Si la cuenta esta completa, esto devuelve `yaExistia` y no hace nada mas.
+   * Decidir si eso es un duplicado que hay que rechazar o un perfil que falta por
+   * reflejar le toca a quien sabe si la persona tiene perfil, que no es este
+   * adaptador.
+   */
+  private async recuperarExistente(
+    poolId: string,
+    usuario: string,
+    clave: string
+  ): Promise<AltaEnProveedor> {
+    let existente;
+    try {
+      existente = await this.conectar().send(
+        new AdminGetUserCommand({ UserPoolId: poolId, Username: usuario })
+      );
+    } catch (e) {
+      // Cognito dijo que existe y acto seguido no lo encuentra. Es temporal o es
+      // una carrera; en ninguno de los dos casos es culpa del dato que mandaron,
+      // asi que se clasifica como transporte y el custodio reintenta.
+      const detalle = e instanceof Error ? e.message : 'desconocido';
+      this.log.error(`Cognito dice que ${usuario} existe pero no se pudo leer: ${detalle}`);
+      throw new ErrorTransporte('No se pudo consultar la cuenta existente. Reintente.');
+    }
+
+    const sub = existente.UserAttributes?.find((a) => a.Name === 'sub')?.Value;
+    if (!sub) {
+      throw new ErrorTransporte('Cognito no devolvio el identificador de la cuenta existente.');
+    }
+
+    if (existente.UserStatus === 'FORCE_CHANGE_PASSWORD') {
+      this.log.warn(`Alta a medias de ${sub}: se le fija la clave definitiva y se continua.`);
+      await this.conectar().send(
+        new AdminSetUserPasswordCommand({
+          UserPoolId: poolId,
+          Username: usuario,
+          Password: clave,
+          Permanent: true
+        })
+      );
+    }
+
+    return { sub, yaExistia: true };
   }
 
   private conectar(): CognitoIdentityProviderClient {

@@ -1,0 +1,169 @@
+# =============================================================================
+# Despliegue a produccion. HU 1.1.2.
+#
+# SIN NINGUN SECRETO DE AWS. Ni aqui ni en la configuracion del repositorio.
+#
+# GitHub firma un token que dice "soy la rama main de este repositorio"; AWS lo
+# verifica contra las llaves publicas de GitHub y entrega credenciales que duran
+# una hora. No hay llave que guardar, que rotar ni que perder. Si alguien agrega
+# un AWS_ACCESS_KEY_ID a los secretos del repositorio, esta deshaciendo esto.
+#
+# El rol y la confianza los crea entorno/aws/desplegar-identidad-federada.sh, y la
+# confianza esta acotada a `refs/heads/main`: una propuesta de cambio no puede
+# asumirlo por mucho que altere este archivo.
+#
+# -----------------------------------------------------------------------------
+# POR QUE SE DISPARA A MANO Y NO AL FUSIONAR
+# -----------------------------------------------------------------------------
+#
+# El ADR 004 describe integracion automatica a PREPRODUCCION y promocion con
+# aprobacion humana a produccion. Preproduccion todavia no existe: hay un solo
+# entorno y es el de verdad.
+#
+# Desplegar solo al fusionar seria, hoy, empujar a produccion cada vez que se
+# aprueba una propuesta — sin el escalon de aprobacion que el ADR si pide. Asi que
+# el disparo manual NO es un paso pendiente de automatizar: es la aprobacion
+# humana que el modelo exige, puesta donde se puede poner mientras haya un solo
+# entorno. El dia que exista preproduccion, este flujo se parte en dos.
+#
+# -----------------------------------------------------------------------------
+# EL ORDEN NO ES NEGOCIABLE
+# -----------------------------------------------------------------------------
+#
+#   1. subir la imagen
+#   2. aplicar migraciones   <- ANTES de que la version nueva reciba trafico
+#   3. actualizar el servicio
+#
+# Es el criterio de la HU 1.1.3. Al reves, la version nueva atenderia peticiones
+# contra un esquema viejo. Y las migraciones son solo aditivas justamente para que
+# la version ANTERIOR siga funcionando durante los segundos en que conviven.
+# =============================================================================
+name: Desplegar
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Escriba "desplegar" para confirmar que va a produccion'
+        required: true
+        default: ''
+
+permissions:
+  # `id-token: write` es lo que permite pedirle a GitHub el token firmado. Es el
+  # unico permiso elevado del flujo, y no da acceso a nada por si mismo: sin la
+  # confianza declarada en AWS, ese token no vale nada.
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  CUENTA: '303638556798'
+  CLUSTER: raiz
+  SERVICIO: raiz-api
+
+jobs:
+  desplegar:
+    name: Publicar, migrar y desplegar
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirmar
+        if: ${{ inputs.confirmar != 'desplegar' }}
+        run: |
+          echo "No se confirmo el despliegue. Escriba exactamente: desplegar" >&2
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - name: Credenciales por identidad federada
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::303638556798:role/raiz-despliegue-produccion
+          aws-region: us-east-1
+          # Sale en CloudTrail y es lo que permite saber que despliegue fue cual
+          # sin cruzar horas a mano.
+          role-session-name: gha-${{ github.run_id }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+
+      # ARM64 porque es lo que corre en Fargate. El corredor de GitHub es x86, asi
+      # que hace falta emulacion para construir esta arquitectura; sin esto la
+      # imagen sale x86 y la tarea muere con "exec format error", que es el fallo
+      # mas aburrido de todo este despliegue.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Publicar la imagen de la API
+        run: |
+          docker buildx build --platform linux/arm64 \
+            -f api/Dockerfile \
+            -t "$CUENTA.dkr.ecr.$AWS_REGION.amazonaws.com/raiz-api:latest" \
+            -t "$CUENTA.dkr.ecr.$AWS_REGION.amazonaws.com/raiz-api:${{ github.sha }}" \
+            --push .
+
+      - name: Publicar la imagen de migraciones
+        run: |
+          docker buildx build --platform linux/arm64 \
+            -f entorno/aws/migraciones/Dockerfile \
+            -t "$CUENTA.dkr.ecr.$AWS_REGION.amazonaws.com/raiz-migraciones:latest" \
+            --push .
+
+      # Se etiqueta ademas con el sha del commit. `latest` dice que hay desplegado
+      # ahora; la etiqueta con sha es lo que permite volver atras desplegando una
+      # anterior, sin reconstruir. El ADR 004 pide exactamente eso.
+
+      - name: Aplicar migraciones
+        run: |
+          REV="$(aws ecs describe-task-definition --task-definition raiz-migraciones \
+                   --query 'taskDefinition.revision' --output text)"
+          SUBRED="$(aws ec2 describe-subnets --filters Name=tag:Name,Values=raiz-publica-a \
+                     --query 'Subnets[0].SubnetId' --output text)"
+          SG="$(aws ec2 describe-security-groups --filters Name=group-name,Values=raiz-sg-api \
+                 --query 'SecurityGroups[0].GroupId' --output text)"
+
+          TAREA="$(aws ecs run-task --cluster "$CLUSTER" \
+            --task-definition "raiz-migraciones:$REV" --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBRED],securityGroups=[$SG],assignPublicIp=ENABLED}" \
+            --query 'tasks[0].taskArn' --output text)"
+
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TAREA"
+
+          ID="${TAREA##*/}"
+          aws logs get-log-events --log-group-name /raiz/migraciones \
+            --log-stream-name "ecs/migraciones/$ID" --start-from-head \
+            --query 'events[].message' --output text | tr '\t' '\n'
+
+          CODIGO="$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TAREA" \
+                     --query 'tasks[0].containers[0].exitCode' --output text)"
+          if [ "$CODIGO" != "0" ]; then
+            echo "Las migraciones fallaron. NO se despliega la version nueva." >&2
+            exit 1
+          fi
+
+      # Si las migraciones fallan, el paso anterior corta el flujo y el servicio
+      # se queda con la version que ya tenia, funcionando contra el esquema que ya
+      # tenia. Es el resultado correcto: no desplegar es mejor que desplegar
+      # contra una base a medio migrar.
+
+      - name: Desplegar el servicio
+        run: |
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICIO" \
+            --force-new-deployment >/dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICIO"
+
+      - name: Comprobar que responde
+        run: |
+          # Se comprueba contra el nombre publico, no contra la IP de la tarea: lo
+          # que importa es que el camino completo funcione, incluidos el
+          # certificado y el balanceador.
+          for i in 1 2 3 4 5; do
+            CODIGO="$(curl -s -o /tmp/salud -w '%{http_code}' https://api.apoyo-colombia.com/salud || true)"
+            if [ "$CODIGO" = "200" ]; then
+              cat /tmp/salud
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "La API no respondio 200 en /salud despues del despliegue." >&2
+          exit 1

@@ -53,9 +53,14 @@ COPY --from=construccion --chown=raiz:raiz /obra/api/package.json ./api/package.
 
 USER raiz
 
-# App Runner manda el puerto en PORT. La API lee PUERTO, asi que se igualan aqui
-# en vez de cambiar el codigo: el mismo contenedor sirve en local, en Fargate o
-# donde sea, y cada plataforma dice el puerto a su manera.
+# Las plataformas de contenedores mandan el puerto en PORT. La API lee PUERTO, asi
+# que se fija aqui en vez de cambiar el codigo: el mismo contenedor sirve en local,
+# en Fargate o donde sea, y cada plataforma dice el puerto a su manera.
+#
+# Este comentario decia "App Runner". AWS dejo de aceptar clientes nuevos en App
+# Runner el 30 de abril de 2026 y recomienda ECS, que es donde esto corre. Se
+# corrige el texto y no la linea: PORT sigue siendo el nombre que inyectan las
+# plataformas, y aceptarlo no ata a ninguna.
 ENV NODE_ENV=production
 ENV PUERTO=8080
 EXPOSE 8080
