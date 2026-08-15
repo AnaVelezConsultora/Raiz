@@ -282,7 +282,8 @@ def main():
     print("\nHistorias")
     ya_estan = {}
     for id_lista in listas.values():
-        for tarjeta in consultar(f"/lists/{id_lista}/cards", fields="name,desc,idMembers"):
+        for tarjeta in consultar(f"/lists/{id_lista}/cards",
+                                 fields="name,desc,idMembers,idLabels"):
             ya_estan[tarjeta["name"].split(" · ")[0]] = tarjeta
 
     creadas = actualizadas = iguales = 0
@@ -295,16 +296,29 @@ def main():
             actuales = existente.get("idMembers", [])
             # Union, no reemplazo: si alguien se asigno a mano en Trello, no se le quita.
             faltan = [i for i in quienes if i not in actuales]
-            if existente.get("desc") == texto and not faltan:
+
+            # Las etiquetas SI se reemplazan por las del modelo: son el estado de la
+            # historia, y el modelo manda. Marcar una como hecha aqui tiene que verse
+            # en el tablero, que es donde el equipo mira.
+            deseadas = [etiquetas[e] for e in hu["etiquetas"] if e in etiquetas]
+            cambia_etiquetas = sorted(deseadas) != sorted(existente.get("idLabels", []))
+
+            if existente.get("desc") == texto and not faltan and not cambia_etiquetas:
                 iguales += 1
             else:
                 cambios = {"desc": texto}
                 if faltan:
                     cambios["idMembers"] = ",".join(actuales + faltan)
+                if cambia_etiquetas:
+                    cambios["idLabels"] = ",".join(deseadas)
                 pedir("PUT", f"/cards/{existente['id']}", **cambios)
                 actualizadas += 1
-                detalle = f"  → +{len(faltan)} miembro(s)" if faltan else "  descripción"
-                print(f"  ~ {hu['id']}{detalle}")
+                detalle = []
+                if faltan:
+                    detalle.append(f"+{len(faltan)} miembro(s)")
+                if cambia_etiquetas:
+                    detalle.append("etiquetas")
+                print(f"  ~ {hu['id']}  {', '.join(detalle) or 'descripción'}")
             continue
 
         pedir("POST", "/cards",
