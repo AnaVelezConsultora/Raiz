@@ -38,3 +38,23 @@ revoke insert, update, delete on auditoria from anon, authenticated;
 -- por defecto la proxima tabla con datos personales queda accesible por olvido,
 -- no por decision. Cada tabla nueva agrega su linea aqui, conscientemente.
 -- ---------------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------------
+-- Lo unico que la API puede hacer sobre el espejo de Cognito: dar de alta.
+--
+-- POR QUE HACE FALTA
+--
+-- `auth.users` la crea el superusuario, y `raiz_api` no hereda nada de el. Sin este
+-- permiso, dar de alta a un voluntario deja la cuenta creada en Cognito y sin fila
+-- aqui, o sea sin perfil: la persona se autentica y no puede entrar. Y el fallo no se
+-- ve al escribir el codigo, porque en la maquina de quien programa se suele consultar
+-- como superusuario.
+--
+-- POR QUE SOLO ESTOS DOS
+--
+-- insert y select, nada mas. Sin update no se le puede cambiar el correo a nadie por
+-- debajo, y sin delete no se puede borrar una cuenta y con ella —por la cascada— su
+-- perfil. Dar de alta es la unica operacion que la API necesita sobre esta tabla; el
+-- resto se hace con la persona delante y por otro camino.
+-- -----------------------------------------------------------------------------
+grant insert, select on auth.users to raiz_api;
