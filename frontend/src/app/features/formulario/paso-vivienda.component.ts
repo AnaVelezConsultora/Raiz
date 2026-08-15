@@ -34,6 +34,14 @@ const NIVELES_INHABITABLES: readonly string[] = [
       <section class="pila-sm" formGroupName="vivienda">
         <h3>La vivienda</h3>
 
+        @if (heredado()) {
+          <p class="aviso">
+            El estado del inmueble viene del registro anterior de esta misma casa:
+            afectacion, riesgo y servicios. Corrijalo si no coincide. La tenencia y
+            donde duerme esta familia se preguntan de nuevo, porque son de ella.
+          </p>
+        }
+
         <div class="campo">
           <label for="ten">Relacion con la vivienda</label>
           <select id="ten" formControlName="tenencia">
@@ -206,6 +214,9 @@ const NIVELES_INHABITABLES: readonly string[] = [
 })
 export class PasoViviendaComponent {
   readonly form = input.required<FormGroup>();
+
+  /** True cuando el caso nacio de otro de la misma estructura. */
+  readonly heredado = input(false);
 
   readonly requiereVivienda = model.required<string[]>();
   readonly serviciosAfectados = model.required<string[]>();

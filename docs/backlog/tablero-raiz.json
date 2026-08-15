@@ -738,16 +738,21 @@
               "quiero": "crear el caso de otra familia de la misma estructura con el lugar ya puesto",
               "para": "no escribir cuatro veces la misma vereda cuando una casa alojaba cuatro familias",
               "criterios": [
-                "Desde un caso guardado se ofrece crear otro con ubicacion y coordenada copiadas",
-                "No se copia NADA del hogar: ni nombre, ni documento, ni telefono, ni composicion",
-                "El caso nuevo es independiente y tiene su propio identificador de origen",
-                "Se ofrece solo cuando el campo de familias en la estructura es mayor que uno"
+                "Al guardar un caso donde vivian varias familias se ofrece registrar la siguiente",
+                "Se copia el lugar completo, incluida la coordenada ya tomada",
+                "Se copia el estado del INMUEBLE: afectacion, riesgo de colapso, materiales y servicios",
+                "NO se copia nada del hogar: ni nombre, ni documento, ni telefono, ni composicion",
+                "NO se copia la autorizacion: cada familia la da por separado",
+                "NO se copian tenencia ni donde duerme: son de cada familia",
+                "El paso 3 avisa que el estado del inmueble viene del registro anterior",
+                "El caso nuevo es independiente y tiene su propio identificador de origen"
               ],
               "etiquetas": [
-                "FrontEnd"
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "Revision del paso 3, 15 de agosto de 2026",
-              "nota": "PENDIENTE. El formulario dice 'Si son varias, se llena un formulario por cada familia', pero no hay forma de hacerlo sin volver a la lista y reescribir vereda, punto de referencia y coordenada. Contar hogares y no viviendas es una decision central del proyecto y hoy el flujo la castiga con trabajo repetido."
+              "nota": "HECHA. El ofrecimiento aparece al guardar, no en la lista: el voluntario todavia esta parado frente a la casa y en la lista ya no lo esta.\n\nQue se copia el estado del inmueble fue una correccion sobre la marcha. La primera version solo copiaba el lugar, y eso dejaba el registro parcial y obligaba a re-responder el dano de la MISMA casa: la grieta es la misma grieta, y volver a preguntarla invita a que un inmueble quede con 'severo' en una familia y 'moderado' en la siguiente, de modo que la entidad recibe dos verdades del mismo predio y ninguna sirve. Lo copiado queda editable y avisado.\n\nLa navegacion va por /nuevo?desde=<id> para que la creacion siga estando en un solo lugar. Se reacciona a los parametros de la ruta y no se leen una sola vez, porque Angular reutiliza el componente cuando solo cambian y el voluntario se quedaria mirando el caso que acaba de guardar."
             }
           ]
         },
