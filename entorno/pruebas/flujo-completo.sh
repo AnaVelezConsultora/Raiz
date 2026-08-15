@@ -352,6 +352,21 @@ CIEGO="$(como "$SUB_ANA" "select count(*) from auditoria;")"
 ok "el lider no ve la auditoria, ni la del caso que el mismo reporto"
 
 # -----------------------------------------------------------------------------
+# Se retira el caso al terminar, y no solo al empezar.
+#
+# Limpiar solo al empezar hacia repetible ESTA prueba, pero dejaba el caso en la base
+# para la siguiente: las pruebas de acceso comprueban que Ana vea UN caso, el suyo, y
+# encontraban dos. Fallaban por el orden en que se corrieran, que es la clase de fallo
+# que ensena al equipo a desconfiar del rojo.
+# -----------------------------------------------------------------------------
+docker compose exec -T db psql -U postgres -d raiz -q >/dev/null <<SQL
+delete from auditoria
+ where (tabla = 'familias'   and despues->>'origen_id' = '$ORIGEN_ID')
+    or (tabla = 'remisiones' and despues->>'radicado'  = '$RADICADO');
+delete from familias where origen_id = '$ORIGEN_ID';
+SQL
+
+# -----------------------------------------------------------------------------
 printf '\n\033[1m==============================================\033[0m\n'
 printf '\033[1m El ciclo completo funciona\033[0m\n'
 printf '\033[1m==============================================\033[0m\n'
