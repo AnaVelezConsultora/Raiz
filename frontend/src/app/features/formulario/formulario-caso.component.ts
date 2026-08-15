@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Caso, FotoLocal } from '../../core/domain/caso.model';
 import { FuenteCoordenada, Zona } from '../../core/domain/enums';
 import { CASO_STORAGE, FOTO_STORAGE } from '../../core/domain/ports';
+import { AlmacenamientoService } from '../../core/services/almacenamiento.service';
 import { CasoFactoryService } from '../../core/services/caso-factory.service';
 import { CasoFormService, SeleccionMultiple } from '../../core/services/caso-form.service';
 import { GeolocalizacionService } from '../../core/services/geolocalizacion.service';
@@ -150,6 +151,7 @@ export class FormularioCasoComponent implements OnInit {
   private readonly formService = inject(CasoFormService);
   private readonly gps = inject(GeolocalizacionService);
   private readonly sync = inject(SincronizacionService);
+  private readonly almacenamiento = inject(AlmacenamientoService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destruccion = inject(DestroyRef);
@@ -409,6 +411,12 @@ export class FormularioCasoComponent implements OnInit {
       return;
     }
     await this.sync.refrescarContadores();
+
+    // Segundo intento de asegurar el almacenamiento. La primera peticion, al abrir
+    // la aplicacion, suele negarse por falta de senales de uso; despues de guardar
+    // un caso completo ya hay interaccion suficiente y la concesion es probable.
+    void this.almacenamiento.asegurarPersistencia();
+
     void this.router.navigate(['/casos']);
   }
 

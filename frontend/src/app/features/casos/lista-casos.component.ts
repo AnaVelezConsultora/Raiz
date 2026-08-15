@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ResumenCaso } from '../../core/domain/caso.model';
 import { EstadoSync, Prioridad, Zona } from '../../core/domain/enums';
 import { CASO_STORAGE } from '../../core/domain/ports';
+import { AlmacenamientoService } from '../../core/services/almacenamiento.service';
 import { RedService } from '../../core/services/red.service';
 import { SincronizacionService } from '../../core/services/sincronizacion.service';
 
@@ -34,6 +35,14 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
           se envia cuando haya senal.
         </p>
       }
+
+      @if (almacenamiento.enRiesgoDeDesalojo() && sync.totalPendientes() > 0) {
+        <p class="aviso peligro">
+          El celular no garantiza conservar los casos sin enviar si se queda sin
+          espacio. Libere espacio y envie las fotografias apenas tenga senal.
+        </p>
+      }
+
 
       @if (sync.estado() === 'en_curso') {
         <p class="aviso">Enviando los casos...</p>
@@ -188,6 +197,7 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
 export class ListaCasosComponent implements OnInit {
   private readonly almacen = inject(CASO_STORAGE);
   readonly sync = inject(SincronizacionService);
+  readonly almacenamiento = inject(AlmacenamientoService);
   readonly red = inject(RedService);
 
   readonly casos = signal<ResumenCaso[]>([]);

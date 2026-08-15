@@ -24,3 +24,8 @@ exportes/
 Thumbs.db
 *.log
 deck.html
+
+# Capturas que deja la prueba de punta a punta. Se regeneran en cada corrida,
+# son binarias y chocan en cada fusion sin aportar nada. Las del deck, que si
+# se versionan a proposito, viven en docs/capturas.
+frontend/preview-*.png
