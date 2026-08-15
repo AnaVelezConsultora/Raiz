@@ -11,6 +11,7 @@ export type EstadoPersistencia =
 export interface UsoAlmacenamiento {
   usado: number;
   disponible: number;
+  cuota: number;
   porcentaje: number;
 }
 
@@ -39,6 +40,10 @@ export interface UsoAlmacenamiento {
  */
 @Injectable({ providedIn: 'root' })
 export class AlmacenamientoService {
+  /** Se avisa con margen: una captura puede necesitar varios MB temporales. */
+  static readonly UMBRAL_PORCENTAJE = 90;
+  static readonly MARGEN_MINIMO_BYTES = 50 * 1024 * 1024;
+
   private readonly _estado = signal<EstadoPersistencia>('desconocido');
   private readonly _uso = signal<UsoAlmacenamiento | null>(null);
 
@@ -47,6 +52,19 @@ export class AlmacenamientoService {
 
   /** True cuando el navegador puede borrar los casos sin sincronizar. */
   readonly enRiesgoDeDesalojo = computed(() => this._estado() === 'desalojable');
+  readonly espacioBajo = computed(() => {
+    const uso = this._uso();
+    return uso !== null &&
+      (uso.porcentaje >= AlmacenamientoService.UMBRAL_PORCENTAJE ||
+        uso.disponible <= AlmacenamientoService.MARGEN_MINIMO_BYTES);
+  });
+
+  readonly avisoEspacio = computed(() => {
+    const uso = this._uso();
+    if (!uso || !this.espacioBajo()) return '';
+    return `Quedan ${this.formatear(uso.disponible)} en el celular. Libere espacio ` +
+      'antes de tomar otra foto para no perder lo capturado.';
+  });
 
   private readonly soportado =
     typeof navigator !== 'undefined' && navigator.storage !== undefined;
@@ -67,14 +85,17 @@ export class AlmacenamientoService {
     try {
       if (await navigator.storage.persisted()) {
         this._estado.set('persistente');
+        console.info('[Raíz] cuota persistente ya concedida');
         return true;
       }
 
       const concedida = await navigator.storage.persist();
       this._estado.set(concedida ? 'persistente' : 'desalojable');
+      console.info(`[Raíz] solicitud de cuota persistente: ${concedida ? 'concedida' : 'denegada'}`);
       return concedida;
-    } catch {
+    } catch (error) {
       this._estado.set('desconocido');
+      console.warn('[Raíz] no se pudo solicitar cuota persistente', error);
       return false;
     }
   }
@@ -87,7 +108,8 @@ export class AlmacenamientoService {
       const { usage = 0, quota = 0 } = await navigator.storage.estimate();
       const uso: UsoAlmacenamiento = {
         usado: usage,
-        disponible: quota,
+        disponible: Math.max(0, quota - usage),
+        cuota: quota,
         porcentaje: quota > 0 ? Math.round((usage / quota) * 100) : 0
       };
       this._uso.set(uso);
@@ -95,6 +117,16 @@ export class AlmacenamientoService {
     } catch {
       return null;
     }
+  }
+
+  /** Vigila la cuota mientras la pantalla está abierta y al volver del segundo plano. */
+  vigilar(): void {
+    if (!this.soportado) return;
+    void this.medirUso();
+    window.setInterval(() => void this.medirUso(), 30_000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') void this.medirUso();
+    });
   }
 
   /** Formatea bytes para mostrarlos a un voluntario, no a un ingeniero. */

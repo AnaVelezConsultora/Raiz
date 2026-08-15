@@ -53,6 +53,9 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
         @if (guardadoEn()) {
           <span class="tenue">Guardado en el dispositivo a las {{ guardadoEn() }}</span>
         }
+        @if (almacenamiento.avisoEspacio()) {
+          <p class="aviso peligro" style="margin:0">{{ almacenamiento.avisoEspacio() }}</p>
+        }
       </header>
 
       @if (form(); as f) {
@@ -151,7 +154,7 @@ export class FormularioCasoComponent implements OnInit {
   private readonly formService = inject(CasoFormService);
   private readonly gps = inject(GeolocalizacionService);
   private readonly sync = inject(SincronizacionService);
-  private readonly almacenamiento = inject(AlmacenamientoService);
+  readonly almacenamiento = inject(AlmacenamientoService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destruccion = inject(DestroyRef);
@@ -433,6 +436,7 @@ export class FormularioCasoComponent implements OnInit {
   async agregarFoto(foto: FotoLocal): Promise<void> {
     await this.almacenFotos.guardar(foto);
     this.fotos.update((lista) => [...lista, foto]);
+    void this.almacenamiento.medirUso();
     await this.sync.refrescarContadores();
   }
 

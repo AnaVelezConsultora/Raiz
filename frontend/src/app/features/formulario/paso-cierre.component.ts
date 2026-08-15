@@ -4,6 +4,7 @@ import { FotoLocal } from '../../core/domain/caso.model';
 import { TipoFoto } from '../../core/domain/enums';
 import { OPCIONES } from '../../core/services/caso-form.service';
 import { FotoService } from '../../core/services/foto.service';
+import { AlmacenamientoService } from '../../core/services/almacenamiento.service';
 import { PastillasComponent } from '../../shared/pastillas.component';
 
 /**
@@ -33,6 +34,9 @@ import { PastillasComponent } from '../../shared/pastillas.component';
             Sin autorizacion de la familia no se toman fotografias.
           </p>
         } @else {
+          @if (almacenamiento.avisoEspacio()) {
+            <p class="aviso peligro">{{ almacenamiento.avisoEspacio() }}</p>
+          }
           <div class="fila">
             <label class="pastilla" style="min-height:52px">
               <input type="file" accept="image/*" capture="environment" hidden
@@ -112,6 +116,7 @@ import { PastillasComponent } from '../../shared/pastillas.component';
 })
 export class PasoCierreComponent {
   private readonly fotoService = inject(FotoService);
+  readonly almacenamiento = inject(AlmacenamientoService);
 
   readonly form = input.required<FormGroup>();
   readonly casoId = input.required<string>();

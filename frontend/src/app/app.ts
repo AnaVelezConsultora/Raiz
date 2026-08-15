@@ -118,7 +118,7 @@ export class App implements OnInit {
     // Sin esto, el navegador puede desalojar los casos sin sincronizar cuando el
     // dispositivo se queda sin espacio, en silencio y sin pedir permiso.
     void this.almacenamiento.asegurarPersistencia();
-    void this.almacenamiento.medirUso();
+    this.almacenamiento.vigilar();
 
     // Ubicar es lo ultimo y no bloquea nada: si el permiso esta denegado o el
     // receptor no fija satelites, la cabecera se queda en "Colombia" y la
