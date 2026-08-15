@@ -42,10 +42,60 @@ const ctx = await browser.newContext({
   geolocation: { latitude: 4.2712345, longitude: -75.9412345, accuracy: 12 },
   locale: 'es-CO'
 });
+/**
+ * La aplicacion publicada exige haber entrado, y con razon.
+ *
+ * Desde que la PWA apunta a la API real, la guarda de sesion manda a /acceso a quien
+ * no tenga sesion, y esta prueba se quedaba esperando un boton que no estaba. Entrar
+ * de verdad exigiria red, y lo que se prueba aqui es precisamente lo contrario.
+ *
+ * Se siembra la sesion en el dispositivo, que es el estado real del voluntario en
+ * campo: entro UNA vez con senal en el casco urbano y subio a la vereda. La sesion
+ * vive en el navegador y el token puede estar vencido; capturar no lo exige.
+ */
+const SESION_SEMBRADA = {
+  perfil: {
+    id: '00000000-0000-4000-8000-000000000001',
+    nombre: 'Ana Velez',
+    rol: 'lider',
+    organizacionId: null,
+    telefono: null,
+    activo: true
+  },
+  correo: 'prueba@ejemplo.test',
+  expiraEn: null,
+  validadaEn: '2026-08-15T00:00:00.000Z'
+};
+
+await ctx.addInitScript(
+  ([clave, sesion]) => {
+    try { localStorage.setItem(clave, sesion); } catch { /* sin almacenamiento */ }
+  },
+  ['raiz.sesion.local', JSON.stringify(SESION_SEMBRADA)]
+);
+
+/**
+ * Esta prueba mide que la aplicacion funcione SIN servidor, asi que no debe hablar
+ * con el que esta publicado. Si lo hiciera, un despliegue caido pintaria de rojo una
+ * prueba que no tiene nada que ver, y peor: una prueba verde podria estarlo por lo que
+ * respondio la nube y no por lo que hace el dispositivo.
+ */
+await ctx.route('**://api.apoyo-colombia.com/**', (ruta) => ruta.abort());
+
 const page = await ctx.newPage();
 
 const errores = [];
-page.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()); });
+// Las llamadas a la API cortadas arriba salen por consola como error de red. Son
+// esperadas y son el escenario, no un defecto: se filtran para que 'errores de
+// consola' siga significando algo.
+const ES_RED_CORTADA = (texto) =>
+  texto.includes('api.apoyo-colombia.com') ||
+  texto.includes('net::ERR_FAILED') ||
+  texto.includes('Failed to load resource');
+
+page.on('console', (m) => {
+  if (m.type() === 'error' && !ES_RED_CORTADA(m.text())) errores.push(m.text());
+});
 page.on('pageerror', (e) => errores.push('pageerror: ' + e.message));
 
 const paso = (n, msg) => console.log(`[${n}] ${msg}`);
