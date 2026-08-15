@@ -1,22 +1,34 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { OPCIONES } from '../../core/services/caso-form.service';
+import { ContadorComponent } from '../../shared/contador.component';
 import { PastillasComponent } from '../../shared/pastillas.component';
 
 /**
  * Paso 2. Quienes viven en el hogar.
  *
- * El desagregado por sexo y edad es el bloque que mas se omite y el que las
- * entidades y la cooperacion exigen para asignar ayuda. Se pinta como rejilla de
- * numeros grandes para que se llene rapido, y se avisa cuando la suma no cuadra con
- * el total declarado, sin bloquear: en campo el total suele ser correcto y el
- * desagregado se corrige por telefono.
+ * El desagregado por sexo y edad es el bloque que mas se omite en los censos
+ * improvisados y el que las entidades y la cooperacion exigen para asignar ayuda. Es
+ * tambien el bloque donde se abandona un formulario: diez casillas numericas son diez
+ * aperturas de teclado, de pie y con la familia esperando.
+ *
+ * Por eso se llena con botones y no con teclado (ver ContadorComponent).
+ *
+ * El total se escribe primero, arriba de la rejilla, porque es lo primero que la
+ * familia dice. No se calcula solo a proposito: si se sobreescribiera con la suma, el
+ * voluntario que ya escribio "somos cinco" veria cambiar su dato mientras reparte por
+ * edades. En vez de eso, mientras reparte ve cuantas lleva repartidas, y el aviso de
+ * descuadre aparece ARRIBA de la rejilla, donde el teclado no lo tapa.
+ *
+ * El aviso de descuadre no bloquea: en campo el total suele ser correcto y el
+ * desagregado se corrige por telefono. Un formulario que bloquea es un formulario que
+ * se abandona.
  *
  * @version 0.1.0
  */
 @Component({
   selector: 'app-paso-hogar',
-  imports: [ReactiveFormsModule, PastillasComponent],
+  imports: [ReactiveFormsModule, PastillasComponent, ContadorComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="pila" [formGroup]="form()">
@@ -26,11 +38,11 @@ import { PastillasComponent } from '../../shared/pastillas.component';
           <div class="fila">
             <div class="campo" style="flex:1">
               <label for="nom">Nombres</label>
-              <input id="nom" type="text" formControlName="jefeNombres" />
+              <input id="nom" type="text" formControlName="jefeNombres" autocomplete="off" />
             </div>
             <div class="campo" style="flex:1">
               <label for="ape">Apellidos</label>
-              <input id="ape" type="text" formControlName="jefeApellidos" />
+              <input id="ape" type="text" formControlName="jefeApellidos" autocomplete="off" />
             </div>
           </div>
           <div class="campo">
@@ -68,51 +80,50 @@ import { PastillasComponent } from '../../shared/pastillas.component';
           <label for="tel2">Celular alterno o de un vecino</label>
           <input id="tel2" type="tel" inputmode="tel" formControlName="tel2" />
         </div>
-        <div class="campo" [class.invalido]="totalInvalido()">
-          <label for="ptotal">Total de personas en el hogar</label>
-          <input id="ptotal" type="number" inputmode="numeric" min="1" formControlName="personasTotal" />
-          @if (totalInvalido()) {
-            <span class="error">Indique cuantas personas viven en el hogar.</span>
-          }
-        </div>
       </section>
 
       <section class="pila-sm">
         <h3>Cuantos son, por edad y sexo</h3>
-        <div class="rejilla-edades" formGroupName="composicion">
-          <span></span><span class="cab">Hombres</span><span class="cab">Mujeres</span>
-          @for (r of rangos; track r.h) {
-            <span class="rango">{{ r.t }}</span>
-            <input type="number" inputmode="numeric" min="0" [formControlName]="r.h"
-                   [attr.aria-label]="'Hombres ' + r.t" />
-            <input type="number" inputmode="numeric" min="0" [formControlName]="r.m"
-                   [attr.aria-label]="'Mujeres ' + r.t" />
+
+        <!-- El total va arriba de la rejilla: es lo primero que la familia dice, y
+             asi el voluntario ve como se llena mientras reparte por edades. -->
+        <div class="campo" formGroupName="hogar" [class.invalido]="totalInvalido()">
+          <label for="ptotal">Total de personas en el hogar</label>
+          <input id="ptotal" type="text" inputmode="numeric" formControlName="personasTotal" />
+          @if (totalInvalido()) {
+            <span class="error">Indique cuantas personas viven en el hogar.</span>
+          } @else if (sumaEdades() > 0) {
+            <span class="pista">Repartidas abajo: {{ sumaEdades() }}.</span>
           }
         </div>
 
         @if (descuadre()) {
           <p class="aviso peligro">
-            La suma por edades da {{ sumaEdades() }} y el total declarado es
-            {{ totalDeclarado() }}. Revise antes de continuar.
+            La suma por edades da {{ sumaEdades() }} y el total dice
+            {{ totalDeclarado() }}. Puede continuar y corregirlo despues.
           </p>
         }
+
+        <div class="rejilla-edades" formGroupName="composicion">
+          <span></span><span class="cab">Hombres</span><span class="cab">Mujeres</span>
+          @for (r of rangos; track r.h) {
+            <span class="rango">{{ r.t }}</span>
+            <app-contador [formControlName]="r.h" [etiqueta]="'Hombres de ' + r.t" />
+            <app-contador [formControlName]="r.m" [etiqueta]="'Mujeres de ' + r.t" />
+          }
+        </div>
       </section>
 
       <section class="pila-sm" formGroupName="vulnerabilidad">
         <h3>Condiciones especiales</h3>
-        <div class="fila">
-          <div class="campo" style="flex:1">
-            <label for="gest">Gestantes</label>
-            <input id="gest" type="number" inputmode="numeric" min="0" formControlName="gestantes" />
-          </div>
-          <div class="campo" style="flex:1">
-            <label for="disc">Con discapacidad</label>
-            <input id="disc" type="number" inputmode="numeric" min="0" formControlName="discapacidadN" />
-          </div>
-          <div class="campo" style="flex:1">
-            <label for="enf">Enfermedad cronica</label>
-            <input id="enf" type="number" inputmode="numeric" min="0" formControlName="enfCronicaN" />
-          </div>
+        <p class="pista">Dejar en cero si no aplica.</p>
+        <div class="rejilla-condiciones">
+          <span class="rango">Gestantes</span>
+          <app-contador formControlName="gestantes" etiqueta="Gestantes" />
+          <span class="rango">Con discapacidad</span>
+          <app-contador formControlName="discapacidadN" etiqueta="Personas con discapacidad" />
+          <span class="rango">Enfermedad cronica</span>
+          <app-contador formControlName="enfCronicaN" etiqueta="Personas con enfermedad cronica" />
         </div>
       </section>
 
