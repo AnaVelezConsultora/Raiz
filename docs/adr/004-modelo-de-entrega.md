@@ -76,13 +76,18 @@ permite que alguien de **F6 abra un enlace en su Android y pruebe el cambio ante
 del merge**, sin instalar nada. El frente más urgente del proyecto, que no
 requiere programar, se vuelve accionable con esto.
 
-> [Sin cumplir desde el 15 de agosto de 2026. Estas vistas previas las daba
-> Netlify, y Netlify se retiró al consolidar la publicación en CloudFront. Lo que
-> este ADR pide sigue siendo lo correcto y no se reabre: lo que falta es volver a
-> proveerlo, y hoy no está. Queda registrado como deuda D5 en
-> [DEUDA-TECNICA.md](../DEUDA-TECNICA.md), con la vía para pagarlo sobre la
-> distribución que ya existe. Decirlo aquí, y no solo allá, porque este párrafo es
-> el que alguien lee cuando pregunta por qué no puede probar antes del merge.]
+> [**Retirado por decisión el 15 de agosto de 2026.** Estas vistas previas las daba
+> Netlify, y Netlify salió del proyecto al consolidar la publicación en CloudFront.
+> Quien responde por el proyecto decidió que no hacen falta, sabiendo lo que este
+> párrafo dice de ellas.
+>
+> La consecuencia queda escrita para que nadie la descubra después: **quien no
+> programa solo puede probar lo que ya está publicado.** El frente F6 —probar en un
+> Android real, que este documento y ESTADO.md llaman el más urgente del proyecto—
+> pierde la vía de probar antes de fusionar.
+>
+> Si algún día se reabre, no hace falta volver a Netlify: la distribución de
+> CloudFront admite un prefijo `/vista-previa/<rama>/` sobre el mismo bucket.]
 
 **No todo se muda.** La PWA es estática y su despliegue ya funcionaba. Se migra
 primero el plano de datos —API, base, almacenamiento, identidad—; el estático se

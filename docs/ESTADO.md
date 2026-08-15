@@ -154,9 +154,9 @@ intermitente de la vereda, que es donde este sistema tiene que aguantar.
 ### Revisión independiente
 
 Un integrante del equipo revisó la documentación contra el código y encontró ocho
-defectos, todos válidos. El despliegue del 15 de agosto destapó tres más: dos que solo se
-ven cuando la API corre contra una base donde no es dueña de las tablas, y uno que solo
-se ve desde un navegador. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
+defectos, todos válidos. El despliegue del 15 de agosto destapó siete más: dos que solo se
+ven cuando la API corre contra una base donde no es dueña de las tablas, y cinco que solo
+se ven abriendo la aplicación publicada en un navegador de verdad. Están en [hallazgos-revision.md](hallazgos-revision.md) y en
 [SEGURIDAD.md](../supabase/SEGURIDAD.md).
 
 | | Hallazgo | Estado |
@@ -169,6 +169,9 @@ se ve desde un navegador. Están en [hallazgos-revision.md](hallazgos-revision.m
 | H8, H12, H13 | Imprecisiones de documentación y ausencia de pruebas automáticas | Pendiente |
 | H15 | La API no podía leer perfiles ni escribir en `auth.users`: ningún inicio de sesión contra la nube era posible | **Corregido** |
 | H16 | El alta de voluntarios no es idempotente, aunque su documentación lo afirma | **Corregido** |
+| H18 | La política de seguridad impedía cargar la hoja de estilos: la aplicación publicada se veía sin estilos | **Corregido** |
+| H19 | Nadie escuchaba al service worker: una corrección publicada no llegaba al celular | **Corregido** |
+| H20, H21 | La pantalla de acceso sin estilo ni mensajes, y la cabecera con «Sevilla» escrito a mano | **Corregido** |
 | H17 | CORS no permitía `DELETE`, así que cerrar sesión desde la PWA no habría funcionado | **Corregido** |
 
 H14 era bloqueante: el esquema completo habría fallado al ejecutarse el día que alguien
@@ -185,9 +188,9 @@ creara la base.
 | F3 Sincronización y servidor | **Desplegada en `api.apoyo-colombia.com`, con TLS** | — |
 | F4 Tablero y mapa | Abierto, bloqueado por una decisión | F7 |
 | F5 Remisiones y seguimiento | Abierto | F3 |
-| F6 Calidad y prueba en campo | **Empieza ya, no depende de nada** | — |
+| F6 Calidad y prueba en campo | **Es el único bloqueo que queda.** Ya hay URL pública | — |
 | F7 Datos y cumplimiento | Abierto, con cuatro decisiones pendientes | — |
-| F8 Multi-municipio | Abierto | — |
+| F8 Multi-municipio | Abierto. La cabecera ya no dice «Sevilla» a la fuerza | — |
 
 El estándar de confiabilidad que debe cumplir la información está en
 [ESTANDAR-PROBATORIO.md](ESTANDAR-PROBATORIO.md), con nueve brechas identificadas y su
@@ -273,7 +276,7 @@ correr las veces que haga falta sin duplicar nada.
 | Esquema | Lo aplica una tarea efímera **dentro** de la VPC, no una persona. Migraciones numeradas con registro: aplicar dos veces no repite ninguna. |
 | API | Fargate, ARM64, una réplica de 0,25 vCPU, detrás de un balanceador. |
 | Borde | HTTPS con certificado comodín; el 80 solo redirige. Nombre propio en Route 53. |
-| PWA | CloudFront sobre bucket privado, en `apoyo-colombia.com` y `www`. |
+| PWA | CloudFront sobre bucket privado, en `apoyo-colombia.com` y `www`. Ver más abajo. |
 | Presupuesto | 50 USD/mes con cuatro avisos, configurado **antes** del primer recurso. |
 
 Verificado contra el despliegue real y sobre HTTPS, no supuesto: el custodio inicia
@@ -291,19 +294,14 @@ llega cifrada. No queda ninguna ruta por la que una clave viaje en claro.
 El dominio se administra en Route 53 y el certificado lo renueva ACM solo, mientras el
 registro CNAME de validación siga en la zona.
 
-**La PWA está publicada en `https://apoyo-colombia.com`** (y `www`), servida por
-CloudFront desde un bucket privado con los cuatro bloqueos de acceso público. Hasta hoy
-la aplicación se compilaba con `apiUrl` vacío —modo local, captura y guarda sin enviar—
-y por eso no habría sincronizado nunca aunque estuviera publicada. Ahora la compilación
-de producción apunta a la API, y el guion de publicación **falla** si el paquete no
-lleva esa dirección adentro: una PWA publicada en modo local no da ningún error, los
-casos simplemente no llegan.
+La PWA vive en el mismo dominio, bajo la misma custodia: ver «La PWA está publicada»
+más abajo.
 
-La política de seguridad de contenido se cerró de paso. Decía `connect-src 'self'
-https:` con una nota que pedía reemplazarlo cuando la dirección de la API estuviera
-decidida; ahora dice `https://api.apoyo-colombia.com`. La diferencia práctica: antes
-impedía que un script inyectado robara los casos, ahora impide además que los mande a
-un servidor ajeno.
+La política de seguridad de contenido del frente se cerró de paso. Decía `connect-src
+'self' https:` con una nota que pedía reemplazarlo cuando la dirección de la API
+estuviera decidida; ahora dice `https://api.apoyo-colombia.com`. La diferencia
+práctica: antes impedía que un script inyectado robara los casos, ahora impide además
+que los mande a un servidor ajeno.
 
 Dos cosas quedaron decididas y conviene que no se reabran por error:
 
@@ -324,12 +322,46 @@ de cambio no puede asumir el rol por mucho que altere el flujo. Queda una llave 
 vida —la de quien montó todo esto— y retirarla es la deuda [D3](DEUDA-TECNICA.md), la de
 mayor riesgo que hay abierta.
 
+### La PWA está publicada, y publicarla destapó cuatro defectos
+
+**https://apoyo-colombia.com** y `www`, servidas por CloudFront desde un bucket
+privado con los cuatro bloqueos de acceso público. La distribución es la que pone las
+cabeceras de seguridad y HTTPS obligatorio; el bucket no se puede leer directamente,
+y por eso la distribución sirve de algo.
+
+Hasta hoy la aplicación se compilaba con `apiUrl` vacío —modo local: captura y guarda
+sin enviar— y no existía compilación de producción. Publicarla así habría dado una
+aplicación que guarda en el celular y **no sincroniza nunca, sin mostrar un solo
+error**. Por eso el guion de publicación falla si el paquete no lleva la dirección de
+la API adentro.
+
+Los cuatro defectos que aparecieron al abrirla de verdad están en
+[hallazgos-revision.md](hallazgos-revision.md), y dos son graves: **la hoja de estilos
+no se aplicaba** —la política de seguridad bloqueaba el mecanismo con el que Angular
+la carga— y **nadie escuchaba al service worker**, así que una corrección publicada no
+llegaba al celular que quedó abierto en la vereda. El segundo importa más de lo que
+parece: poder corregir a distancia es la diferencia entre un error y una jornada
+perdida.
+
+La aplicación muestra ahora su versión en el pie —`Raíz v0.1.0`—, estampada desde
+`package.json` al compilar. Cuando alguien reporte desde la vereda que «no guarda», lo
+primero que hay que saber es qué versión tiene en la mano.
+
+**No hay vista previa por propuesta de cambio.** Netlify salió del proyecto y con él
+se fueron. Es una decisión tomada sabiendo el precio: quien no programa solo puede
+probar lo que ya está publicado. Ver [DEUDA-TECNICA.md](DEUDA-TECNICA.md).
+
 ### El bloqueo real que queda
 
 **Nadie ha probado esto en campo.** El código puede estar perfecto y el formulario
 seguir siendo inusable de pie, bajo el sol, con la familia esperando. Eso no lo detecta
-ninguna prueba automática. Ya no hay excusa técnica: no requiere servidor, y ahora
-tampoco espera a nadie.
+ninguna prueba automática.
+
+Ya no queda ninguna excusa técnica. Hay una dirección que se abre en cualquier Android
+sin instalar nada, con cuenta de prueba, contra la API real. Y los cuatro defectos que
+se corrigieron hoy salieron de abrir la aplicación en un teléfono y mirarla — ninguno
+lo habría encontrado una prueba automática, que es exactamente el argumento de este
+frente.
 
 El bloqueo anterior —«no hay proyecto de Supabase»— ya no aplica: el entorno local
 levanta todo lo necesario para trabajar, y la infraestructura de producción es trabajo
@@ -357,13 +389,21 @@ presentación a autoridades civiles es la ocasión de pedirlos.
 avión, registrar un caso de prueba y contar todo lo que incomodó. No requiere escribir
 código, no depende del servidor y es lo de mayor impacto.
 
-**Prioridad 2 — quien quiera hacer el servidor.** El contrato, los puertos y el
-paquete de dominio están listos, y el entorno local levanta la base con un comando.
-Desbloquea la mitad del tablero.
+**Prioridad 2 — retirar la última llave de larga vida.** El pipeline ya despliega por
+identidad federada, pero la llave de IAM con la que se montó todo sigue viva. Es la
+deuda D3 y la de mayor riesgo abierta: una llave así no caduca, no dice quién la copió,
+y quien la tenga alcanza la base de familias. El orden es desplegar una vez por el
+flujo, comprobar, y borrarla.
 
 **Prioridad 3 — Angular y visualización.** El tablero y el mapa no tocan el núcleo: se
 pueden construir en paralelo desde hoy con los datos de ejemplo del entorno local. Ojo
 con la decisión pendiente sobre qué puede mostrar el mapa público.
+
+**Y una que no es de programar: el listado del DANE.** La cabecera ubica al voluntario
+contra una tabla de 95 municipios escrita a mano, con coordenadas de cabecera y no
+polígonos. Ya se equivocó una vez —dijo «Ulloa» a alguien en Pereira— y nada en el
+código detecta un error de tecleo. El reemplazo es el listado oficial de la división
+político-administrativa, que es la misma clase de gestión que el listado de veredas.
 
 Con dos horas a la semana se aporta. Escoja una historia del tablero y avise cuál toma,
 para no repetir trabajo.

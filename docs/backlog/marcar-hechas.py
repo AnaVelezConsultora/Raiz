@@ -107,6 +107,21 @@ HECHAS = {
     ),
 }
 
+# -----------------------------------------------------------------------------
+# Lo que NO se marca, y por que. Se deja escrito para que nadie lo agregue por
+# parecer obvio.
+#
+#   HU 1.2.1  El contrato de la API existe, pero se decidio (15/8/2026) que debe
+#             crecer hasta ser parte de la arquitectura del proyecto, y eso no se
+#             hizo. Marcarla ahora la sacaria del radar con trabajo pendiente.
+#
+#   HU 1.4.2  Va al reves: era la vista previa por propuesta de cambio, la daba
+#             Netlify, y Netlify salio del proyecto. Si estaba marcada hay que
+#             DESMARCARLA, y este script no quita etiquetas por diseno: hacerlo a
+#             mano obliga a que alguien lo mire. La decision y su costo estan en
+#             docs/DEUDA-TECNICA.md y en la enmienda del ADR 004.
+# -----------------------------------------------------------------------------
+
 
 def cargar(nombre_tablero):
     """Tablero, listas, etiquetas y tarjetas, en una pasada."""

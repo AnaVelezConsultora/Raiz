@@ -24,7 +24,6 @@ como para postergarla.
 | D2 | Las claves de la base no rotan | Medio | Que alguien con acceso al secreto deje el equipo |
 | D3 | Sigue viva una llave de larga vida de IAM | **Alto** | Que el pipeline despliegue solo, verificado una vez |
 | D4 | Los guiones son CLI y no código declarativo | Medio | Que haya un segundo entorno, o un segundo municipio |
-| D5 | No hay vista previa por propuesta de cambio | Medio | Que alguien de F6 tenga que probar un cambio antes del merge |
 
 ---
 
@@ -146,44 +145,6 @@ poder inventariarlos y adoptarlos con un diff.
 
 ---
 
-## D5 · No hay vista previa por propuesta de cambio
-
-**Qué se hizo.** Netlify se retiró el 15 de agosto de 2026 y la aplicación se sirve
-solo desde CloudFront. Con Netlify se fueron las vistas previas por propuesta de
-cambio: hoy no hay ninguna URL que abra el estado de una rama sin fusionarla.
-
-**Por qué.** Dos sitios publicados es un sitio de más. El de Netlify quedaba
-sirviendo `main` desde otro dominio, envejeciendo por su cuenta, y esa clase de
-duplicado se descubre el día que alguien reporta un error contra la versión
-equivocada. Consolidar en un solo sitio fue la decisión, y es defendible.
-
-**Lo que cuesta, dicho sin suavizar.** El ADR 004 no menciona las vistas previas de
-pasada: las llama la pieza que vuelve accionable el frente F6.
-
-> «No por los devs: es lo que permite que alguien de **F6 abra un enlace en su
-> Android y pruebe el cambio antes del merge**, sin instalar nada. El frente más
-> urgente del proyecto, que no requiere programar, se vuelve accionable con esto.»
-
-F6 —probar en un teléfono real, en la vereda— sigue siendo el bloqueo declarado del
-proyecto. Quien quiera probar un cambio hoy tiene dos opciones, y las dos son
-peores: clonar el repositorio y compilar, que descarta a quien no programa; o
-esperar a que se fusione, que es probar después de decidir.
-
-**Qué lo hace tolerable por ahora.** La aplicación publicada ya se abre en cualquier
-Android desde `apoyo-colombia.com` sin instalar nada. Para probar **lo que ya está
-fusionado** —que es la mayor parte de lo que F6 necesita hoy, porque nunca se ha
-hecho ni una vez— alcanza.
-
-**Disparador.** El primer cambio de interfaz que alguien de F6 necesite probar antes
-de que se fusione. Ese día, esperar al merge deja de ser aceptable.
-
-**Cómo se paga.** No hace falta volver a Netlify. La distribución de CloudFront ya
-existe: se le agrega un comportamiento para un prefijo `/vista-previa/<rama>/` en el
-mismo bucket, y el flujo de verificación sube ahí el paquete que ya construye. Es
-una regla de caché y un paso de subida, no infraestructura nueva.
-
----
-
 ## Lo que NO es deuda, aunque lo parezca
 
 Conviene decirlo para que nadie venga a «arreglarlo»:
@@ -199,3 +160,18 @@ Conviene decirlo para que nadie venga a «arreglarlo»:
   pista.
 - **Sin puerta de enlace NAT.** Es una decisión de la HU 1.1.1 y del ADR 002, no
   un atajo.
+- **Sin vista previa por propuesta de cambio.** Estuvo un rato en esta tabla como
+  D5 y se retiró: quien responde por el proyecto decidió el 15 de agosto de 2026
+  que no hace falta. Un segundo sitio publicado —el de Netlify— envejecía por su
+  cuenta y se descubre el día que alguien reporta un error contra la versión
+  equivocada.
+
+  **Lo que cuesta, dicho igual.** El ADR 004 llamaba a esa vista previa la pieza
+  que vuelve accionable el frente F6: probar un cambio en un Android antes de
+  fusionarlo. Sin ella, quien no programa solo puede probar lo que ya está
+  publicado. Es una decisión tomada sabiendo el precio, no un olvido, y por eso no
+  lleva disparador: no hay nada que se esté postergando.
+
+  Si algún día se quiere, no hace falta volver a Netlify: la distribución de
+  CloudFront ya existe y admite un prefijo `/vista-previa/<rama>/` sobre el mismo
+  bucket.
