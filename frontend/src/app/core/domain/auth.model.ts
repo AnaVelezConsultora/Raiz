@@ -48,6 +48,28 @@ export interface ResultadoAcceso {
   sinConexion: boolean;
 }
 
+/**
+ * Un voluntario visto por la custodia de datos.
+ *
+ * Trae lo que el perfil no muestra al propio usuario y la custodia si necesita para
+ * decidir: el correo, cuando se registro y que organizacion DECLARO.
+ *
+ * `organizacionDeclarada` es lo que la persona escribio, sin verificar. Se llama asi a
+ * proposito: distinguirlo de un vinculo confirmado evita que un dato sin comprobar
+ * termine pareciendo comprobado en la pantalla de quien decide.
+ */
+export interface PerfilAdministrable extends PerfilUsuario {
+  correo: string;
+  organizacionDeclarada: string | null;
+  creadoEn: string;
+}
+
+/** Cambio que la custodia aplica sobre un voluntario. */
+export interface CambioPerfil {
+  activo?: boolean;
+  rol?: Rol;
+}
+
 /** Datos con que un voluntario pide una cuenta. */
 export interface DatosRegistro {
   nombre: string;
@@ -99,6 +121,28 @@ export interface AuthPort {
    * Las dos cosas a la vez: cero friccion para sumarse, cero datos sin responsable.
    */
   registrar(datos: DatosRegistro): Promise<ResultadoRegistro>;
+
+  /**
+   * Voluntarios que la custodia puede administrar.
+   *
+   * CONTRATO CON LA API: `GET /perfiles`, restringida a la custodia POR EL SERVIDOR.
+   * Que la pantalla solo se le muestre a ella es comodidad; lo que protege el dato es
+   * la politica de acceso por fila, no la ruta del navegador.
+   *
+   * @param soloPendientes true para traer unicamente las cuentas sin activar.
+   */
+  listarVoluntarios(soloPendientes?: boolean): Promise<PerfilAdministrable[]>;
+
+  /**
+   * Activa, desactiva o cambia el rol de un voluntario.
+   *
+   * CONTRATO CON LA API: `PATCH /perfiles/:id` con { activo?, rol? }.
+   *
+   * Desactivar NO borra los casos que la persona levanto: la familia sigue contada y
+   * el registro conserva quien lo reporto. Retirar a alguien del equipo no puede
+   * borrar el trabajo hecho ni romper la trazabilidad.
+   */
+  cambiarVoluntario(id: string, cambio: CambioPerfil): Promise<PerfilAdministrable>;
   cerrarSesion(): Promise<void>;
   /** Sesion vigente segun el servidor. Null si no hay o si no se pudo consultar. */
   sesionActual(): Promise<Sesion | null>;
