@@ -40,7 +40,17 @@ export interface Control {
    * Autorizacion de tratamiento de datos, Ley 1581 de 2012.
    * En false la identidad NO viaja. La regla se aplica con {@link aplicarConsentimiento}.
    */
-  consentimiento: boolean;
+  /**
+   * Autorizacion de la familia. null es SIN RESPONDER, y no es lo mismo que un no.
+   *
+   * Con un booleano de dos estados, un formulario que nadie lleno se veia igual que
+   * una familia que dijo que no. De esta respuesta depende si el nombre y el documento
+   * de una persona se guardan, asi que la diferencia importa.
+   *
+   * Al escribir en la base, cualquier cosa distinta de true es un no: la regla de
+   * identidad no cambia.
+   */
+  consentimiento: boolean | null;
   fechaRegistro: string;
 }
 

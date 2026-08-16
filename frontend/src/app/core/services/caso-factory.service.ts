@@ -87,7 +87,7 @@ export class CasoFactoryService {
         registradorOrg: perfil?.organizacion ?? null,
         registradorTel: perfil?.telefono ?? null,
         fuenteDato: FuenteDato.Presencial,
-        consentimiento: false,
+        consentimiento: null,
         fechaRegistro: ahora.slice(0, 10)
       },
       ubicacion: {
@@ -183,7 +183,7 @@ export class CasoFactoryService {
     nuevo.control = {
       ...nuevo.control,
       fuenteDato: base.control.fuenteDato,
-      consentimiento: false
+      consentimiento: null
     };
 
     if (base.vivienda) {

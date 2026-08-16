@@ -53,7 +53,7 @@ const NIVELES_INHABITABLES: readonly string[] = [
         </div>
 
         <div class="campo">
-          <label for="hog">Cuantas familias vivian en esa misma casa o estructura</label>
+          <label for="hog">Cuántas familias vivían en esa misma casa o estructura</label>
           <div class="fila" style="flex-wrap:nowrap">
             <app-contador formControlName="hogaresEnEstructura" [minimo]="1"
                           etiqueta="Familias en la misma estructura" />
@@ -62,7 +62,7 @@ const NIVELES_INHABITABLES: readonly string[] = [
         </div>
 
         <div class="campo">
-          <label for="afec">Nivel de afectacion</label>
+          <label for="afec">Nivel de afectación</label>
           <select id="afec" formControlName="afectacion">
             <!-- Sin preseleccion. Antes venia en "moderado", asi que un paso que nadie
                  lleno describia una casa con dano moderado que no tiene. -->
@@ -77,12 +77,12 @@ const NIVELES_INHABITABLES: readonly string[] = [
              "no es habitable" de "no me preguntaron", y de este dato depende si la
              familia entra en la lista de quienes necesitan techo esta noche. -->
         <div class="campo">
-          <label>Se puede vivir ahi hoy</label>
+          <label>¿Se puede vivir ahí hoy?</label>
           <div class="pastillas">
             <button type="button" class="pastilla" [class.activa]="habitable() === true"
-                    (click)="fijarHabitable(true)">Si, es habitable</button>
+                    (click)="fijarHabitable(true)">Sí, es habitable</button>
             <button type="button" class="pastilla" [class.activa]="habitable() === false"
-                    (click)="fijarHabitable(false)">No se puede vivir ahi</button>
+                    (click)="fijarHabitable(false)">No se puede vivir ahí</button>
           </div>
           @if (habitable() === null) {
             <span class="pista">Sin responder.</span>

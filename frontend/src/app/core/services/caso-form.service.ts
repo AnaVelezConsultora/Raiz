@@ -369,15 +369,15 @@ export const OPCIONES = {
     { v: Prioridad.P3, t: 'P3 dano leve' }
   ],
   afiliacion: [
-    { v: 'comite_reforma', t: 'Comite de reforma agraria' },
-    { v: 'asoc_campesina', t: 'Asociacion campesina' },
-    { v: 'jac', t: 'Junta de Accion Comunal' },
-    { v: 'federacion', t: 'Federacion (convenio)' },
+    { v: 'comite_reforma', t: 'Comité de reforma agraria' },
+    { v: 'asoc_campesina', t: 'Asociación campesina' },
+    { v: 'jac', t: 'Junta de Acción Comunal' },
+    { v: 'federacion', t: 'Federación (convenio)' },
     { v: 'no_afiliada', t: 'No afiliada' },
     { v: 'otra', t: 'Otra' }
   ],
   requiereVivienda: [
-    { v: 'remocion', t: 'Remocion de escombros' },
+    { v: 'remocion', t: 'Remoción de escombros' },
     { v: 'apuntalamiento', t: 'Apuntalamiento urgente' },
     { v: 'eval_estructural', t: 'Evaluacion estructural' },
     { v: 'demolicion', t: 'Demolicion controlada' },
@@ -433,7 +433,7 @@ export const OPCIONES = {
     { v: 'alojamiento_temp', t: 'Alojamiento temporal' },
     { v: 'subsidio_arriendo', t: 'Subsidio de arriendo' },
     { v: 'eval_estructural', t: 'Evaluacion estructural' },
-    { v: 'remocion', t: 'Remocion de escombros' },
+    { v: 'remocion', t: 'Remoción de escombros' },
     { v: 'materiales', t: 'Materiales' },
     { v: 'reactivacion_negocio', t: 'Reactivacion del negocio' },
     { v: 'reubicacion', t: 'Reubicacion' }
@@ -450,10 +450,10 @@ export const OPCIONES = {
     { v: Necesidad.Aseo, t: 'Kit de aseo' },
     { v: Necesidad.Cocina, t: 'Kit de cocina' },
     { v: Necesidad.Dormir, t: 'Colchonetas y cobijas' },
-    { v: Necesidad.Carpa, t: 'Carpa o plastico' },
+    { v: Necesidad.Carpa, t: 'Carpa o plástico' },
     { v: Necesidad.Ropa, t: 'Ropa' },
     { v: Necesidad.Medicamentos, t: 'Medicamentos' },
-    { v: Necesidad.Panales, t: 'Panales o leche infantil' },
+    { v: Necesidad.Panales, t: 'Pañales o leche infantil' },
     { v: Necesidad.Psicosocial, t: 'Apoyo psicosocial' },
     { v: Necesidad.Transporte, t: 'Transporte' },
     { v: Necesidad.Documentos, t: 'Reposicion de documentos' }

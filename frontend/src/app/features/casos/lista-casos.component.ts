@@ -39,7 +39,7 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
       @if (almacenamiento.enRiesgoDeDesalojo() && sync.totalPendientes() > 0) {
         <p class="aviso peligro">
           El celular no garantiza conservar los casos sin enviar si se queda sin
-          espacio. Libere espacio y envie las fotografias apenas tenga senal.
+          espacio. Libere espacio y envíe las fotografías apenas tenga señal.
         </p>
       }
 
@@ -109,7 +109,7 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
 
       @if (casos().length === 0) {
         <p class="aviso">
-          Todavia no hay casos en este celular. Toque Nuevo caso para registrar la
+          Todavía no hay casos en este celular. Toque Nuevo caso para registrar la
           primera familia.
         </p>
       }

@@ -106,7 +106,10 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
     const valores = [
       caso.origenId, c.fechaRegistro,
       c.registradorNombre, c.registradorOrg, c.registradorTel,
-      c.fuenteDato, c.consentimiento,
+      c.fuenteDato,
+      // Sin responder se guarda como no autorizado: la columna no admite nulo y la
+      // regla de identidad ya trata cualquier cosa distinta de true como un no.
+      c.consentimiento === true,
       u.departamento, u.municipio, u.zona, u.vereda, u.corregimiento, u.barrio, u.comuna,
       u.direccionRef, u.lat, u.lon, u.gpsFuente,
       h.jefeNombres, h.jefeApellidos, h.tipoDoc, h.numDoc,

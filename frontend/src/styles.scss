@@ -320,6 +320,24 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .mono { font-family: var(--mono); font-size: 0.85rem; }
 .tenue { color: var(--ink-faint); font-size: 0.85rem; }
 
+
+/* Marca de campo obligatorio.
+   La pidio el terreno: no habia forma de saber que se podia dejar en blanco, y la
+   duda se resuelve mal —o se llena de mas, o se deja lo que hacia falta—. Se escribe
+   la palabra en vez de un asterisco: un asterisco hay que saber que significa. */
+.obligatorio {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--p0);
+  margin-left: 0.4rem;
+}
+
+/* Rango de edad que las entidades miran primero: menores y 60 o mas. No cambia el
+   dato, avisa que ese renglon no se deja en cero por descuido. */
+.rango.priorizado { font-weight: 650; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
