@@ -1,0 +1,547 @@
+<title>Manual de Raíz</title>
+<style>
+  /* =========================================================================
+     Manual de campo de Raiz — para proyectar ante lideres y para imprimir.
+
+     La paleta es la del sello del equipo: papel de estampa y tinta verde muy
+     oscura. Tipografia grande a proposito: esto se proyecta en un salon comunal
+     con luz de dia, y se lee desde la ultima fila.
+     ========================================================================= */
+
+  :root {
+    --papel: #f1ead8;
+    --papel-claro: #fbf6ea;
+    --tinta: #232b24;
+    --tinta-suave: #4b544a;
+    --tinta-tenue: #7b8071;
+    --linea: #d8cfb8;
+    --verde: #2b3a2e;
+    --ladrillo: #9b2617;
+    --ocre: #7f5406;
+    --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  }
+
+  body {
+    margin: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .lamina {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+    border-bottom: 1px solid var(--linea);
+  }
+  .lamina:last-child { border-bottom: 0; }
+
+  .numero {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--tinta-tenue);
+    margin: 0 0 0.6rem;
+  }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.1; }
+  h2 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin-bottom: 0.8rem; }
+  h3 { font-size: 1.15rem; margin-bottom: 0.3rem; }
+
+  p { margin: 0 0 1rem; max-width: 34rem; }
+  .grande { font-size: 1.22rem; }
+
+  /* Pantalla del celular junto al texto. En un telefono se apilan. */
+  .dos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
+    gap: 2.5rem;
+    align-items: start;
+  }
+  .dos.izquierda { grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); }
+  @media (max-width: 46rem) {
+    .dos, .dos.izquierda { grid-template-columns: 1fr; gap: 1.5rem; }
+    .celular { max-width: 17rem; margin: 0 auto; }
+  }
+
+  .celular {
+    border: 1px solid var(--linea);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--papel-claro);
+    box-shadow: 0 1px 0 rgba(35, 43, 36, 0.06), 0 10px 24px rgba(35, 43, 36, 0.09);
+  }
+  .celular img { display: block; width: 100%; height: auto; }
+
+  .nota {
+    border-left: 4px solid var(--verde);
+    background: var(--papel-claro);
+    padding: 0.9rem 1.1rem;
+    margin: 0 0 1rem;
+    max-width: 34rem;
+  }
+  .nota.peligro { border-left-color: var(--ladrillo); }
+  .nota.peligro strong { color: var(--ladrillo); }
+  .nota p:last-child { margin-bottom: 0; }
+
+  ul { margin: 0 0 1rem; padding-left: 1.1rem; max-width: 34rem; }
+  li { margin-bottom: 0.5rem; }
+
+  .regla {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.9rem 1rem;
+    align-items: start;
+    max-width: 40rem;
+  }
+  .regla dt {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--verde);
+    background: var(--papel-claro);
+    border: 1px solid var(--linea);
+    border-radius: 999px;
+    padding: 0.1rem 0.7rem;
+    white-space: nowrap;
+  }
+  .regla dd { margin: 0; }
+
+  .portada {
+    min-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .portada .lema {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    color: var(--tinta-suave);
+    margin-top: 1.2rem;
+  }
+  .sello { width: min(12rem, 40vw); height: auto; margin-bottom: 2rem; }
+
+  .pie {
+    font-size: 0.9rem;
+    color: var(--tinta-tenue);
+    border-top: 1px solid var(--linea);
+    padding-top: 1rem;
+    margin-top: 2rem;
+  }
+
+  figure { margin: 0; }
+  figcaption { font-size: 0.9rem; color: var(--tinta-tenue); margin-top: 0.6rem; }
+
+  svg.recorrido { width: 100%; height: auto; display: block; }
+
+  @media print {
+    .lamina { page-break-after: always; border: 0; padding: 2rem 1rem; }
+    body { font-size: 12pt; }
+  }
+</style>
+
+<!-- ===================================================================== -->
+<section class="lamina portada">
+  <img class="sello" src="{{IMG_SELLO}}" alt="Sello: Ingenieros de Sistemas Unidos por Colombia · Raíz"
+       onerror="this.style.display='none'" />
+  <h1>Cómo registrar a una familia con Raíz</h1>
+  <p class="lema">Manual para líderes · Sevilla, Valle del Cauca · Agosto de 2026</p>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <p class="numero">Para qué sirve</p>
+  <h2>Una familia se registra una sola vez, y ese registro se puede exigir</h2>
+  <p class="grande">
+    Raíz no es una encuesta. Es el listado con el que se le pide a una entidad que
+    responda por una familia, y el registro de lo que esa entidad contestó.
+  </p>
+  <ul class="grande">
+    <li>Cada familia queda con un código propio, que asigna el sistema.</li>
+    <li>Queda escrito quién la reportó y cuándo.</li>
+    <li>Cuando se remite a una entidad, queda el radicado y los días que lleva sin responder.</li>
+  </ul>
+  <div class="nota">
+    <p>
+      <strong>Por eso el total importa.</strong> Un listado con familias repetidas o con
+      cifras que no cuadran pierde fuerza el día que hay que sustentarlo. Lo que usted
+      escribe con la familia enfrente es lo que después sostiene la petición.
+    </p>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <p class="numero">Lo primero que hay que saber</p>
+  <h2>Funciona sin señal</h2>
+  <p class="grande">
+    Usted entra una vez donde haya señal —en el casco urbano, en su casa— y de ahí en
+    adelante registra familias en la vereda sin internet. Los casos se guardan en el
+    celular y viajan solos cuando vuelve a haber señal.
+  </p>
+  {{DIAGRAMA}}
+  <div class="nota">
+    <p>
+      <strong>No espere a tener señal para registrar.</strong> La aplicación abre, guarda y
+      funciona igual en modo avión. Lo único que necesita conexión es entrar la primera
+      vez y enviar.
+    </p>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos izquierda">
+    <div class="celular"><img src="{{IMG_01}}" alt="Pantalla de entrada a Raíz" /></div>
+    <div>
+      <p class="numero">Antes de salir</p>
+      <h2>Entrar</h2>
+      <p class="grande">
+        Con su correo y su clave, una sola vez y con señal. Después la aplicación lo
+        recuerda: no tiene que volver a entrar en la vereda.
+      </p>
+      <div class="nota">
+        <p>
+          <strong>La cuenta se la crea la coordinación.</strong> No hay registro abierto, y es
+          a propósito: lo que se escribe con esa cuenta es el listado de familias
+          damnificadas.
+        </p>
+      </div>
+      <p>Si la clave se la dieron por WhatsApp, cámbiela apenas pueda.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos">
+    <div>
+      <p class="numero">La pantalla principal</p>
+      <h2>Su cuaderno de casos</h2>
+      <p class="grande">
+        Aquí están las familias que usted ha registrado en este celular. Arriba dice si
+        hay señal y cuántos casos faltan por enviar.
+      </p>
+      <p>
+        Abajo, dos botones: <strong>Nuevo caso rural</strong> para vereda, corregimiento o
+        finca, y <strong>Nuevo caso urbano</strong> para barrio o casco urbano. Escoja según
+        dónde queda la casa, no según dónde está usted.
+      </p>
+    </div>
+    <div class="celular"><img src="{{IMG_02}}" alt="Lista de casos vacía" /></div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos izquierda">
+    <div class="celular"><img src="{{IMG_03}}" alt="Paso 1: quién reporta" /></div>
+    <div>
+      <p class="numero">Paso 1 de 4</p>
+      <h2>Quién reporta</h2>
+      <p class="grande">
+        Su nombre y su organización. <strong>Es suyo, no de la familia.</strong> Queda
+        guardado para los siguientes casos: no lo va a escribir cada vez.
+      </p>
+      <p>
+        Si no pertenece a ninguna organización, escriba <em>independiente</em>.
+      </p>
+      <p>
+        En «cómo obtuvo la información» diga la verdad: presencial, por teléfono, por
+        WhatsApp. Un caso que no se visitó vale igual, pero hay que saberlo.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos">
+    <div>
+      <p class="numero">Paso 1 · lo más importante de todo el formulario</p>
+      <h2>La autorización de la familia</h2>
+      <p class="grande">
+        Léale a la familia el texto que aparece en pantalla, completo, y espere la
+        respuesta. Después toque <strong>Sí, autoriza</strong> o <strong>No autoriza</strong>.
+      </p>
+      <div class="nota peligro">
+        <p>
+          <strong>Si la familia dice que no, el caso se registra igual.</strong> Lo que no se
+          guarda es su nombre, su documento ni sus fotos. La familia sigue contando en el
+          total y sigue apareciendo en la petición.
+        </p>
+      </div>
+      <p>
+        Sin responder no se puede continuar. No es un trámite: de esa respuesta depende
+        si el nombre de una persona queda guardado en un sistema.
+      </p>
+    </div>
+    <div class="celular"><img src="{{IMG_04}}" alt="Autorización de tratamiento de datos" /></div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos izquierda">
+    <div class="celular"><img src="{{IMG_05}}" alt="Coordenada obtenida por GPS" /></div>
+    <div>
+      <p class="numero">Paso 1 · la ubicación</p>
+      <h2>La coordenada</h2>
+      <p class="grande">
+        Toque <strong>Obtener ubicación</strong> parado frente a la casa y espere unos
+        segundos, quieto, hasta que la precisión baje.
+      </p>
+      <p>
+        El GPS del celular <strong>no necesita internet</strong>. Funciona en la vereda igual
+        que en el pueblo.
+      </p>
+      <div class="nota">
+        <p>
+          <strong>Dos casas vecinas pueden quedar en el mismo punto.</strong> Por eso el
+          <em>punto de referencia</em> importa tanto como la coordenada: «300 m arriba de la
+          escuela, casa de teja roja» es lo que permite encontrarla después.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos">
+    <div>
+      <p class="numero">Paso 2 de 4</p>
+      <h2>El total y las edades tienen que coincidir</h2>
+      <p class="grande">
+        Escriba primero cuántas personas viven en la casa. Después repártalas por edad y
+        sexo con los botones <strong>−</strong> y <strong>+</strong>: no se abre el teclado.
+      </p>
+      <div class="nota peligro">
+        <p>
+          <strong>Si los dos números no cuadran, no deja continuar.</strong> Y es a propósito:
+          la ayuda se asigna por edades. Un caso que dice siete personas y reparte una no
+          sirve para pedir nada, y nadie va a volver a llamar a esa familia para
+          arreglarlo.
+        </p>
+      </div>
+      <p>Corregirlo son cinco toques con la familia enfrente. Después es imposible.</p>
+    </div>
+    <div class="celular"><img src="{{IMG_06}}" alt="Aviso de descuadre entre total y edades" /></div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos izquierda">
+    <div class="celular"><img src="{{IMG_07}}" alt="Rejilla de edades completa" /></div>
+    <div>
+      <p class="numero">Paso 2 · por qué se pregunta así</p>
+      <h2>Menores y personas mayores</h2>
+      <p class="grande">
+        Los rangos en negrilla —menores de edad y de 60 años en adelante— son población
+        priorizada. De esos números depende buena parte de lo que se le puede exigir a
+        una entidad.
+      </p>
+      <p>
+        Más abajo, <strong>condiciones especiales</strong>: gestantes, personas con
+        discapacidad, enfermedad crónica o huérfana. Deje en cero lo que no aplique; no
+        deje de preguntar.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos">
+    <div>
+      <p class="numero">Paso 2 · lo que primero pregunta salud</p>
+      <h2>Personas fallecidas o heridas</h2>
+      <p class="grande">
+        De <strong>esta familia</strong>, no de la vereda. Se cuentan aparte las heridas que se
+        atendieron en casa y las que hubo que llevar a un hospital.
+      </p>
+      <p>
+        No hace falta un diagnóstico: si tuvo que ser remitida a un hospital, va en esa
+        casilla. Con eso basta para que una entidad de salud sepa qué atender.
+      </p>
+    </div>
+    <div class="celular"><img src="{{IMG_08}}" alt="Personas fallecidas o heridas" /></div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos izquierda">
+    <div class="celular"><img src="{{IMG_09}}" alt="Riesgo de colapso" /></div>
+    <div>
+      <p class="numero">Paso 3 de 4</p>
+      <h2>La vivienda y el daño</h2>
+      <p class="grande">
+        Marque el nivel de afectación y responda si <strong>se puede vivir ahí hoy</strong>.
+        Son dos preguntas distintas y las dos hacen falta.
+      </p>
+      <div class="nota peligro">
+        <p>
+          <strong>Riesgo inminente de colapso:</strong> al marcarlo el caso queda en prioridad
+          P0 automáticamente. <strong>Avísele al coordinador ese mismo día</strong>, sin
+          esperar a sincronizar. Un P0 en el celular no salva a nadie.
+        </p>
+      </div>
+      <p>
+        Si en la casa vivían varias familias, dígalo: al guardar, la aplicación le ofrece
+        registrar la siguiente sin volver a tomar la ubicación.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos">
+    <div>
+      <p class="numero">Paso 3 · zona rural</p>
+      <h2>Cultivos, animales y maquinaria</h2>
+      <p class="grande">
+        Una casa puede quedar intacta y la familia quedar sin sustento. Ese daño también
+        se registra, y es lo que sostiene la petición ante la Secretaría de Agricultura.
+      </p>
+      <ul>
+        <li>Cultivos afectados, y en el campo abierto lo que no esté en la lista.</li>
+        <li>Animales perdidos.</li>
+        <li>
+          <strong>Maquinaria y vehículos de trabajo.</strong> Guadaña, despulpadora, moto de
+          trabajo. Si no queda escrito, no entra en ninguna reclamación.
+        </li>
+      </ul>
+    </div>
+    <div class="celular"><img src="{{IMG_10}}" alt="Predio, cultivos y animales" /></div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos izquierda">
+    <div class="celular"><img src="{{IMG_11}}" alt="Fotos, prioridad y necesidades" /></div>
+    <div>
+      <p class="numero">Paso 4 de 4</p>
+      <h2>Fotos, prioridad y lo que necesitan ya</h2>
+      <p class="grande">
+        Tome las fotos que sirvan de prueba: la fachada, el daño, el cultivo. La
+        aplicación las reduce sola para que no se le gasten los datos.
+      </p>
+      <p>
+        Marque las <strong>necesidades de las próximas 72 horas</strong>. Si falta algo en la
+        lista, escríbalo en el campo abierto, con las palabras de la familia.
+      </p>
+      <div class="nota">
+        <p>
+          <strong>Sin autorización no se toman fotos de la familia</strong> ni se guarda su
+          nombre. El daño sí se puede fotografiar.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos">
+    <div>
+      <p class="numero">Al guardar</p>
+      <h2>El caso queda en su celular</h2>
+      <p class="grande">
+        Aparece en la lista con un código provisional y la marca
+        <strong>SIN ENVIAR</strong>. Ese caso ya está a salvo aunque se quede sin batería o
+        cierre la aplicación.
+      </p>
+      <p>
+        Cuando llegue al servidor, el código provisional se reemplaza por el
+        institucional: <span style="font-family:var(--mono)">RZ-2026-000123</span>. Ese es
+        el que se le da a una entidad.
+      </p>
+    </div>
+    <div class="celular"><img src="{{IMG_12}}" alt="Lista con el caso guardado" /></div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <div class="dos izquierda">
+    <div class="celular"><img src="{{IMG_13}}" alt="La aplicación abierta sin conexión" /></div>
+    <div>
+      <p class="numero">En la vereda</p>
+      <h2>Sin conexión, todo sigue igual</h2>
+      <p class="grande">
+        La aplicación abre, muestra sus casos y deja registrar familias nuevas. Arriba
+        dice <strong>SIN CONEXIÓN</strong> y cuántos casos faltan por enviar.
+      </p>
+      <dl class="regla">
+        <dt>El caso</dt>
+        <dd>Pesa poco. Viaja solo apenas hay señal, sin que usted haga nada.</dd>
+        <dt>Las fotos</dt>
+        <dd>Pesan mucho. Esperan a que usted toque el botón, o a que haya wifi.</dd>
+      </dl>
+      <p>
+        Por eso el contador de arriba puede decir «faltan fotos» un rato largo: es normal
+        y es para cuidarle los datos.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <p class="numero">Lo que Raíz no hace</p>
+  <h2>Qué se guarda y qué no</h2>
+  <ul class="grande">
+    <li>
+      <strong>Sin autorización de la familia no se guarda su identidad.</strong> Ni nombre,
+      ni apellidos, ni documento. No es una promesa: la base de datos lo rechaza.
+    </li>
+    <li>
+      <strong>El mapa público no muestra a nadie por su nombre.</strong> Ubica la afectación
+      con la coordenada redondeada a unos cien metros, sin nombre, sin documento y sin
+      teléfono.
+    </li>
+    <li>
+      <strong>Cada líder ve solo los casos que él mismo levantó.</strong> Ni siquiera desde
+      otro celular puede ver los de otro.
+    </li>
+  </ul>
+  <div class="nota">
+    <p>
+      <strong>Lo que sí viaja siempre es el teléfono de la familia</strong>, incluso sin
+      autorización, porque sin él no se puede verificar el caso ni avisarle a la familia
+      que la ayuda va en camino. Es una decisión abierta y conviene que la sepa.
+    </p>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina">
+  <p class="numero">Para recordar</p>
+  <h2>Cinco cosas y ya</h2>
+  <dl class="regla grande">
+    <dt>1</dt>
+    <dd>Entre una vez con señal antes de subir. Después no la necesita.</dd>
+    <dt>2</dt>
+    <dd>Lea la autorización completa y respete lo que la familia conteste.</dd>
+    <dt>3</dt>
+    <dd>Tome la coordenada frente a la casa y escriba el punto de referencia.</dd>
+    <dt>4</dt>
+    <dd>Que el total de personas cuadre con las edades, ahí mismo.</dd>
+    <dt>5</dt>
+    <dd>Riesgo de colapso: llame al coordinador el mismo día. No espere a sincronizar.</dd>
+  </dl>
+  <p class="pie">
+    Raíz · Ingeniería al servicio de la vida · Este manual se genera desde la aplicación
+    real: todo lo que aparece aquí son pantallas de la versión que usted tiene instalada,
+    con datos inventados.
+  </p>
+</section>
