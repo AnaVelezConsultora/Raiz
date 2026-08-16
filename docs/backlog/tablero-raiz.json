@@ -1008,15 +1008,15 @@
             },
             {
               "id": "HU 2.1.2",
-              "titulo": "Sustentar una petición ante una entidad con cifras y mapa",
+              "titulo": "Cifras y mapa dentro del dashboard, para sustentar una petición",
               "como": "integrante de la mesa",
-              "quiero": "ver cuántas familias, dónde y con qué prioridad, desde la aplicación",
+              "quiero": "ver cuántas familias, dónde y con qué prioridad",
               "para": "llegar a una entidad con una cifra que se sostenga",
               "criterios": [
-                "Es una vista de la PWA, con sesión: no un archivo ni una página aparte",
+                "Es la primera vista DENTRO del dashboard administrativo, no una pantalla suelta",
                 "Las cifras salen de la API y obedecen las políticas por fila: cada rol suma lo que alcanza",
                 "Mapa y contadores en la misma pantalla; el mapa ubica la afectación, no la vivienda",
-                "El total consolidado cuadra con el listado: si no cuadra, se pierde la palanca",
+                "El total cuadra con el listado: si no cuadra, se pierde la palanca",
                 "Funciona con los datos de ejemplo del entorno local"
               ],
               "etiquetas": [
@@ -1024,7 +1024,8 @@
                 "BackEnd"
               ],
               "origen": "FRENTES.md F4",
-              "nota": "YA NO DEPENDE DE LA HU 2.1.1, y eso es lo que cambia con este planchado. Dependia cuando se penso como pagina publica; como vista con sesion, la decision de que puede mostrarse SIN sesion no la toca.\n\nSe construye dentro de la aplicacion que ya existe, como un modulo mas junto a casos y voluntarios. No se empieza otra aplicacion."
+              "nota": "NO DEPENDE DE LA HU 2.1.1. Dependia cuando se penso como pagina publica; como vista con sesion, la decision de que puede mostrarse SIN sesion no la toca.\n\nEl mapa es de la mesa: el coordinador lo ve y el lider no. Lo que el lider necesita es otra cosa y esta en la HU 2.1.5.",
+              "depende_de": "HU 2.1.4 (el contenedor)"
             },
             {
               "id": "HU 2.1.3",
@@ -1047,23 +1048,23 @@
             },
             {
               "id": "HU 2.1.4",
-              "titulo": "Módulo de administración para quien destina los recursos",
+              "titulo": "Dashboard administrativo, donde se cuelga todo lo demás",
               "como": "coordinador o custodio",
-              "quiero": "un módulo en la aplicación donde ver todos los casos con su evidencia",
-              "para": "decidir a dónde van los recursos con la prueba del daño a la vista",
+              "quiero": "un lugar en la aplicación donde estén las vistas de gestión",
+              "para": "trabajar el conjunto sin salirme de la herramienta con la que se captura",
               "criterios": [
-                "Es un módulo de la PWA existente, no una aplicación aparte",
-                "Listado consolidado con filtros por zona, prioridad y estado, y el detalle de un caso",
-                "Cada rol ve lo que le corresponde: el listado y la fotografía obedecen las mismas políticas",
-                "La fotografía se abre con enlace firmado de vida corta, nunca servida por la API",
-                "Queda registro de quién pidió ver qué fotografía"
+                "Es un módulo de la PWA existente, con su ruta y su navegación: no una aplicación aparte",
+                "LA PUERTA ES `verTodosLosCasos`, que hoy es la mesa: coordinación, custodia y validación",
+                "El líder y el digitador NO lo ven ni alcanzan la ruta: solo ven lo suyo, y para eso está la HU 2.1.5",
+                "Ocultar el enlace no es la protección: la API vuelve a decidir en cada petición con el rol leído de la base",
+                "Nace con una sola vista dentro —cifras y mapa— y con sitio para las que vengan"
               ],
               "etiquetas": [
                 "FrontEnd",
                 "BackEnd"
               ],
-              "origen": "HU 1.2.5: la subida quedo hecha y la lectura no existe",
-              "nota": "Aqui vive el mapa Y el tablero de cifras para la mesa, junto al listado: es la pantalla desde la que se decide, no una galeria de fotos.\n\nHOY LA FOTOGRAFIA ENTRA Y NO SE PUEDE VOLVER A VER: el bucket es privado —comprobado contra AWS, cinco caminos anonimos y los cinco rechazados— y la API solo tiene rutas de escritura. La relacion con el caso ya esta hecha: `fotos.familia_id`, la ruta bajo el consecutivo institucional, y la politica `hija_fotos` que hereda el permiso de la familia."
+              "origen": "decisión del 16 de agosto de 2026",
+              "nota": "ES EL CONTENEDOR, no una pantalla suelta. Se pide asi a proposito: las vistas de gestion que vienen —seguimiento de remisiones, mora por entidad, duplicados— no deben nacer cada una con su propia ruta, su propia guarda y su propia forma de preguntar quien es quien.\n\nLA PUERTA YA ESTA ESCRITA y no se inventa una nueva: `permisosDe(rol)` en el dominio compartido dice `verTodosLosCasos` para la mesa, y es la misma frontera que usa `es_mesa()` en las politicas de la base. Tres capas diciendo lo mismo, sin una cuarta definicion que se separe.\n\nEl mapa entra aqui: el coordinador lo ve, el lider no."
             },
             {
               "id": "HU 2.1.5",
@@ -1083,7 +1084,7 @@
                 "BackEnd"
               ],
               "origen": "prueba en terreno de Miguel, 16 de agosto de 2026",
-              "nota": "HOY LA PANTALLA SE LLAMA «Casos en este celular» Y ES LITERAL: lo que se ve sale de IndexedDB. Un lider que cambie de telefono, reinstale la aplicacion o preste el suyo pierde de vista su propio trabajo — aunque el servidor lo tenga entero.\n\nEn campo eso se lee como «la aplicacion me borro los casos», que es lo unico que hace que un voluntario deje de usar la herramienta.\n\nLa API ya sabe responder con las politicas puestas; falta la ruta de consulta y que la lista junte las dos fuentes sin confundirlas."
+              "nota": "HOY LA PANTALLA SE LLAMA «Casos en este celular» Y ES LITERAL: lo que se ve sale de IndexedDB. Un lider que cambie de telefono, reinstale la aplicacion o preste el suyo pierde de vista su propio trabajo — aunque el servidor lo tenga entero. En campo eso se lee como «la aplicacion me borro los casos», que es lo unico que hace que un voluntario deje de usar la herramienta.\n\nNO ES EL DASHBOARD. El lider no entra ahi —no ve el mapa ni el conjunto— y esta historia es su equivalente: lo suyo, completo, venga del celular o del servidor. La politica por fila ya garantiza que sea solo lo suyo.\n\nLa API ya sabe responder con las politicas puestas; falta la ruta de consulta y que la lista junte las dos fuentes sin confundirlas."
             },
             {
               "id": "HU 2.1.6",
