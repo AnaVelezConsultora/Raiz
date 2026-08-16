@@ -92,17 +92,29 @@ primero, secuencial, y se detiene si se cae la red.
 - **Perfil:** PostgreSQL, APIs
 - **Tamaño:** mediano · 1 o 2 personas
 
-### F4 · Tablero y mapa — ABIERTO
+### F4 · Vistas de consulta — ABIERTO
 
-Contadores, filtros y mapa de afectación sobre la vista pública, que ya está
-anonimizada y con la coordenada redondeada a tres decimales. Es la pieza que se le
-muestra a una entidad para sustentar una petición.
+Contadores, filtros y mapa **dentro de la aplicación que ya existe**, como módulos
+junto a casos y voluntarios. Con sesión y con roles: cada quien ve lo que le
+corresponde, y lo garantizan las políticas por fila, no la pantalla.
 
-No toca la aplicación de captura en absoluto: se puede construir en paralelo desde el
-primer día, incluso con datos de prueba.
+Son dos audiencias y conviene no fusionarlas:
 
-- **Toca:** `features/tablero/` (nuevo)
-- **No toca:** nada de `core/`
+- **La mesa** —coordinación, custodia, quien destina recursos— necesita el conjunto:
+  listado, cifras, mapa y la fotografía del daño para sustentar una remisión.
+- **El líder** necesita lo suyo: hoy la lista se llama «Casos en este celular» y es
+  literal, así que quien cambia de teléfono pierde de vista su propio trabajo aunque
+  el servidor lo tenga entero.
+
+**El tablero estático de `tablero/` no es parte de esto y no se despliega.** Es una
+herramienta de reunión: se abre desde el disco, sin servidor. Publicar algo sin sesión
+exige antes la decisión HU 2.1.1, que sigue abierta.
+
+No toca la captura en absoluto: se puede construir en paralelo, incluso con los datos
+de ejemplo del entorno local.
+
+- **Toca:** `features/` (módulos nuevos) y rutas de consulta en la API
+- **No toca:** el formulario ni la cola de sincronización
 - **Perfil:** Angular, Leaflet, visualización de datos
 - **Tamaño:** mediano · 1 o 2 personas
 
