@@ -156,6 +156,31 @@ echo "    subido"
 # -----------------------------------------------------------------------------
 # 2. Despues lo que no se puede cachear
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# EL SERVICE WORKER LLEVA LA VERSION ADENTRO, Y NO ES DECORACION
+# -----------------------------------------------------------------------------
+#
+# `ngsw-worker.js` es identico byte a byte en todas las compilaciones: es codigo de
+# Angular, no de esta aplicacion. El navegador solo reinstala un service worker
+# cuando su ARCHIVO cambia, asi que un worker instalado hace semanas se queda
+# corriendo para siempre, aunque la aplicacion se actualice a diario.
+#
+# Eso importa porque UN SERVICE WORKER CONSERVA LA POLITICA DE SEGURIDAD CON LA QUE
+# SE INSTALO. Cuando se agrego el bucket de fotografias a `connect-src`, los
+# telefonos recibieron la aplicacion nueva y siguieron con el worker viejo: las
+# peticiones al almacenamiento se bloqueaban dentro del worker, y como Angular
+# convierte un fetch fallido en un `504 Gateway Timeout` sintetico y sin cuerpo, lo
+# que se veia en la vereda era «el almacenamiento respondio 504» — un mensaje que
+# no menciona ni la politica ni el worker.
+#
+# Con la version escrita dentro, cada entrega produce un archivo distinto, el
+# navegador instala el worker nuevo y la politica viaja con el.
+echo ""
+echo "==> sellando el service worker con la version"
+printf '\n// Raiz %s — esta linea existe para que el navegador reinstale el worker.\n' \
+  "$VERSION" >> "$DIST/ngsw-worker.js"
+echo "    ngsw-worker.js lleva $VERSION"
+
 echo ""
 echo "==> subiendo el index y el service worker"
 for archivo in index.html ngsw.json ngsw-worker.js safety-worker.js worker-basic.min.js; do

@@ -76,48 +76,110 @@ deja los casos fuera del envío **sin decírselo a nadie**. El botón muestra
 pendientes y no manda nada. En campo eso se lee como "la aplicación perdió mi
 trabajo".
 
-### 5. Fotografías por política de subida firmada
+### 5. Fotografías por bloques, con permiso firmado
+
+*Reescrito el 15 de agosto de 2026, al construirlo. Lo que había antes describía un
+envío único con política de subida por navegador; lo que sigue describe lo que
+existe.*
 
 El dispositivo pide autorización, sube **directo al almacenamiento de objetos** y
-luego **confirma contra la API**. Las fotografías no atraviesan la API.
-
-Con 15.000 fotos previstas a 200 KB, hacerlas pasar por el servidor es pagar
-cómputo y transferencia por mover bytes que no se procesan.
+luego **confirma contra la API**.
 
 **Son tres pasos, no dos.** El tercero no es opcional:
 
 | | Quién | Qué |
 |---|---|---|
-| 1 | Dispositivo → API | Declara `fotoId`, `casoOrigenId`, `tipo`, `bytes` y `tipoMime` |
-| 2 | Dispositivo → almacenamiento | `POST` multiparte con los campos firmados; el archivo va **de último** |
-| 3 | Dispositivo → API | Confirma; **la API verifica contra el almacenamiento** y responde la ruta definitiva |
+| 1 | Dispositivo → API | Declara `fotoId`, `casoOrigenId`, `tipo`, `bytes`, `tipoMime` y la **suma SHA-256** de la imagen |
+| 2 | Dispositivo → almacenamiento | Sube los bloques que falten, uno por uno, cada uno con su permiso |
+| 3 | Dispositivo → API | Confirma; **la API une los bloques, verifica la suma** y responde la ruta definitiva |
 
-**Por qué se firma una política y no una URL simple.** La política lleva
-`content-length-range`, de modo que el tamaño que el dispositivo declaró en el paso 1
-es el que el almacenamiento acepta en el paso 2. Sin eso, la autorización para subir
-una foto de 200 KB sirve para subir un archivo de cualquier tamaño, y quien paga esa
-factura es el proyecto. También fija tipo de contenido y ruta.
+#### Toda fotografía se parte, incluso una de 200 KB
 
-El archivo va de último en el formulario porque el almacenamiento evalúa la política
-con lo que ya leyó: si va primero, el rechazo llega **después** de haber transmitido
-los bytes, que en una conexión rural es exactamente lo que no se puede permitir.
+La red de una vereda no se cae cuando el archivo es grande: se cae cuando se cae. Un
+envío de 200 KB cortado al 80 % no deja nada, y el siguiente intento vuelve a
+transmitir —y a cobrarle al voluntario— los mismos 160 KB. Tres intentos así son
+800 KB de un plan de datos ajeno, y la fotografía sigue sin llegar.
 
-**Por qué el paso 3 existe.** Que el almacenamiento responda 204 no es que el objeto
-esté ahí y esté completo. La única afirmación que vale es la de la API, que lo
-verifica. Sin ese paso el dispositivo podría liberar la fotografía de su memoria
-creyendo que ya viajó, y la evidencia de una familia desaparecería sin que nadie se
-entere. Confirmar es **idempotente**: repetirlo no sube nada de nuevo, así que el
-dispositivo puede reintentarlo sin miedo cuando se le cae la señal a mitad.
+Partida en bloques, **cada pedazo que llega se queda**. Los bloques van de 64 KiB a
+1 MiB, apuntando a unos ocho por imagen: pocos bloques dejan mucho que repetir cuando
+uno falla, y muchos gastan peticiones sobre la red que ya está mal.
 
-**Consistencia eventual.** La escritura de un objeto nuevo es de lectura inmediata,
-pero el listado no. Por eso la confirmación se hace contra el objeto concreto y no
-listando un prefijo, y por eso el estado de una fotografía lo dicta la API y no lo
-infiere el dispositivo.
+**Qué bloques llegaron se le pregunta al almacenamiento, no al celular.** Se consulta
+objeto por objeto en cada autorización. Por eso un teléfono que se quedó sin batería a
+mitad, o al que le reinstalaron la aplicación, retoma exactamente donde iba.
 
-> **Lo que NO se usa: subida multiparte de objetos grandes.** Está pensada para
-> archivos de varios megabytes y su tamaño mínimo de parte es de 5 MB. Una fotografía
-> de 200 KB sería una sola parte, con dos viajes de red adicionales para iniciarla y
-> cerrarla. Si algún día se suben videos, se revisa.
+#### Lo que NO se usa: la subida multiparte de S3
+
+Y no es una preferencia. Exige que toda parte salvo la última pese al menos 5 MiB, de
+modo que con ella una fotografía de 200 KB **no se puede partir**: sería una sola parte
+y no habría nada que reanudar. Aquí cada bloque es su propio objeto, bajo el prefijo
+`partes/`, y la API los une al confirmar.
+
+**El precio de esa decisión, dicho en voz alta:** unir hace pasar los bytes por la
+API. Ocurre dentro de la nube, una vez por fotografía, sobre unos cientos de kilobytes
+y **en flujo** —la memoria que ocupa unir 25 MB es la misma que la de unir 200 KB—.
+Lo que sigue sin pasar por la API es la subida desde el celular, que es la parte lenta
+y la que costaría de verdad: un teléfono subiendo por una red rural tendría ocupado
+varios minutos un contenedor que debería estar recibiendo casos.
+
+#### Por qué el permiso lleva el tamaño dentro de la firma
+
+`content-length` va entre las cabeceras firmadas de cada bloque. Si el cuerpo que llega
+no pesa exactamente lo declarado, la firma no cuadra y el almacenamiento rechaza. Sin
+esa atadura, un permiso interceptado sería espacio ilimitado a cargo del proyecto.
+
+El tipo de contenido **no** se firma en los bloques: un bloque no es una imagen, son
+bytes sueltos, y `Blob.slice` pierde el tipo del original. Firmarlo haría fallar la
+subida por una cabecera que el celular no controla. El tipo se fija al unir.
+
+#### Por qué el paso 3 existe, y por qué no basta con contar
+
+Que el almacenamiento haya aceptado los bloques no es que la imagen esté completa. La
+única afirmación que vale es la de la API. Sin ese paso el dispositivo podría liberar
+la fotografía de su memoria creyendo que ya viajó, y la evidencia del daño de una
+familia desaparecería sin que nadie se entere.
+
+Y **contar bloques y sumar tamaños no alcanza**: una imagen corrupta, unos bloques
+pegados en el orden equivocado y la imagen buena pesan exactamente lo mismo. Por eso el
+dispositivo declara el SHA-256 de la imagen en el paso 1, y la API lo vuelve a calcular
+sobre lo que unió —en la misma pasada en que lo escribe, no releyéndolo después—. Si no
+coinciden, se borra lo unido y se borran los bloques: el voluntario vuelve a subir la
+fotografía. Es duro, y es lo correcto; dejar guardada una imagen que no se abre sería
+peor, porque nadie se enteraría hasta el día en que la entidad pida ver la evidencia.
+
+Quien junta los bloques es la API, con los que ella misma verificó, **no con la lista
+que reporte el cliente**. Así una versión defectuosa de la aplicación no puede dar por
+completa una imagen a la que le falta un pedazo.
+
+Confirmar es **idempotente**: repetirlo no sube nada de nuevo, así que el dispositivo
+puede reintentarlo cuando se le cae la señal justo después del último bloque.
+
+#### Una fotografía no viaja sola
+
+Es parte del registro de la familia, no un adjunto. De ahí tres reglas:
+
+- **No se sube una fotografía cuyo caso todavía no llegó al servidor.** No hay a qué
+  colgarla, y descubrirlo gastando —pedir permiso, subir bloques, recibir un rechazo—
+  quemaba datos del voluntario y los reintentos de esa foto, que después ya no volvía
+  a subir aunque su caso llegara.
+- **Un caso con fotografías pendientes no está entregado**, aunque su parte de texto sí
+  lo esté. Ni se muestra como enviado, ni la limpieza por retención lo borra del
+  dispositivo.
+- **Sin autorización de la familia no se emite permiso de subida.** La comprobación
+  está en el borde, contra la base, no en la interfaz.
+
+#### Consistencia eventual
+
+La escritura de un objeto nuevo es de lectura inmediata, pero el listado no. Por eso
+nunca se lista un prefijo: se pregunta por cada objeto concreto, y por eso el estado de
+una fotografía lo dicta la API y no lo infiere el dispositivo.
+
+> **Advertencia que cuesta dinero.** Los bloques de una fotografía que nunca se
+> completó se quedan ocupando espacio facturable. La API los borra al unir y al
+> cancelar; para lo que quede —un celular perdido, una foto descartada sin señal— el
+> bucket tiene una regla que barre `partes/` a los siete días. Siete es holgado a
+> propósito: alguien puede subir a la vereda el lunes y no volver a tener señal hasta
+> el sábado, y su fotografía a medias tiene que seguir ahí para reanudarse.
 
 **Lo que el dispositivo sí calcula, y por qué.** Cuánto pesa lo que está **por subir**
 sale del dispositivo, porque esos bytes todavía no existen en ninguna otra parte: es

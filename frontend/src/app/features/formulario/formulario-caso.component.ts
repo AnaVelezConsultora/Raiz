@@ -137,7 +137,7 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
           </button>
         } @else {
           <button type="button" class="btn-primario" style="flex:2" (click)="finalizar()">
-            Guardar caso
+            {{ esEdicion() ? 'Guardar cambios' : 'Guardar caso' }}
           </button>
         }
       </div>
@@ -192,7 +192,17 @@ export class FormularioCasoComponent implements OnInit {
    * Un caso recien creado vive solo en memoria hasta que haya algo que valga la pena
    * conservar. Ver {@link salir}.
    */
-  private readonly yaEstaGuardado = signal(false);
+  /**
+   * `protected` y no `private` porque la plantilla lo lee para rotular el boton.
+   *
+   * La diferencia solo la ve el compilador de Angular: `tsc --noEmit` da por buena
+   * una plantilla que usa un miembro privado, y el fallo aparece despues, al
+   * compilar de verdad.
+   */
+  protected readonly yaEstaGuardado = signal(false);
+
+  /** True si se abrio un caso que ya estaba en el celular. Solo rotula el boton. */
+  protected readonly esEdicion = signal(false);
 
   /** True mientras se le pregunta al voluntario si guarda o descarta. */
   readonly preguntandoAlSalir = signal(false);
@@ -239,6 +249,12 @@ export class FormularioCasoComponent implements OnInit {
       (base ? this.factory.crearEnMismaEstructura(base) : this.factory.crear(this.aZona(zonaParam)));
 
     this.yaEstaGuardado.set(existente !== undefined);
+    // SE ABRIO UNO QUE YA ESTABA, no se esta capturando uno nuevo. Es lo que decide
+    // el rotulo del boton, y no `yaEstaGuardado`: ese se pone en true en cuanto el
+    // caso se persiste, que ocurre en cada paso, asi que a mitad de la primera
+    // captura el boton pasaba a decir «Guardar cambios» — cuando lo que la persona
+    // esta haciendo es, precisamente, guardar el caso por primera vez.
+    this.esEdicion.set(existente !== undefined);
     this.heredado.set(existente === undefined && base !== undefined);
 
     this.caso.set(caso);
@@ -322,6 +338,7 @@ export class FormularioCasoComponent implements OnInit {
     void this.router.navigate(['/casos']);
   }
 
+  /** Guardar desde el aviso de salida. Confirma igual que el boton del paso 4. */
   async guardarYSalir(): Promise<void> {
     this.preguntandoAlSalir.set(false);
     await this.persistir();
@@ -460,7 +477,27 @@ export class FormularioCasoComponent implements OnInit {
     // un caso completo ya hay interaccion suficiente y la concesion es probable.
     void this.almacenamiento.asegurarPersistencia();
 
-    void this.router.navigate(['/casos']);
+    this.volverALaLista();
+  }
+
+  /**
+   * Vuelve a la lista DICIENDO que se guardo.
+   *
+   * Antes se navegaba en silencio. Quien acaba de tocar «Guardar caso» veia la lista
+   * y nada mas, asi que no tenia forma de saber si su registro entro: volvia a abrirlo
+   * y a guardarlo por si acaso. No se duplicaba nada —el caso conserva su
+   * identificador— pero el voluntario no podia saberlo, y esa duda cuesta minutos
+   * frente a una familia que espera.
+   *
+   * El codigo viaja en la direccion y no en un servicio compartido porque asi
+   * sobrevive a una recarga: en un celular que se queda sin memoria, la pantalla se
+   * reconstruye y el mensaje sigue ahi.
+   */
+  private volverALaLista(): void {
+    const caso = this.caso();
+    void this.router.navigate(['/casos'], {
+      queryParams: { guardado: caso?.codigo ?? caso?.codigoLocal ?? '1' }
+    });
   }
 
   async capturarUbicacion(): Promise<void> {
@@ -480,6 +517,9 @@ export class FormularioCasoComponent implements OnInit {
   }
 
   async quitarFoto(fotoId: string): Promise<void> {
+    // Primero afuera y despues adentro. Si la fotografia ya habia empezado a subir por
+    // bloques, lo transmitido sigue en el servidor aunque aqui desaparezca.
+    await this.sync.cancelarFoto(fotoId);
     await this.almacenFotos.eliminar(fotoId);
     this.fotos.update((lista) => lista.filter((f) => f.id !== fotoId));
     await this.sync.refrescarContadores();

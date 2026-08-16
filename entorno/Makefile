@@ -1,5 +1,5 @@
 # Atajos del entorno local. Ver README.md.
-.PHONY: arriba abajo limpio pruebas e2e psql logs estado
+.PHONY: arriba abajo limpio pruebas e2e ciclo cadena psql logs estado
 
 ## arriba   levanta la base, S3, Cognito y siembra datos de prueba
 arriba:
@@ -16,6 +16,19 @@ pruebas:
 ## e2e      flujo operativo completo: capturar, sincronizar, remitir, seguir
 e2e:
 	./pruebas/flujo-completo.sh
+
+## ciclo    contra la API local: casos, y fotografias por bloques con reanudacion
+##          Exige la API corriendo. El `sub` de Ana se resuelve solo.
+ciclo:
+	@SUB=$$(docker compose exec -T db psql -U postgres -d raiz -t -A \
+	  -c "select id from auth.users where email='ana@ejemplo.test';"); \
+	node ./pruebas/ciclo-api.mjs $${API_URL:-http://localhost:3021} $$SUB
+
+## cadena   quien puede dar de alta a quien, contra la API local
+cadena:
+	@SUB=$$(docker compose exec -T db psql -U postgres -d raiz -t -A \
+	  -c "select id from perfiles where rol='custodio' limit 1;"); \
+	node ./pruebas/cadena-de-altas.mjs $${API_URL:-http://localhost:3021} $$SUB
 
 ## psql     consola contra la base
 psql:

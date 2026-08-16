@@ -47,6 +47,17 @@ export interface FotoStoragePort {
   contarPendientes(): Promise<number>;
   /** Peso total de lo pendiente, para avisar cuanto se va a gastar antes de gastarlo. */
   bytesPendientes(): Promise<number>;
+  /** Cuantas fotografias agotaron sus reintentos y ya nadie esta enviando. */
+  contarDetenidas(): Promise<number>;
+  /**
+   * Devuelve a la cola las fotografias que agotaron sus reintentos.
+   *
+   * Lo dispara una persona, nunca un temporizador: el limite de intentos existe para
+   * no quemar bateria y datos en pasadas automaticas, no para vetar la decision de
+   * quien esta parado frente a la casa. Si alguien toca «enviar», algo cambio —otra
+   * red, otra hora, una version corregida— y merece un intento.
+   */
+  reactivarDetenidas(): Promise<number>;
   eliminar(fotoId: string): Promise<void>;
 }
 
@@ -66,13 +77,39 @@ export interface ResultadoEnvioFoto {
   urlRemota?: string;
   error?: string;
   reintentable: boolean;
+  /**
+   * Bytes que SI viajaron, aunque el envio terminara mal.
+   *
+   * En la subida por bloques un fallo no vuelve todo a cero: lo transmitido queda en el
+   * almacenamiento y el siguiente intento retoma desde ahi. Sin este dato, la
+   * aplicacion le diria al voluntario que no se envio nada cuando en realidad ya pago
+   * los datos de cuatro bloques de cinco.
+   */
+  bytesEnviados?: number;
 }
 
-/** Transporte hacia el servidor. Lo implementa el adaptador de Supabase. */
+/** Avance de una subida larga. Lo consume la barra que ve el voluntario. */
+export interface AvanceFoto {
+  fotoId: string;
+  bloque: number;
+  totalBloques: number;
+  bytesEnviados: number;
+  bytesTotales: number;
+}
+
+/** Transporte hacia el servidor. Lo implementa el adaptador de la API. */
 export interface SincronizacionPort {
   disponible(): Promise<boolean>;
   enviarCaso(caso: Caso): Promise<ResultadoEnvioCaso>;
-  enviarFoto(foto: FotoLocal): Promise<ResultadoEnvioFoto>;
+  /**
+   * Sube una fotografia. `alAvanzar` se llama al terminar cada bloque.
+   *
+   * Es opcional a proposito: la cola puede llamarla sin escuchar, y quien quiera
+   * dibujar el avance se suscribe sin que el transporte sepa de pantallas.
+   */
+  enviarFoto(foto: FotoLocal, alAvanzar?: (avance: AvanceFoto) => void): Promise<ResultadoEnvioFoto>;
+  /** Cancela una subida a medias en el servidor y libera lo ya transmitido. */
+  cancelarFoto(fotoId: string): Promise<void>;
 }
 
 export const CASO_STORAGE = new InjectionToken<CasoStoragePort>('CASO_STORAGE');

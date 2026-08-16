@@ -18,12 +18,16 @@ async function arrancar(): Promise<void> {
     origin: (process.env['ORIGENES_PERMITIDOS'] ?? 'http://localhost:4200,http://localhost:4300')
       .split(',')
       .map((o) => o.trim()),
-    // DELETE esta aqui porque `DELETE /sesion` existe. Sin el, el navegador
-    // rechaza la peticion en el vuelo previo y cerrar sesion no funciona desde la
-    // PWA — solo desde una herramienta de linea de comandos, que es donde se
-    // habia probado. Se descubrio consultando las cabeceras contra el despliegue.
-    // La lista sigue sin PUT ni PATCH: no hay ninguna ruta que los use.
-    methods: ['GET', 'POST', 'DELETE'],
+    // Cada metodo esta aqui porque hay una ruta que lo usa, y ninguno de mas:
+    //
+    //   DELETE  cerrar sesion, y cancelar una subida de fotografia a medias
+    //   PATCH   cambiar el rol o el acceso de alguien
+    //
+    // El olvido se paga caro y en silencio: el navegador rechaza la peticion en el
+    // vuelo previo, asi que la pantalla no funciona y el error no menciona CORS.
+    // Paso con DELETE —cerrar sesion solo servia desde la linea de comandos, que es
+    // donde se habia probado— y volveria a pasar con el siguiente.
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     maxAge: 3600
   });

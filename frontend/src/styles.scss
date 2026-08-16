@@ -142,13 +142,18 @@ a:focus-visible {
 }
 
 /* Rejilla del desagregado por sexo y edad. */
-/* Igual que la rejilla de condiciones: la etiqueta primero.
-   Con `1fr` los dos contadores se llevaban el ancho y "60 o más" quedaba partido en
-   cinco renglones, una letra por linea. El rango de edad es lo que el voluntario lee
-   para saber que numero esta poniendo; si no se lee, el dato entra donde no va. */
+/* La columna del rango NO puede ceder su ancho.
+   Con `1fr auto auto`, en una pantalla angosta los dos contadores se quedaban con
+   todo el espacio —su ancho intrinseco manda sobre el `1fr`— y "60 o mas" salia
+   partido una letra por renglon. El rango de edad es lo que el voluntario lee para
+   saber que numero esta poniendo; si no se lee, el dato entra donde no va.
+
+   Lo vieron dos personas por separado, en un iPhone y en el paso 2, y las dos
+   correcciones se juntan aqui: el piso de 4.5rem para el rotulo, y contadores en
+   minmax(0, 1fr) para que sean ELLOS los que encogen. */
 .rejilla-edades {
   display: grid;
-  grid-template-columns: minmax(4.5rem, auto) 1fr 1fr;
+  grid-template-columns: minmax(4.5rem, max-content) minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
@@ -162,7 +167,9 @@ a:focus-visible {
 .rejilla-edades .rango {
   font-size: 0.85rem;
   color: var(--ink-soft);
-  overflow-wrap: normal;
+  /* Un rango partido en dos renglones descuadra la fila; partido por letras es
+     ilegible. Las tres lineas cubren los dos casos. */
+  white-space: nowrap;
   word-break: keep-all;
   hyphens: none;
 }
@@ -172,10 +179,11 @@ a:focus-visible {
    Con `1fr auto` el contador se quedaba con el ancho que pedia y la etiqueta se
    partia por la mitad de una palabra: "Bovino s perdid os". Se lee peor que un dato
    equivocado, porque el voluntario tiene que descifrar que le estan preguntando.
-   Ahora la etiqueta tiene un minimo y las palabras no se parten nunca. */
+   Aqui las palabras si pueden envolverse —«Enfermedad / cronica» se lee bien— lo
+   que no pueden es partirse por la mitad. */
 .rejilla-condiciones {
   display: grid;
-  grid-template-columns: minmax(8.5rem, 1fr) auto;
+  grid-template-columns: minmax(8.5rem, max-content) minmax(0, 1fr);
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
@@ -198,6 +206,9 @@ a:focus-visible {
   border-radius: 999px;
   background: var(--surface);
   overflow: hidden;
+  /* Encoge con su columna en vez de empujar al rotulo fuera de la pantalla. Lo que
+     NO encoge son los botones: su tamano es el que un pulgar acierta sin mirar. */
+  max-width: 100%;
 }
 .contador-boton {
   width: var(--alto-toque);
@@ -219,6 +230,9 @@ a:focus-visible {
 
 .contador-valor {
   width: 44px;
+  /* Sin esto un input no baja de su ancho por defecto y el contador no encoge. */
+  min-width: 0;
+  flex: 1 1 44px;
   min-height: var(--alto-toque);
   padding: 0;
   border: 0;
