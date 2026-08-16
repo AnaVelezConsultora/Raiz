@@ -33,8 +33,10 @@ export class DexieCasoStorageService implements CasoStoragePort {
     const filtrados = casos.filter((c) => this.cumpleFiltro(c, filtro));
     const recortados = filtro.limite ? filtrados.slice(0, filtro.limite) : filtrados;
 
-    const idsConFoto = await this.contarFotosPorCaso(recortados.map((c) => c.id));
-    return recortados.map((c) => this.aResumen(c, idsConFoto.get(c.id) ?? 0));
+    const fotos = await this.contarFotosPorCaso(recortados.map((c) => c.id));
+    return recortados.map((c) =>
+      this.aResumen(c, fotos.get(c.id) ?? { total: 0, pendientes: 0 })
+    );
   }
 
   /**
@@ -104,7 +106,12 @@ export class DexieCasoStorageService implements CasoStoragePort {
    * prestado o perdido.
    */
   async eliminar(casoId: string): Promise<void> {
-    await db.transaction('rw', db.casos, db.fotos, async () => {
+    await db.transaction('rw', db.casos, db.fotos, db.imagenes, async () => {
+      const fotos = await db.fotos.where('casoId').equals(casoId).primaryKeys();
+      // Los bytes viven en su propia tabla desde la version 2 del esquema: borrar
+      // solo la fila de la fotografia dejaria la imagen ocupando el celular sin
+      // ningun registro que la explique.
+      await db.imagenes.bulkDelete(fotos);
       await db.fotos.where('casoId').equals(casoId).delete();
       await db.casos.delete(casoId);
     });
@@ -112,29 +119,68 @@ export class DexieCasoStorageService implements CasoStoragePort {
 
   /**
    * Libera espacio borrando casos ya confirmados por el servidor.
+   *
    * Solo toca registros con estado Sincronizado: lo no confirmado nunca se borra.
+   *
+   * UN CASO CON FOTOGRAFIAS SIN SUBIR NO ESTA CONFIRMADO, aunque su parte de texto si
+   * lo este. La fotografia no es un adjunto del registro: es parte del registro — es la
+   * prueba del dano con la que se sustenta la peticion ante la entidad. Borrar el caso
+   * dejaria esas imagenes sin a que colgarse, y como el envio de una fotografia exige
+   * que su caso siga aqui, no volverian a subir nunca: se perderian sin que nadie se
+   * entere, que es la peor forma de perder algo.
+   *
+   * Se borra el caso Y sus fotografias, en una transaccion. Dejar las imagenes de una
+   * familia sin ningun registro que las explique, en un celular prestado o perdido, es
+   * justo lo que no puede pasar.
    */
   async eliminarSincronizadosAntesDe(fechaIso: string): Promise<number> {
-    const obsoletos = await db.casos
-      .filter(
-        (c) =>
-          c.meta.estadoSync === EstadoSync.Sincronizado &&
-          c.meta.sincronizadoEn !== null &&
-          c.meta.sincronizadoEn < fechaIso
-      )
-      .primaryKeys();
+    return db.transaction('rw', db.casos, db.fotos, db.imagenes, async () => {
+      const candidatos = await db.casos
+        .filter(
+          (c) =>
+            c.meta.estadoSync === EstadoSync.Sincronizado &&
+            c.meta.sincronizadoEn !== null &&
+            c.meta.sincronizadoEn < fechaIso
+        )
+        .primaryKeys();
 
-    await db.casos.bulkDelete(obsoletos);
-    return obsoletos.length;
+      if (candidatos.length === 0) return 0;
+
+      const conFotosPendientes = new Set(
+        (await db.fotos.where('casoId').anyOf(candidatos as string[]).toArray())
+          .filter((f) => f.meta.estadoSync !== EstadoSync.Sincronizado)
+          .map((f) => f.casoId)
+      );
+
+      const obsoletos = (candidatos as string[]).filter((id) => !conFotosPendientes.has(id));
+      if (obsoletos.length === 0) return 0;
+
+      const fotos = await db.fotos.where('casoId').anyOf(obsoletos).primaryKeys();
+      await db.imagenes.bulkDelete(fotos);
+      await db.fotos.where('casoId').anyOf(obsoletos).delete();
+      await db.casos.bulkDelete(obsoletos);
+      return obsoletos.length;
+    });
   }
 
-  private async contarFotosPorCaso(casoIds: string[]): Promise<Map<string, number>> {
-    const conteo = new Map<string, number>();
+  /**
+   * Cuantas fotografias tiene cada caso, y cuantas de esas siguen sin viajar.
+   *
+   * Las dos cifras salen de la misma lectura porque se muestran juntas: «3 fotos, 2 sin
+   * enviar» es una frase, no dos consultas.
+   */
+  private async contarFotosPorCaso(
+    casoIds: string[]
+  ): Promise<Map<string, { total: number; pendientes: number }>> {
+    const conteo = new Map<string, { total: number; pendientes: number }>();
     if (casoIds.length === 0) return conteo;
 
     const fotos = await db.fotos.where('casoId').anyOf(casoIds).toArray();
     for (const foto of fotos) {
-      conteo.set(foto.casoId, (conteo.get(foto.casoId) ?? 0) + 1);
+      const actual = conteo.get(foto.casoId) ?? { total: 0, pendientes: 0 };
+      actual.total++;
+      if (foto.meta.estadoSync !== EstadoSync.Sincronizado) actual.pendientes++;
+      conteo.set(foto.casoId, actual);
     }
     return conteo;
   }
@@ -173,7 +219,7 @@ export class DexieCasoStorageService implements CasoStoragePort {
     return orden[caso.triaje?.prioridad ?? 'p3'] ?? 3;
   }
 
-  private aResumen(caso: Caso, nFotos: number): ResumenCaso {
+  private aResumen(caso: Caso, fotos: { total: number; pendientes: number }): ResumenCaso {
     const nombre = [caso.hogar.jefeNombres, caso.hogar.jefeApellidos]
       .filter((v): v is string => typeof v === 'string' && v.length > 0)
       .join(' ');
@@ -189,7 +235,8 @@ export class DexieCasoStorageService implements CasoStoragePort {
       estado: caso.estado,
       estadoSync: caso.meta.estadoSync,
       tieneCoordenada: caso.ubicacion.lat !== null && caso.ubicacion.lon !== null,
-      nFotos,
+      nFotos: fotos.total,
+      fotosPendientes: fotos.pendientes,
       actualizadoEn: caso.actualizadoEn
     };
   }

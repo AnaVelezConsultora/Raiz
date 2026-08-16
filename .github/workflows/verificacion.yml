@@ -113,6 +113,14 @@ jobs:
         run: $PSQL -f entorno/postgres/01-roles.sql
       - name: Esquema
         run: $PSQL -f supabase/schema.sql
+      # Las dos migraciones que extienden el esquema, en el mismo punto en que las
+      # monta el compose: entre el esquema y los permisos. Sin ellas, las pruebas
+      # que tocan fotografias o la cadena de altas fallan aqui por columnas que no
+      # existen — y el rojo hablaria de la prueba y no del cambio.
+      - name: Subida de fotografias por bloques
+        run: $PSQL -f entorno/postgres/55-fotos-subida.sql
+      - name: Cedula y cadena de altas
+        run: $PSQL -f entorno/postgres/56-perfiles-alta.sql
       - name: Permisos
         run: $PSQL -f entorno/postgres/60-grants.sql
       # Lo que raiz_api necesita ANTES de que exista sesion: leer el perfil de
@@ -121,6 +129,8 @@ jobs:
       # esta lista de pasos existe para evitar. Ver el hallazgo H15.
       - name: Acceso de la API
         run: $PSQL -f entorno/postgres/65-acceso-api.sql
+      - name: Campos que pidio el terreno
+        run: $PSQL -f entorno/postgres/66-campos-de-terreno.sql
       - name: Catalogos
         run: $PSQL -f entorno/postgres/70-semillas-catalogos.sql
 

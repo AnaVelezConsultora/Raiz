@@ -4,6 +4,7 @@ import {
   RegistrarVoluntarioService,
   VoluntarioCreado
 } from '../aplicacion/registrar-voluntario.service';
+import { Rol } from '@raiz/dominio';
 import { ErrorRechazo, Identidad } from '../dominio/puertos';
 import { Quien } from './ruta-abierta.decorador';
 
@@ -11,8 +12,10 @@ import { Quien } from './ruta-abierta.decorador';
 interface CuerpoAlta {
   correo?: unknown;
   nombre?: unknown;
+  documento?: unknown;
   telefono?: unknown;
   clave?: unknown;
+  rol?: unknown;
 }
 
 /**
@@ -40,8 +43,12 @@ export class VoluntariosController {
   /**
    * Convierte el cuerpo en algo tipado, sin confiar en lo que llegue.
    *
-   * El telefono se acepta vacio y se guarda como null, no como cadena vacia: en la base
-   * "no tiene telefono" y "tiene el telefono en blanco" no pueden ser lo mismo.
+   * El telefono y el documento ya NO son opcionales. Quien registra a una familia
+   * damnificada firma ese registro: el dia que una entidad devuelva un caso
+   * preguntando quien lo levanto, la respuesta no puede ser un correo electronico.
+   *
+   * Sin `rol` se entiende `lider`, que es el rol de quien registra y el unico que
+   * todos los que pueden dar de alta tienen permiso de crear.
    */
   private leer(cuerpo: CuerpoAlta): AltaVoluntario {
     if (!cuerpo || typeof cuerpo !== 'object') {
@@ -49,13 +56,19 @@ export class VoluntariosController {
     }
 
     const texto = (v: unknown): string => (typeof v === 'string' ? v : '');
-    const telefono = texto(cuerpo.telefono).trim();
+    const rol = texto(cuerpo.rol).trim() || Rol.Lider;
+
+    if (!Object.values(Rol).includes(rol as Rol)) {
+      throw new ErrorRechazo(`El rol "${rol}" no existe.`);
+    }
 
     return {
       correo: texto(cuerpo.correo),
       nombre: texto(cuerpo.nombre),
-      telefono: telefono || null,
-      clave: texto(cuerpo.clave)
+      documento: texto(cuerpo.documento).trim(),
+      telefono: texto(cuerpo.telefono).trim(),
+      clave: texto(cuerpo.clave),
+      rol: rol as Rol
     };
   }
 }

@@ -154,6 +154,14 @@ create table familias (
   discapacidad_n         integer default 0,
   discapacidad_tipo      text[],
   enf_cronica_n          integer default 0,
+  -- Fallecidos y heridos. Se cuentan por gravedad para poder sumarlos por vereda,
+  -- que es lo que una entidad de salud puede atender. Grave = fue remitido a un
+  -- hospital: el criterio es el hecho, porque quien llena la ficha es un lider
+  -- comunal y no un enfermero.
+  fallecidos             integer not null default 0,
+  heridos_leves          integer not null default 0,
+  heridos_graves         integer not null default 0,
+
   requiere_medicamento   boolean,
   medicamento_cual       text,
   etnia                  text,
@@ -170,6 +178,8 @@ create table familias (
   -- bloque 7: triaje
   prioridad              prioridad_t not null,
   necesidades_inmediatas necesidad_t[] not null default '{}',
+  -- La lista cerrada sirve para sumar; no para describir. El texto la acompana.
+  necesidades_otra       text,
   ya_recibio_ayuda       boolean,
   ayuda_cual             text,
   ayuda_quien            text,
@@ -291,7 +301,13 @@ create table produccion (
   aves_perdidas             integer default 0,
   otros_animales            text,
   infra_productiva          text[],
+  infra_productiva_otro     text,
+  -- Maquinaria y vehiculos: son insumo de la cadena productiva y quedarse por
+  -- fuera del listado es justamente como se pierden en el camino.
+  maquinaria_afectada       boolean,
+  maquinaria_detalle        text,
   requiere_agro             text[],
+  requiere_agro_otro        text,
   creado_en                 timestamptz not null default now()
 );
 create index idx_produccion_familia on produccion (familia_id);

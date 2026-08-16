@@ -21,14 +21,41 @@ Desde cero, en este orden. Cada guion escribe lo que el siguiente necesita en
 | 3 | `desplegar-red.sh` | VPC, subredes, grupos de seguridad | ~1 min |
 | 4 | `desplegar-base.sh` | RDS PostgreSQL 16 | **8 a 12 min** |
 | 5 | `desplegar-cluster.sh` | Clúster de ECS, roles de IAM, registros | segundos |
-| 6 | `aplicar-migraciones.sh` | El esquema, desde dentro de la VPC | ~2 min |
-| 7 | `publicar-api.sh` | La imagen de la API en ECR | ~2 min |
-| 8 | `desplegar-api.sh` | El servicio en Fargate y el balanceador | ~4 min |
-| 9 | `desplegar-tls.sh` | Certificado, redirección y `api.apoyo-colombia.com` | ~1 min |
-| 10 | `crear-custodio.sh <correo> <nombre>` | El primer custodio | ~1 min |
-| 11 | `desplegar-identidad-federada.sh` | Rol del pipeline sin llaves, y rol de solo lectura de registros | segundos |
-| 12 | `desplegar-front.sh` | Bucket privado, CloudFront y DNS de `apoyo-colombia.com` | **5 a 15 min** |
-| 13 | `publicar-front.sh` | La PWA compilada, subida e invalidada | ~2 min |
+| 6 | `desplegar-fotos.sh` | Bucket privado de fotografías y el permiso de la API | segundos |
+| 7 | `aplicar-migraciones.sh` | El esquema, desde dentro de la VPC | ~2 min |
+| 8 | `publicar-api.sh` | La imagen de la API en ECR | ~2 min |
+| 9 | `desplegar-api.sh` | El servicio en Fargate y el balanceador | ~4 min |
+| 10 | `desplegar-tls.sh` | Certificado, redirección y `api.apoyo-colombia.com` | ~1 min |
+| 11 | `crear-custodio.sh <correo> <nombre>` | El primer custodio | ~1 min |
+| 12 | `desplegar-identidad-federada.sh` | Rol del pipeline sin llaves, y rol de solo lectura de registros | segundos |
+| 13 | `desplegar-front.sh` | Bucket privado, CloudFront y DNS de `apoyo-colombia.com` | **5 a 15 min** |
+| 14 | `publicar-front.sh` | La PWA compilada, subida e invalidada | ~2 min |
+
+`desplegar-fotos.sh` va **después** de `desplegar-cluster.sh` porque le agrega una
+política al rol de tarea que ese guion crea, y **antes** de `desplegar-api.sh`
+porque deja en `generado/fotos.env` el nombre del bucket que la definición de
+tarea necesita.
+
+## Mirar la base desde un gestor de escritorio
+
+`tunel-a-la-base.sh` no es parte del despliegue: se levanta cuando alguien
+necesita inspeccionar los datos y se apaga al terminar.
+
+```sh
+./tunel-a-la-base.sh --abrir      # la crea o enciende, y abre la sesión
+./tunel-a-la-base.sh --estado     # qué hay y cuánto cuesta ahora
+./tunel-a-la-base.sh --apagar     # ~0,64 USD/mes: sólo el disco
+./tunel-a-la-base.sh --destruir   # 0 USD: no queda nada
+```
+
+**La base no se abre a internet.** Una instancia `t4g.nano` dentro de la VPC
+reenvía el puerto, y esa instancia **no tiene ni una regla de entrada** —ni el
+22—: se entra por Session Manager, que es una conexión saliente del agente, con
+el acceso decidido por IAM y registrado en CloudTrail.
+
+**Se apaga sola.** Un temporizador mira cada cinco minutos si hay sesión abierta
+y, tras quince minutos sin ninguna, ejecuta el apagado. Esto lo paga una persona
+de su bolsillo: olvidarse de `--apagar` cuesta, como mucho, un cuarto de hora.
 
 **El presupuesto va primero y no es formalismo.** AWS evalúa un presupuesto desde
 que existe, así que una alerta configurada el martes no dice nada de lo que se

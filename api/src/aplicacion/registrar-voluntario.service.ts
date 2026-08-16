@@ -1,4 +1,4 @@
-import { Rol } from '@raiz/dominio';
+import { ROLES_QUE_PUEDE_CREAR, Rol, faltantesDeAlta, puedeCrear } from '@raiz/dominio';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ADMINISTRADOR_IDENTIDAD,
@@ -14,9 +14,15 @@ import {
 /** Lo que hay que saber de un voluntario para darlo de alta. */
 export interface AltaVoluntario {
   correo: string;
+  /** Nombres COMPLETOS: nombre y apellido. Un solo nombre no identifica a nadie. */
   nombre: string;
-  telefono: string | null;
+  /** Cedula. Obligatoria: quien registra a una familia firma ese registro. */
+  documento: string;
+  /** Obligatorio: es como se le pregunta a quien levanto un caso. */
+  telefono: string;
   clave: string;
+  /** Que va a ser. Se comprueba contra lo que puede crear quien pide. */
+  rol: Rol;
 }
 
 /** Lo que se devuelve. NUNCA incluye la clave. */
@@ -71,8 +77,6 @@ export interface VoluntarioCreado {
 export class RegistrarVoluntarioService {
   private readonly log = new Logger(RegistrarVoluntarioService.name);
 
-  /** Quienes pueden dar de alta. Se declara aqui y no en el controlador. */
-  private static readonly PUEDEN_DAR_DE_ALTA: readonly Rol[] = [Rol.Custodio, Rol.Coordinador];
 
   constructor(
     @Inject(ADMINISTRADOR_IDENTIDAD) private readonly proveedor: AdministradorIdentidadPort,
@@ -80,16 +84,18 @@ export class RegistrarVoluntarioService {
   ) {}
 
   async ejecutar(alta: AltaVoluntario, quienPide: Identidad): Promise<VoluntarioCreado> {
-    await this.exigirPermiso(quienPide);
+    const quien = await this.exigirPermiso(quienPide, alta.rol);
     this.validar(alta);
 
     const correo = alta.correo.trim().toLowerCase();
     const nombre = alta.nombre.trim();
+    const documento = alta.documento.replace(/\D/g, '');
+    const telefono = this.aFormatoInternacional(alta.telefono);
 
     const { sub, yaExistia } = await this.proveedor.crearVoluntario(
       correo,
       nombre,
-      alta.telefono,
+      telefono,
       alta.clave
     );
 
@@ -111,13 +117,38 @@ export class RegistrarVoluntarioService {
       this.log.warn(`Alta a medias de ${sub}: existe en el proveedor y no tenia perfil. Se completa.`);
     }
 
-    await this.perfiles.reflejarDelProveedor({ sub, correo, nombre, telefono: alta.telefono });
+    await this.perfiles.reflejarDelProveedor({
+      sub,
+      correo,
+      nombre,
+      telefono,
+      documento
+    });
 
-    this.log.log(`Voluntario ${sub} dado de alta por ${quienPide.sub}`);
+    // NACE LIDER SIEMPRE, que es lo que pone el disparador, y ascender es un acto
+    // aparte que pasa por las politicas de acceso. Si el rol viniera en el alta,
+    // quien pudiera escribir en `auth.users` se fabricaria un coordinador sin que
+    // ninguna politica lo mirara.
+    //
+    // El ascenso corre A NOMBRE DE QUIEN PIDE: la base vuelve a decidir, y por eso
+    // la regla vale aunque manana alguien escriba otra ruta y olvide comprobarla.
+    let rol = Rol.Lider;
+    if (alta.rol !== Rol.Lider) {
+      const ascendido = await this.perfiles.cambiar(sub, { rol: alta.rol }, quienPide);
+      if (!ascendido) {
+        // La cuenta existe y quedo como lider. Se dice tal cual: media verdad aqui
+        // seria un coordinador que cree que dio de alta a alguien que no puede
+        // hacer su trabajo.
+        this.log.error(`La base no dejo asignar ${alta.rol} a ${sub}, pedido por ${quien.rol}.`);
+        throw new ErrorRechazo(
+          `La cuenta se creo, pero no se pudo dejar como ${alta.rol}. Quedo como lider.`
+        );
+      }
+      rol = ascendido.rol;
+    }
 
-    // Nace con el rol menos privilegiado, que es el que pone el disparador. Ascender
-    // es una accion aparte y deliberada del custodio.
-    return { sub, correo, nombre, rol: Rol.Lider };
+    this.log.log(`Voluntario ${sub} dado de alta como ${rol} por ${quienPide.sub} (${quien.rol})`);
+    return { sub, correo, nombre, rol };
   }
 
   /**
@@ -127,30 +158,66 @@ export class RegistrarVoluntarioService {
    * que su token caducara. Aqui el custodio revoca y en la siguiente peticion ya no
    * puede dar de alta a nadie.
    */
-  private async exigirPermiso(quien: Identidad): Promise<void> {
+  private async exigirPermiso(quien: Identidad, rolNuevo: Rol): Promise<Perfil> {
     const perfil: Perfil | null = await this.perfiles.porSub(quien.sub);
 
     if (!perfil || !perfil.activo) {
       throw new ErrorSesion('Su acceso no esta activo.');
     }
-    if (!RegistrarVoluntarioService.PUEDEN_DAR_DE_ALTA.includes(perfil.rol)) {
+
+    const puede = ROLES_QUE_PUEDE_CREAR[perfil.rol] ?? [];
+    if (puede.length === 0) {
       // Clase sesion y no rechazo: el problema no es el dato que mando, es que no
       // tiene permiso. Decirle "revise los campos" seria mandarlo a buscar donde no es.
-      throw new ErrorSesion('Solo el custodio de datos puede dar de alta voluntarios.');
+      throw new ErrorSesion('Su rol no da de alta a nadie.');
     }
+    if (!puedeCrear(perfil.rol, rolNuevo)) {
+      throw new ErrorSesion(
+        `Un ${perfil.rol} no puede crear un ${rolNuevo}. Puede crear: ${puede.join(', ')}.`
+      );
+    }
+
+    return perfil;
   }
 
-  private validar(alta: AltaVoluntario): void {
-    const faltantes: string[] = [];
+  /**
+   * El telefono, como lo exige un proveedor de identidad: `+57...`.
+   *
+   * COGNITO REAL RECHAZA `3001112233` con «Invalid phone number format» y el Cognito
+   * del entorno local lo acepta sin chistar. Es decir: el alta funcionaba en la
+   * maquina de quien programa y fallaba con un 503 en la nube, sin que el mensaje
+   * mencionara el telefono. Se descubrio desplegando.
+   *
+   * Se asume Colombia cuando el numero llega sin indicativo, que es de donde son
+   * todos los voluntarios de este proyecto. Quien traiga un numero de otro pais lo
+   * escribe con `+` y se respeta tal cual.
+   */
+  private aFormatoInternacional(telefono: string): string {
+    const limpio = telefono.trim();
+    if (limpio.startsWith('+')) return '+' + limpio.slice(1).replace(/\D/g, '');
 
-    // Comprobacion deliberadamente laxa: la forma exacta la valida Cognito, que es
-    // quien manda. Aqui solo se evita gastar un viaje de red en algo evidente.
-    if (!alta?.correo?.includes('@')) faltantes.push('correo debe ser una direccion valida');
-    if (!alta?.nombre?.trim()) faltantes.push('nombre es obligatorio');
-    if (!alta?.clave || alta.clave.length < 8) faltantes.push('la clave debe tener al menos 8 caracteres');
+    const digitos = limpio.replace(/\D/g, '');
+    return digitos.startsWith('57') ? `+${digitos}` : `+57${digitos}`;
+  }
+
+  /**
+   * Nada llega al proveedor de identidad sin pasar por aqui.
+   *
+   * La regla no vive en este archivo sino en el contrato compartido, y esa es la
+   * parte que importa: la aplicacion comprueba lo MISMO antes de ofrecer el boton.
+   * Con la regla escrita dos veces, el dia que una cambie la otra deja pasar lo que
+   * la primera rechaza — y el sintoma de eso es una cuenta creada a medias, que es
+   * justo lo que esta comprobacion existe para evitar.
+   */
+  private validar(alta: AltaVoluntario): void {
+    const faltantes = faltantesDeAlta(alta);
 
     if (faltantes.length > 0) {
-      throw new ErrorRechazo('No se puede dar de alta al voluntario.', faltantes);
+      throw new ErrorRechazo(
+        'No se puede dar de alta al voluntario.',
+        faltantes.map((f) => `falta ${f}`)
+      );
     }
   }
+
 }

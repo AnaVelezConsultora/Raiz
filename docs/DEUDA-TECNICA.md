@@ -24,6 +24,12 @@ como para postergarla.
 | D2 | Las claves de la base no rotan | Medio | Que alguien con acceso al secreto deje el equipo |
 | D3 | Sigue viva una llave de larga vida de IAM | **Alto** | Que el pipeline despliegue solo, verificado una vez |
 | D4 | Los guiones son CLI y no código declarativo | Medio | Que haya un segundo entorno, o un segundo municipio |
+| D6 | Quien crea una cuenta conoce la clave de esa persona | **Alto** | La primera entrega nominal a una entidad, o el primer líder que no sea del equipo |
+| D7 | No hay respaldo de la base | **Alto** | **Ya se cumplió**: hay datos de familias reales adentro |
+| D8 | La base desplegada conserva `perfil_lee_en_login` | Bajo | El primer despliegue posterior al que llevó el código que la vuelve innecesaria |
+
+El número D5 no se reutiliza: fue la vista previa por propuesta de cambio, que se
+retiró de esta tabla y quedó explicada más abajo.
 
 ---
 
@@ -142,6 +148,80 @@ mano en la consola es invisible para los guiones y no se detecta hasta que choca
 **Cómo se paga.** Importando lo que ya existe, no reescribiendo desde cero: los
 recursos están etiquetados con `Proyecto=Raiz` y `Gestion=<guion>` justamente para
 poder inventariarlos y adoptarlos con un diff.
+
+---
+
+## D6 · Quien crea una cuenta conoce la clave de esa persona
+
+**Qué se hizo.** El alta por `POST /voluntarios` fija una clave **definitiva**, que
+escribe quien da de alta y le entrega al voluntario por WhatsApp.
+
+**Por qué.** Una clave temporal obliga a cambiarla en el primer ingreso, y ese cambio
+es un desafío de Cognito que la API todavía no resuelve: el voluntario quedaría creado
+y sin poder entrar. Entre eso y que la coordinación pueda sumar líderes hoy, se eligió
+lo segundo, a sabiendas.
+
+**Qué cuesta, dicho sin adornos.** Cada caso queda firmado con quien lo reportó, y esa
+firma es el argumento con el que se sustenta el censo ante una entidad: quién levantó
+cada dato y cuándo. Mientras alguien más conozca esa clave, la firma no prueba autoría.
+No es un riesgo hipotético de intrusos: es que nuestro propio registro no puede
+sostener lo que afirma.
+
+**Cómo se paga.** Lo mínimo es una ruta para cambiar la propia clave, y pedirle a cada
+líder que lo haga al entrar. Lo correcto es forzar el cambio en el primer ingreso, que
+es resolver el desafío de Cognito en la API.
+
+**Disparador.** La primera entrega nominal a una entidad, o el primer líder de campo
+que no sea del equipo. Lo que ocurra antes.
+
+---
+
+## D7 · No hay respaldo de la base
+
+**Qué se hizo.** Nada, y ahí está el problema. RDS quedó con lo que trae por defecto y
+no se verificó que exista una copia recuperable ni se ha probado restaurar una.
+
+**Por qué.** El despliegue se hizo contra reloj y la base estaba vacía. Con la base
+vacía, no tener respaldo no cuesta nada.
+
+**Qué cuesta.** Ya no está vacía. Lo que hay adentro son familias damnificadas
+caracterizadas una por una por líderes que subieron a la vereda, y ese trabajo no se
+puede volver a hacer: la emergencia sigue y la gente se mueve. Un borrado accidental,
+una migración mal aplicada o un fallo de la instancia, y no hay de dónde volver.
+
+**Cómo se paga.** Confirmar que las copias automáticas de RDS están activas y con qué
+retención, y **probar una restauración**. Un respaldo que nunca se restauró es una
+suposición, no un respaldo.
+
+**Disparador.** Ya se cumplió. Esta entrada nace vencida a propósito: entró a la tabla
+el mismo día en que dejó de ser postergable, y se queda aquí hasta que alguien pueda
+decir que restauró una copia y funcionó.
+
+---
+
+## D8 · La base desplegada conserva `perfil_lee_en_login`
+
+**Qué se hizo.** Esa política le permitía a la API leer `perfiles` sin identidad, que
+era como se resolvía el ingreso. El código ya no la necesita —la consulta pone
+identidad—, y el archivo del esquema la retira. Pero el aplicador lleva registro por
+nombre de archivo y ese ya figura como aplicado, así que en la base desplegada la
+política **sigue existiendo**.
+
+**Por qué.** Retirarla exige una migración nueva, y esa migración no puede salir en la
+misma entrega que el código: el despliegue aplica migraciones **antes** de que la
+versión nueva reciba tráfico, de modo que soltar el `drop` ahí dejaría unos minutos a
+la versión vieja —la que lee sin identidad— sin poder resolver ningún ingreso, con
+líderes trabajando.
+
+**Qué cuesta.** Poco y conviene decirlo: mientras esté, la API puede leer `perfiles`
+entera por el camino sin identidad. Hoy ninguna consulta lo hace. El riesgo no es lo
+que pasa, es lo que quedaría abierto para la próxima consulta que alguien escriba por
+ahí sin darse cuenta.
+
+**Cómo se paga.** Una migración numerada con el `drop`, en el despliegue siguiente.
+
+**Disparador.** El primer despliegue posterior al que llevó el código que la vuelve
+innecesaria.
 
 ---
 

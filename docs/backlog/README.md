@@ -24,44 +24,22 @@ llegue vea de dónde parte y no rehaga lo que ya está.
 
 | Archivo | Qué es |
 |---|---|
-| `tablero-raiz.json` | **Fuente de verdad.** Se edita este; los otros se regeneran |
+| `tablero-raiz.json` | **Fuente de verdad.** Se edita este; el CSV se regenera |
 | `tablero-raiz.csv` | Para la importación por CSV de Trello |
-| `crear-tablero.py` | Crea el tablero por API, con credenciales que sólo tú ves |
-| `trello.py` | Solo lectura: ver tableros, listas, tarjetas y etiquetas |
-| `marcar-hechas.py` | Pone la etiqueta `hecha` y un comentario en lo que se cerró |
 
-`trello.py` sólo lee y `marcar-hechas.py` sólo agrega — nunca quita una etiqueta,
-mueve una tarjeta ni edita una descripción. La separación es deliberada: quince
-personas usan este tablero y lo que marcan es suyo. Los dos son re-ejecutables.
+**Las herramientas que hablan con Trello no viven aquí.** Crear el tablero,
+marcar lo cerrado y tomar una historia son tareas de quien cura el tablero, no
+del producto: no las corre quien contribuye, no las ejecuta el despliegue y
+ninguna es necesaria para levantar el proyecto. Quedaron fuera del repositorio, y
+quien las necesite las pide.
 
-Si sale `401 invalid key`, el problema es la **clave**, no el token, y generar un
-token nuevo no arregla nada porque el enlace de autorización lleva la clave dentro.
-El orden correcto y las direcciones están en el `CLAUDE.md` de la raíz.
+Lo que sí es del repositorio es este directorio: el backlog en JSON, que es lo
+que se cita desde `ESTADO.md` y desde las propuestas de cambio, y que sigue
+sirviendo aunque nadie tenga credenciales de Trello a mano.
 
-## Crear el tablero
-
-```bash
-export TRELLO_KEY=...      # Clave de API: trello.com/power-ups/admin
-export TRELLO_TOKEN=...    # ver abajo
-./crear-tablero.py --simular   # primero en seco, sin tocar nada
-./crear-tablero.py
-```
-
-**El token no es el secreto de API.** El secreto es para OAuth y aquí no se usa.
-El token se genera abriendo esta URL con la sesión de Trello y aprobando:
-
-```
-https://trello.com/1/authorize?expiration=1day&name=Raiz%20backlog&scope=read,write&response_type=token&key=TU_CLAVE
-```
-
-`expiration=1day` lo hace caducar solo, que es lo que conviene para una corrida
-puntual. Si se usa uno permanente, conviene revocarlo al terminar en
-*Cuenta → Tokens permitidos*.
-
-El script sólo usa la biblioteca estándar y **es re-ejecutable**: si el tablero ya
-existe, reutiliza listas y etiquetas y agrega únicamente las historias que
-falten, comparando por identificador. Cuando el backlog cambie, se vuelve a
-correr sin duplicar nada.
+Si al usar esas herramientas sale `401 invalid key`, el problema es la **clave**,
+no el token, y generar un token nuevo no arregla nada porque el enlace de
+autorización lleva la clave dentro.
 
 ---
 

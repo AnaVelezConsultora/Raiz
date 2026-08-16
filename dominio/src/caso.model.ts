@@ -40,7 +40,17 @@ export interface Control {
    * Autorizacion de tratamiento de datos, Ley 1581 de 2012.
    * En false la identidad NO viaja. La regla se aplica con {@link aplicarConsentimiento}.
    */
-  consentimiento: boolean;
+  /**
+   * Autorizacion de la familia. null es SIN RESPONDER, y no es lo mismo que un no.
+   *
+   * Con un booleano de dos estados, un formulario que nadie lleno se veia igual que
+   * una familia que dijo que no. De esta respuesta depende si el nombre y el documento
+   * de una persona se guardan, asi que la diferencia importa.
+   *
+   * Al escribir en la base, cualquier cosa distinta de true es un no: la regla de
+   * identidad no cambia.
+   */
+  consentimiento: boolean | null;
   fechaRegistro: string;
 }
 
@@ -85,6 +95,17 @@ export interface Vulnerabilidad {
   discapacidadN: number;
   discapacidadTipo: string[];
   enfCronicaN: number;
+  /**
+   * Fallecidos y heridos del hogar.
+   *
+   * Separados por gravedad porque asi se pueden sumar por vereda, y esa suma es lo
+   * que una entidad de salud puede atender. Grave se define por el hecho —fue
+   * remitido o atendido en un hospital— y no por criterio medico: quien llena la
+   * ficha es un lider comunal.
+   */
+  fallecidos: number;
+  heridosLeves: number;
+  heridosGraves: number;
   requiereMedicamento: boolean | null;
   medicamentoCual: string | null;
   etnia: string | null;
@@ -161,7 +182,19 @@ export interface AnexoRural {
   avesPerdidas: number;
   otrosAnimales: string | null;
   infraProductiva: string[];
+  infraProductivaOtro: string | null;
   requiereAgro: string[];
+  requiereAgroOtro: string | null;
+  /**
+   * Maquinaria y vehiculos afectados o perdidos.
+   *
+   * Son insumo de la cadena productiva, y quedarse por fuera del listado es
+   * exactamente como se pierden en el camino. El detalle va en texto: una guadana, un
+   * tractor y una moto de trabajo no se parecen en nada, y agruparlos ahora seria
+   * inventar un catalogo sin haber visto los datos.
+   */
+  maquinariaAfectada: boolean | null;
+  maquinariaDetalle: string | null;
 }
 
 /** Bloque 6. Anexo convenio de la federacion. */
@@ -178,6 +211,8 @@ export interface Triaje {
   necesidadesInmediatas: string[];
   yaRecibioAyuda: boolean | null;
   ayudaCual: string | null;
+  /** Lo que la lista cerrada no alcanza a decir. La acompana, no la reemplaza. */
+  necesidadesOtra: string | null;
   ayudaQuien: string | null;
   observaciones: string | null;
 }

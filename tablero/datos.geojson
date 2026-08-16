@@ -1,13 +1,19 @@
 {
   "type": "FeatureCollection",
-  "corte": "2026-08-15",
+  "corte": "2026-08-12",
   "sin_coordenada": 1,
-  "datos": "INVENTADOS. Ninguna fila corresponde a una familia real. Los nombres de vereda son ficticios a proposito, para que nadie confunda esta muestra con el censo.",
-  "nota": "Vista publica: una fila por afectacion, sin nombre, sin documento, sin telefono y sin fotografia, con la coordenada redondeada a 3 decimales (~110 m). No es un agregado: cuanto puede mostrar esta vista sin senalar a una familia es la decision HU 2.1.1, y sigue abierta.",
+  "datos": "INVENTADOS. Ninguna fila corresponde a una familia real.",
+  "nota": "Una fila por afectacion, con la coordenada redondeada a 3 decimales (~110 m). Ubica la afectacion, no la vivienda.",
   "features": [
     {
       "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [-75.941, 4.271] },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.941,
+          4.271
+        ]
+      },
       "properties": {
         "codigo": "RZ-2026-000001",
         "zona": "rural",
@@ -24,7 +30,13 @@
     },
     {
       "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [-75.936, 4.266] },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.936,
+          4.266
+        ]
+      },
       "properties": {
         "codigo": "RZ-2026-000002",
         "zona": "urbana",
@@ -41,7 +53,13 @@
     },
     {
       "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [-75.948, 4.279] },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.948,
+          4.279
+        ]
+      },
       "properties": {
         "codigo": "RZ-2026-000003",
         "zona": "rural",

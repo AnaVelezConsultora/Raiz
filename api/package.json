@@ -1,9 +1,10 @@
 {
   "name": "@raiz/api",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "API de Raiz. Recibe lo que el voluntario capturo sin senal.",
   "license": "MIT",
   "scripts": {
+    "prebuild": "node tools/estampar-version.mjs",
     "build": "nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
@@ -11,6 +12,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1111.0",
+    "@aws-sdk/client-s3": "^3.1111.0",
+    "@aws-sdk/s3-presigned-post": "^3.1111.0",
+    "@aws-sdk/s3-request-presigner": "^3.1111.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

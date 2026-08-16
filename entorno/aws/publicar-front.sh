@@ -85,6 +85,56 @@ fi
 # Sale del mismo sitio que el pie de la aplicacion, asi que lo que se lee aqui es
 # exactamente lo que va a leer el voluntario en el celular.
 VERSION="$(node -p "require('$RAIZ_REPO/frontend/package.json').version")"
+
+# -----------------------------------------------------------------------------
+# La aplicacion no se publica adelantada a su servidor
+# -----------------------------------------------------------------------------
+#
+# POR QUE ESTA COMPROBACION
+#
+# El despliegue de la API corre por su propio flujo y aplica migraciones antes de
+# recibir trafico. Este guion, en cambio, lo lanza una persona. Nada impedia subir
+# una aplicacion nueva contra un servidor viejo, y el fallo de eso no se ve: los
+# campos que el servidor no conoce NO dan error, se ignoran en silencio. El
+# voluntario llena "personas fallecidas", ve que guarda, sincroniza sin aviso, y el
+# dato no queda en ninguna parte. Nadie se entera hasta que alguien pregunta por
+# una cifra que nunca existio.
+#
+# Por eso se compara con lo que responde /salud, que desde la version 0.2.0 dice
+# que version esta corriendo alla.
+#
+# COMO SALTARSELA, CUANDO DE VERDAD TOCA
+#
+#   RAIZ_PUBLICAR_ADELANTADO=1 ./publicar-front.sh
+#
+# Sirve para una correccion que solo toca la interfaz. Se pide a proposito escribir
+# eso: la decision queda tomada por alguien y no por omision.
+API_URL="$(grep -oE "https://[a-z0-9.-]+" "$RAIZ_REPO/frontend/src/environments/environment.prod.ts" | head -1)"
+
+if [ -n "$API_URL" ] && [ "${RAIZ_PUBLICAR_ADELANTADO:-0}" != "1" ]; then
+  echo ""
+  echo "==> comprobando la version que corre en la API"
+  VERSION_API="$(curl -s -m 20 "$API_URL/salud" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).version ?? ""' 2>/dev/null || true)"
+
+  if [ -z "$VERSION_API" ]; then
+    echo "ERROR: no se pudo leer la version de $API_URL/salud." >&2
+    echo "       O la API no responde, o corre una version anterior a la 0.2.0." >&2
+    echo "       Despliegue primero la API. Para publicar igual:" >&2
+    echo "         RAIZ_PUBLICAR_ADELANTADO=1 $0" >&2
+    exit 1
+  fi
+
+  if [ "$VERSION_API" != "$VERSION" ]; then
+    echo "ERROR: la aplicacion es la $VERSION y la API que responde es la $VERSION_API." >&2
+    echo "       Publicarla asi haria que los campos nuevos se pierdan en silencio." >&2
+    echo "       Despliegue primero la API. Si el cambio es solo de interfaz:" >&2
+    echo "         RAIZ_PUBLICAR_ADELANTADO=1 $0" >&2
+    exit 1
+  fi
+
+  echo "    la API responde la $VERSION_API: coinciden"
+fi
+
 echo ""
 echo "==> publicando la version $VERSION"
 
@@ -106,6 +156,31 @@ echo "    subido"
 # -----------------------------------------------------------------------------
 # 2. Despues lo que no se puede cachear
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# EL SERVICE WORKER LLEVA LA VERSION ADENTRO, Y NO ES DECORACION
+# -----------------------------------------------------------------------------
+#
+# `ngsw-worker.js` es identico byte a byte en todas las compilaciones: es codigo de
+# Angular, no de esta aplicacion. El navegador solo reinstala un service worker
+# cuando su ARCHIVO cambia, asi que un worker instalado hace semanas se queda
+# corriendo para siempre, aunque la aplicacion se actualice a diario.
+#
+# Eso importa porque UN SERVICE WORKER CONSERVA LA POLITICA DE SEGURIDAD CON LA QUE
+# SE INSTALO. Cuando se agrego el bucket de fotografias a `connect-src`, los
+# telefonos recibieron la aplicacion nueva y siguieron con el worker viejo: las
+# peticiones al almacenamiento se bloqueaban dentro del worker, y como Angular
+# convierte un fetch fallido en un `504 Gateway Timeout` sintetico y sin cuerpo, lo
+# que se veia en la vereda era «el almacenamiento respondio 504» — un mensaje que
+# no menciona ni la politica ni el worker.
+#
+# Con la version escrita dentro, cada entrega produce un archivo distinto, el
+# navegador instala el worker nuevo y la politica viaja con el.
+echo ""
+echo "==> sellando el service worker con la version"
+printf '\n// Raiz %s — esta linea existe para que el navegador reinstale el worker.\n' \
+  "$VERSION" >> "$DIST/ngsw-worker.js"
+echo "    ngsw-worker.js lleva $VERSION"
+
 echo ""
 echo "==> subiendo el index y el service worker"
 for archivo in index.html ngsw.json ngsw-worker.js safety-worker.js worker-basic.min.js; do

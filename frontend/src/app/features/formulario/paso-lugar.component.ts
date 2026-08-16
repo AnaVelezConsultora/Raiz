@@ -20,7 +20,7 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
   template: `
     <div class="pila" [formGroup]="form()">
       <section class="pila-sm" formGroupName="control">
-        <h3>Quien registra</h3>
+        <h3>Quién registra</h3>
         <div class="campo">
           <label for="reg">Su nombre</label>
           <input id="reg" type="text" formControlName="registradorNombre" autocomplete="name" />
@@ -30,12 +30,12 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
           <span class="pista">Es suyo, no de la familia: queda guardado para los siguientes casos.</span>
         </div>
         <div class="campo">
-          <label for="org">Organizacion, junta o comite</label>
+          <label for="org">Organización, junta o comité</label>
           <input id="org" type="text" formControlName="registradorOrg"
                  placeholder="Escriba independiente si no pertenece a ninguna" />
         </div>
         <div class="campo">
-          <label for="fuente">Como obtuvo la informacion</label>
+          <label for="fuente">Cómo obtuvo la información</label>
           <select id="fuente" formControlName="fuenteDato">
             @for (o of fuentes; track o.v) {
               <option [value]="o.v">{{ o.t }}</option>
@@ -47,27 +47,43 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
           <strong>Lea esto a la familia antes de continuar</strong>
           <p style="margin:.4rem 0 0">
             Estamos levantando un censo de familias afectadas por el sismo para presentarlo
-            ante las entidades y ante organismos de cooperacion, con el fin de gestionar
-            ayuda. Sus datos solo se usaran para eso y puede pedir que los eliminemos.
-            Nos autoriza a registrar sus datos?
+            ante las entidades y ante organismos de cooperación, con el fin de gestionar
+            ayuda. Sus datos solo se usarán para eso y puede pedir que los eliminemos.
+            ¿Nos autoriza a registrar sus datos?
           </p>
         </div>
 
-        <label class="pastilla" [class.activa]="consentimiento">
-          <input type="checkbox" formControlName="consentimiento" />
-          La familia autoriza el tratamiento de sus datos
-        </label>
+        <!-- Dos botones y no una casilla. Una casilla sin marcar no distingue "la
+             familia dijo que no" de "nadie le preguntó", y de esa diferencia depende si
+             el nombre de una persona puede guardarse. Sin responder no se continúa. -->
+        <div class="campo">
+          <label>
+            ¿La familia autoriza el tratamiento de sus datos?
+            <span class="obligatorio">obligatorio</span>
+          </label>
+          <div class="pastillas">
+            <button type="button" class="pastilla" [class.activa]="consentimiento === true"
+                    (click)="fijarConsentimiento(true)">Sí, autoriza</button>
+            <button type="button" class="pastilla" [class.activa]="consentimiento === false"
+                    (click)="fijarConsentimiento(false)">No autoriza</button>
+          </div>
+        </div>
 
-        @if (!consentimiento) {
+        @if (consentimiento === null) {
+          <p class="aviso">
+            Sin esta respuesta no se puede continuar. Es lo que decide si el nombre y el
+            documento de la familia pueden guardarse.
+          </p>
+        } @else if (consentimiento === false) {
           <p class="aviso peligro">
-            Sin autorizacion NO se registran nombre, documento ni fotos. El caso se
-            guarda con ubicacion, numero de personas y tipo de dano.
+            Sin autorización NO se registran nombre, documento ni fotos. El caso se
+            guarda con ubicación, número de personas y tipo de daño.
           </p>
         }
       </section>
 
       <section class="pila-sm" formGroupName="ubicacion">
-        <h3>Donde queda</h3>
+        <h3>Dónde queda</h3>
         <div class="campo">
           <label for="zona">Zona</label>
           <select id="zona" formControlName="zona">
@@ -88,14 +104,17 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
         </div>
 
         @if (esRural()) {
+          <!-- Un solo campo y no dos. En terreno nadie separa vereda de corregimiento
+               de centro poblado: dice el nombre del sitio. Con dos casillas, la mitad
+               de los registros llegaba con una vacía y la otra con el nombre puesto
+               donde alcanzó, y después no se pueden agrupar por lugar. -->
           <div class="campo">
-            <label for="vereda">Vereda</label>
+            <label for="vereda">
+              Vereda, corregimiento o centro poblado
+              <span class="obligatorio">obligatorio</span>
+            </label>
             <input id="vereda" type="text" formControlName="vereda" />
             <span class="pista">Escriba el nombre como lo dice la comunidad.</span>
-          </div>
-          <div class="campo">
-            <label for="correg">Corregimiento o centro poblado</label>
-            <input id="correg" type="text" formControlName="corregimiento" />
           </div>
         } @else {
           <div class="campo">
@@ -118,15 +137,33 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
       <section class="pila-sm">
         <h3>Coordenada</h3>
         <p class="pista">
-          El GPS del celular funciona SIN internet. Quedese quieto unos segundos hasta
-          que la precision baje.
+          El GPS del celular funciona SIN internet. Quédese quieto unos segundos hasta
+          que la precisión baje.
         </p>
 
         @if (lat() !== null) {
           <p class="aviso exito mono">
             {{ lat() }}, {{ lon() }}
-            @if (precision() !== null) { · precision {{ precision() }} m }
+            @if (precision() !== null) { · precisión {{ precision() }} m }
           </p>
+
+          <!-- El enlace abre el mapa, con internet o con la aplicación de mapas del
+               celular. Antes la coordenada solo se veía y no se podía comprobar, que
+               es justo lo que se necesita al llegar a una casa vecina. -->
+          <a class="btn-secundario btn-ancho" style="text-align:center;text-decoration:none;
+                    display:flex;align-items:center;justify-content:center"
+             [href]="'https://www.google.com/maps/search/?api=1&query=' + lat() + ',' + lon()"
+             target="_blank" rel="noopener">
+            Ver la coordenada en el mapa
+          </a>
+
+          @if (precision() !== null && precision()! > 15) {
+            <p class="aviso">
+              Con {{ precision() }} m de precisión, dos casas vecinas pueden quedar en el
+              mismo punto. Escriba el punto de referencia arriba: es lo que permite
+              distinguirlas cuando alguien vaya a verificar.
+            </p>
+          }
         }
 
         <button type="button" class="btn-secundario btn-ancho"
@@ -134,7 +171,7 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
                 (click)="capturarGps.emit()">
           @switch (gps.estado()) {
             @case ('buscando') {
-              Buscando satelites...
+              Buscando satélites...
               @if (gps.precisionActual() !== null) { ({{ gps.precisionActual() }} m) }
             }
             @case ('denegado') { Permiso de ubicacion denegado. Toque para reintentar }
@@ -166,8 +203,23 @@ export class PasoLugarComponent {
 
   readonly esRural = computed(() => this.form().get('ubicacion.zona')?.value === Zona.Rural);
 
-  get consentimiento(): boolean {
-    return this.form().get('control.consentimiento')?.value === true;
+  /**
+   * Tres estados y hacen falta los tres.
+   *
+   * null es "nadie ha preguntado", que no es lo mismo que "la familia dijo que no".
+   * Un caso sin responder no puede continuar: de esta respuesta depende si el nombre y
+   * el documento de una persona se guardan.
+   */
+  get consentimiento(): boolean | null {
+    const valor = this.form().get('control.consentimiento')?.value;
+    return valor === true || valor === false ? valor : null;
+  }
+
+  fijarConsentimiento(autoriza: boolean): void {
+    const control = this.form().get('control.consentimiento');
+    if (!control) return;
+    control.setValue(autoriza);
+    control.markAsDirty();
   }
 
   /** El contenedor escucha este evento, captura la coordenada y la persiste. */

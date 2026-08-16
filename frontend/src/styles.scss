@@ -1,30 +1,38 @@
 /* =============================================================================
-   SIRCA - estilos globales
+   RAIZ - estilos globales
    Diseñado para uso en campo: sol directo, una sola mano, celular de gama baja.
    Contraste alto, objetivos tactiles de 48 px minimo, sin animaciones costosas.
    ============================================================================= */
 
 :root {
-  --paper: #edefea;
-  --surface: #f8f9f5;
-  --surface-2: #e4e8df;
-  --ink: #16201d;
-  --ink-soft: #4e5a55;
-  --ink-faint: #78847e;
-  --rule: #d0d6ca;
-  --accent: #0e5c63;
-  --accent-ink: #0a484e;
-  --accent-soft: #dae7e5;
-  --p0: #a32017;
-  --p1: #8a5a00;
-  --p2: #3b6a46;
-  --p3: #5a655f;
-  --p0-bg: #f4dedb;
-  --p1-bg: #f2e6cc;
-  --p2-bg: #dfebdf;
-  --p3-bg: #e4e8e3;
-  --ok: #2f6b3f;
-  --alerta: #a32017;
+  /* Paleta tomada del sello del equipo: papel de estampa y tinta verde muy oscura.
+     El logo es de dos tintas, asi que la jerarquia no puede venir del color: viene
+     del peso y del espacio. Lo que si se conserva del diseno anterior es la regla
+     que manda aqui — contraste alto, porque esto se lee de pie y bajo el sol. */
+  --paper: #f1ead8;
+  --surface: #fbf6ea;
+  --surface-2: #e7dfc9;
+  --ink: #232b24;
+  --ink-soft: #4b544a;
+  --ink-faint: #7b8071;
+  --rule: #d8cfb8;
+  --accent: #2b3a2e;
+  --accent-ink: #1b2520;
+  --accent-soft: #dfe4d4;
+
+  /* Semaforo de prioridad. Se templaron hacia el ocre y el ladrillo para que se
+     apoyen en el papel en vez de flotar encima, pero sin bajarles el contraste:
+     P0 tiene que gritar tanto como antes. */
+  --p0: #9b2617;
+  --p1: #7f5406;
+  --p2: #37623f;
+  --p3: #6b6555;
+  --p0-bg: #f3ded6;
+  --p1-bg: #f0e4c8;
+  --p2-bg: #dfe7d5;
+  --p3-bg: #e8e2d2;
+  --ok: #37623f;
+  --alerta: #9b2617;
 
   --sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
   --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
@@ -134,9 +142,18 @@ a:focus-visible {
 }
 
 /* Rejilla del desagregado por sexo y edad. */
+/* La columna del rango NO puede ceder su ancho.
+   Con `1fr auto auto`, en una pantalla angosta los dos contadores se quedaban con
+   todo el espacio —su ancho intrinseco manda sobre el `1fr`— y "60 o mas" salia
+   partido una letra por renglon. El rango de edad es lo que el voluntario lee para
+   saber que numero esta poniendo; si no se lee, el dato entra donde no va.
+
+   Lo vieron dos personas por separado, en un iPhone y en el paso 2, y las dos
+   correcciones se juntan aqui: el piso de 4.5rem para el rotulo, y contadores en
+   minmax(0, 1fr) para que sean ELLOS los que encogen. */
 .rejilla-edades {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(4.5rem, max-content) minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
@@ -147,16 +164,36 @@ a:focus-visible {
   color: var(--ink-faint);
   text-align: center;
 }
-.rejilla-edades .rango { font-size: 0.85rem; color: var(--ink-soft); }
+.rejilla-edades .rango {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  /* Un rango partido en dos renglones descuadra la fila; partido por letras es
+     ilegible. Las tres lineas cubren los dos casos. */
+  white-space: nowrap;
+  word-break: keep-all;
+  hyphens: none;
+}
 
 /* Condiciones especiales: mismas dos columnas, sin cabecera de sexo. */
+/* La etiqueta manda sobre el contador y no al reves.
+   Con `1fr auto` el contador se quedaba con el ancho que pedia y la etiqueta se
+   partia por la mitad de una palabra: "Bovino s perdid os". Se lee peor que un dato
+   equivocado, porque el voluntario tiene que descifrar que le estan preguntando.
+   Aqui las palabras si pueden envolverse —«Enfermedad / cronica» se lee bien— lo
+   que no pueden es partirse por la mitad. */
 .rejilla-condiciones {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(8.5rem, max-content) minmax(0, 1fr);
   gap: 0.4rem 0.6rem;
   align-items: center;
 }
-.rejilla-condiciones .rango { font-size: 0.85rem; color: var(--ink-soft); }
+.rejilla-condiciones .rango {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
+}
 
 /* Contador de personas: menos, numero, mas.
    Usa --alto-toque, la medida que ya define el resto del sistema: es lo minimo que un
@@ -169,6 +206,9 @@ a:focus-visible {
   border-radius: 999px;
   background: var(--surface);
   overflow: hidden;
+  /* Encoge con su columna en vez de empujar al rotulo fuera de la pantalla. Lo que
+     NO encoge son los botones: su tamano es el que un pulgar acierta sin mirar. */
+  max-width: 100%;
 }
 .contador-boton {
   width: var(--alto-toque);
@@ -190,6 +230,9 @@ a:focus-visible {
 
 .contador-valor {
   width: 44px;
+  /* Sin esto un input no baja de su ancho por defecto y el contador no encoge. */
+  min-width: 0;
+  flex: 1 1 44px;
   min-height: var(--alto-toque);
   padding: 0;
   border: 0;
@@ -319,6 +362,24 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .mono { font-family: var(--mono); font-size: 0.85rem; }
 .tenue { color: var(--ink-faint); font-size: 0.85rem; }
+
+
+/* Marca de campo obligatorio.
+   La pidio el terreno: no habia forma de saber que se podia dejar en blanco, y la
+   duda se resuelve mal —o se llena de mas, o se deja lo que hacia falta—. Se escribe
+   la palabra en vez de un asterisco: un asterisco hay que saber que significa. */
+.obligatorio {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--p0);
+  margin-left: 0.4rem;
+}
+
+/* Rango de edad que las entidades miran primero: menores y 60 o mas. No cambia el
+   dato, avisa que ese renglon no se deja en cero por descuido. */
+.rango.priorizado { font-weight: 650; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

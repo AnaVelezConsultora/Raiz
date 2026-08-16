@@ -153,6 +153,36 @@ export enum Rol {
   Lider = 'lider'
 }
 
+/**
+ * Que roles puede CREAR cada rol.
+ *
+ * Vive en el contrato porque lo usan los dos lados: la API para decidir y la
+ * aplicacion para no ofrecer lo que va a ser rechazado. Escrito dos veces, el dia
+ * que cambie uno la pantalla ofrecera algo que el servidor niega, y quien lo
+ * sufre es el coordinador que esta dando de alta a su equipo.
+ *
+ * NADIE CREA CUSTODIOS. El primero se siembra desde la infraestructura, y que la
+ * cima de la cadena quede fuera del alcance de la aplicacion es deliberado: el
+ * custodio responde por la proteccion de datos personales, y ese nombramiento no
+ * puede ser el efecto secundario de un formulario.
+ *
+ * La misma regla esta en la base, como politica de acceso. Aqui es para dar un
+ * mensaje decente; alli es para que sea cierta.
+ */
+export const ROLES_QUE_PUEDE_CREAR: Readonly<Record<Rol, readonly Rol[]>> = {
+  [Rol.Custodio]: [Rol.Coordinador, Rol.Validador, Rol.Digitador, Rol.Lider],
+  /** El coordinador arma su equipo de registro, y no puede ascender a nadie a su nivel. */
+  [Rol.Coordinador]: [Rol.Lider, Rol.Digitador],
+  [Rol.Validador]: [],
+  [Rol.Digitador]: [],
+  [Rol.Lider]: []
+};
+
+/** True si quien tiene `rol` puede dar de alta a alguien con `rolNuevo`. */
+export function puedeCrear(rol: Rol, rolNuevo: Rol): boolean {
+  return ROLES_QUE_PUEDE_CREAR[rol]?.includes(rolNuevo) ?? false;
+}
+
 /** Tipo de fotografia asociada al caso. */
 export enum TipoFoto {
   Fachada = 'fachada',

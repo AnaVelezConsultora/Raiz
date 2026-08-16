@@ -402,23 +402,28 @@
               "quiero": "que la fotografía vaya directo al almacenamiento",
               "para": "que la subida sea lo más liviana y rápida posible",
               "criterios": [
-                "Politica de subida firmada y de vida corta, limitada a la ruta del caso",
-                "La politica lleva content-length-range con el tamano que el dispositivo declaro",
-                "La fotografia no atraviesa la API en ningun momento",
+                "Toda fotografia se sube por bloques, tambien una de 200 KB: lo transmitido no se vuelve a pagar",
+                "Cada bloque lleva su tamano dentro de la firma, y el permiso caduca en 15 minutos",
+                "La imagen no atraviesa la API en su viaje desde el celular",
                 "Sin consentimiento no se emite autorizacion: la regla en el borde, no en la interfaz",
                 "El objeto no queda legible sin firma",
-                "Hay ruta de confirmacion, idempotente, que VERIFICA el objeto contra el almacenamiento",
-                "La confirmacion consulta el objeto concreto, nunca listando un prefijo"
+                "Que bloques llegaron lo dice el almacenamiento, no el dispositivo: se reanuda tras perder la bateria",
+                "La confirmacion consulta cada objeto concreto, nunca listando un prefijo",
+                "Integridad de extremo a extremo: SHA-256 declarado en el dispositivo y verificado al unir",
+                "Una fotografia no se envia si su caso todavia no llego al servidor",
+                "Ruta de cancelacion que libera los bloques a medias"
               ],
               "etiquetas": [
-                "BackEnd"
+                "BackEnd",
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "ADR 003",
               "depende_de": "HU 1.2.3",
               "sugerido": [
                 "lDavidSantiago"
               ],
-              "nota": "EL LADO DEL CLIENTE YA ESTA. El adaptador declara fotoId, casoOrigenId, tipo, bytes y tipoMime; sube por POST multiparte con los campos firmados, poniendo el archivo de ultimo; y despues llama a POST /fotos/{id}/confirmar. Falta construir esos dos endpoints.\n\nEl contrato completo quedo escrito en el ADR 003 seccion 5, reescrita el 15 de agosto de 2026. Incluye por que son tres pasos y no dos: que el almacenamiento responda 204 no es que el objeto este ahi y completo, y sin confirmacion el dispositivo podria liberar la foto de su memoria creyendo que ya viajo.\n\nNO usar subida multiparte de objetos grandes: su parte minima es de 5 MB, asi que una foto de 200 KB seria una sola parte con dos viajes de red de mas."
+              "nota": "HECHA el 15 de agosto de 2026. Rama feature/hu-1.2.5-fotos.\n\nSE CAMBIO EL MECANISMO frente a lo que decia el ADR 003, y la seccion 5 se reescribio: no se usa la subida multiparte de S3 porque exige partes de 5 MiB minimo, de modo que una foto de 200 KB no se podria partir. Cada bloque es un objeto propio bajo `partes/` y la API los une al confirmar, en flujo.\n\nVerificado contra la API, PostgreSQL y el almacenamiento reales con `entorno/pruebas/ciclo-api.mjs`: 27 comprobaciones, incluida la reanudacion —se corta la subida a la mitad y solo se vuelven a firmar los bloques que faltan— y la integridad, con un bloque danado DEL TAMANO CORRECTO que se rechaza y no queda guardado.\n\nFalta correr `entorno/aws/desplegar-fotos.sh` contra AWS y volver a desplegar la API para que reciba S3_BUCKET_FOTOS."
             },
             {
               "id": "HU 1.2.6",
@@ -781,6 +786,25 @@
               ],
               "origen": "Revision del paso 3, 15 de agosto de 2026",
               "nota": "HECHA. El ofrecimiento aparece al guardar, no en la lista: el voluntario todavia esta parado frente a la casa y en la lista ya no lo esta.\n\nQue se copia el estado del inmueble fue una correccion sobre la marcha. La primera version solo copiaba el lugar, y eso dejaba el registro parcial y obligaba a re-responder el dano de la MISMA casa: la grieta es la misma grieta, y volver a preguntarla invita a que un inmueble quede con 'severo' en una familia y 'moderado' en la siguiente, de modo que la entidad recibe dos verdades del mismo predio y ninguna sirve. Lo copiado queda editable y avisado.\n\nLa navegacion va por /nuevo?desde=<id> para que la creacion siga estando en un solo lugar. Se reacciona a los parametros de la ruta y no se leen una sola vez, porque Angular reutiliza el componente cuando solo cambian y el voluntario se quedaria mirando el caso que acaba de guardar."
+            },
+            {
+              "id": "HU 1.3.15",
+              "titulo": "Que las fotografias suban solas apenas haya red",
+              "como": "lider territorial",
+              "quiero": "no tener que acordarme de tocar un boton para que las fotos viajen",
+              "para": "dedicar el tiempo a atender a la familia y no a manejar la aplicacion",
+              "criterios": [
+                "Apenas hay conexion, las fotografias salen: no se distingue wifi de datos moviles",
+                "Con el ahorro de datos activo sigue sin salir nada sin pedirlo: es la valvula del voluntario",
+                "Nunca hay envio en segundo plano con la aplicacion cerrada",
+                "Se avisa cuanto se va a gastar, pero no se pide permiso cada vez",
+                "El caso completo —texto y fotos— deja de aparecer como pendiente sin que nadie toque nada"
+              ],
+              "etiquetas": [
+                "FrontEnd"
+              ],
+              "origen": "prueba en iPhone del 15 de agosto de 2026; enmienda a ESTADO.md seccion 2",
+              "nota": "CAMBIA UNA DECISION ESCRITA, y por eso es una historia y no un ajuste. ESTADO.md dice «el caso viaja solo; la fotografia espera el boton», con un argumento que no era malo: un caso son 3 KB y veinte fotografias son 4 MB del plan de datos de alguien.\n\nLa decision se revisa con lo aprendido en campo: el boton no protege al voluntario, le pasa una tarea. Y una fotografia que se queda en el celular no es un ahorro, es evidencia del dano que no llega. APENAS HAYA RED, SUBEN — sin distinguir wifi de datos moviles.\n\nLo que se conserva es la valvula: con el ahorro de datos activo no sale nada sin pedirlo, y nunca hay envio en segundo plano con la aplicacion cerrada.\n\nPedido en campo con estas palabras: «quitarle tareas al voluntario, que esta buscando atender y entregar ayudas a quienes realmente las necesitan»."
             }
           ]
         },
@@ -1015,6 +1039,27 @@
               ],
               "origen": "ADR 002",
               "asignado": "yonathangutierrez"
+            },
+            {
+              "id": "HU 2.1.4",
+              "titulo": "Tablero de administracion para quien destina los recursos",
+              "como": "coordinador o custodio",
+              "quiero": "una vista de administracion donde ver los casos con su evidencia",
+              "para": "decidir a donde van los recursos con la prueba del dano a la vista",
+              "criterios": [
+                "La vista es de administracion: coordinador, custodio y quien destina recursos",
+                "Cada rol ve lo que le corresponde; el listado y la fotografia obedecen las mismas politicas",
+                "La fotografia se abre con enlace firmado de vida corta, nunca servida por la API",
+                "El bucket sigue sin lectura anonima, verificado contra la nube real",
+                "Queda registro de quien pidio ver que fotografia"
+              ],
+              "etiquetas": [
+                "BackEnd",
+                "FrontEnd"
+              ],
+              "origen": "HU 1.2.5: la subida quedo hecha y la lectura no existe",
+              "depende_de": "HU 1.2.5 (hecha)",
+              "nota": "SE TRAZA MAS ADELANTE, con los roles y permisos delante. Esta tarjeta guarda el problema, no el diseno: no se empieza a construir sin definir que ve cada rol.\n\nEl hueco concreto que la origina: HOY LA FOTOGRAFIA ENTRA Y NO SE PUEDE VOLVER A VER. El bucket es privado y sin lectura anonima —comprobado contra AWS— y la API solo tiene rutas de escritura.\n\nLa relacion con el caso ya esta hecha: `fotos.familia_id` apunta a la familia, `fotos.url` guarda la ruta y el prefijo es el consecutivo institucional, de modo que las imagenes de un hogar se encuentran por `casos/RZ-2026-000014/`. La politica `hija_fotos` hace que hereden su permiso.\n\nAlimenta el paquete de la remision (F5): una entidad que recibe un caso pide ver el dano."
             }
           ]
         },

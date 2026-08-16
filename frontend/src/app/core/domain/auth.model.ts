@@ -57,6 +57,20 @@ export interface ResultadoAcceso {
 export interface PerfilAdministrable extends PerfilUsuario {
   correo: string;
   creadoEn: string;
+  /** Cedula. Falta en las cuentas creadas antes de que se exigiera. */
+  documento: string | null;
+}
+
+/** Lo que hay que saber de alguien para darlo de alta. */
+export interface AltaVoluntario {
+  correo: string;
+  /** Nombres y apellidos. Un solo nombre no identifica a nadie. */
+  nombre: string;
+  /** Cedula: quien registra a una familia firma ese registro. */
+  documento: string;
+  telefono: string;
+  clave: string;
+  rol: Rol;
 }
 
 /** Cambio que la custodia aplica sobre un voluntario. */
@@ -79,6 +93,14 @@ export interface AuthPort {
    * @param soloInactivos true para traer unicamente las cuentas sin acceso.
    */
   listarVoluntarios(soloInactivos?: boolean): Promise<PerfilAdministrable[]>;
+
+  /**
+   * Da de alta a alguien.
+   *
+   * CONTRATO CON LA API: `POST /voluntarios`. Quien puede crear que rol lo decide el
+   * servidor y lo vuelve a decidir la base; aqui solo se ofrece lo que corresponde.
+   */
+  crearVoluntario(alta: AltaVoluntario): Promise<PerfilAdministrable>;
 
   /**
    * Activa, desactiva o cambia el rol de un voluntario.

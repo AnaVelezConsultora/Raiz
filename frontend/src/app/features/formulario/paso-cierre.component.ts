@@ -101,10 +101,19 @@ import { PastillasComponent } from '../../shared/pastillas.component';
         </div>
       </section>
 
-      <app-pastillas etiqueta="Necesidades de las proximas 72 horas"
+      <app-pastillas etiqueta="Necesidades de las próximas 72 horas"
                      [opciones]="opcNecesidades" [(seleccion)]="necesidades" />
 
       <section class="pila-sm" formGroupName="triaje">
+        <!-- La lista cerrada sirve para sumar por vereda; no para describir. El texto
+             la acompaña: lo que la familia pide con sus palabras es lo que después
+             permite explicarle a una entidad por qué el consolidado no basta. -->
+        <div class="campo">
+          <label for="nec-otra">Otra necesidad, en palabras de la familia</label>
+          <input id="nec-otra" type="text" formControlName="necesidadesOtra"
+                 placeholder="Lo que hace falta y no está en la lista" />
+        </div>
+
         <div class="campo">
           <label for="obs">Observaciones</label>
           <textarea id="obs" formControlName="observaciones"

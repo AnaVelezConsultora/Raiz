@@ -6,29 +6,104 @@
  * verificacion de HU 1.2.4 en el lado del servidor: la prueba SQL comprueba el
  * upsert, esta comprueba el camino entero desde una peticion HTTP.
  *
- * Uso:
- *   node entorno/pruebas/ciclo-api.mjs [urlApi] [sub]
+ * Uso, contra el entorno local:
+ *   node entorno/pruebas/ciclo-api.mjs http://localhost:3021 <sub>
  *
- * El `sub` es el identificador del usuario en Cognito. Se obtiene con:
+ * Uso, contra un despliegue real:
+ *   node entorno/pruebas/ciclo-api.mjs https://api.apoyo-colombia.com <correo> <clave>
+ *
+ * La diferencia esta en el segundo argumento. Con un `sub` se arma un token sin
+ * firma, que solo sirve donde el verificador corre en modo local; con un correo y
+ * una clave se abre sesion de verdad contra la API, que es lo unico que vale
+ * contra la nube.
+ *
+ * El `sub` local se obtiene con:
  *   docker compose exec -T db psql -U postgres -d raiz -t -A \
  *     -c "select id from auth.users where email='ana@ejemplo.test';"
+ *
+ * OJO AL CORRERLA CONTRA PRODUCCION. Registra casos de prueba en la base real, con
+ * `Prueba de ciclo (API)` como registrador para que se puedan encontrar y borrar
+ * despues. Los identificadores que creo se imprimen al final, justamente para eso.
  */
-const API = process.argv[2] ?? 'http://localhost:3021';
-const SUB = process.argv[3];
+import { createHash } from 'node:crypto';
 
-if (!SUB) {
-  console.error('Falta el sub del usuario. Ver el encabezado de este archivo.');
+const API = process.argv[2] ?? 'http://localhost:3021';
+const QUIEN = process.argv[3];
+const CLAVE = process.argv[4];
+
+/**
+ * El almacenamiento, para mirar lo que quedo guardado.
+ *
+ * Contra el entorno local se lee el objeto y se compara byte por byte, que es lo
+ * unico que demuestra que los bloques se unieron EN ORDEN. LocalStack lo sirve sin
+ * firma, y eso es una carencia suya, no un permiso nuestro.
+ *
+ * Contra un despliegue real esa misma lectura tiene que FALLAR, y ahi se comprueba
+ * lo contrario: que una peticion anonima a una fotografia no la entrega. Es el
+ * punto 6 de SEGURIDAD.md, el que el propio documento llama «el que mas se
+ * olvida», y no se puede verificar en local.
+ */
+const LOCAL = /localhost|127\.0\.0\.1/.test(API);
+const S3 = process.env.S3_ENDPOINT ?? 'http://localhost:4566';
+const BUCKET = process.env.S3_BUCKET_FOTOS ?? 'raiz-fotos';
+const urlObjeto = (ruta) =>
+  LOCAL ? `${S3}/${BUCKET}/${ruta}` : `https://${BUCKET}.s3.amazonaws.com/${ruta}`;
+
+if (!QUIEN) {
+  console.error('Falta el sub del usuario, o su correo y clave. Ver el encabezado.');
   process.exit(1);
 }
 
-/** Token sin firma: el verificador corre en modo local cuando no hay proveedor. */
-const base64url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
-const token = `eyJhbGciOiJub25lIn0.${base64url({ sub: SUB })}.`;
+/**
+ * El token con el que corre toda la prueba.
+ *
+ * Con correo y clave se abre sesion contra la API, que ademas comprueba de paso que
+ * el camino de identidad funciona. Sin ellos se arma un token sin firma, que el
+ * verificador acepta solo en modo local.
+ */
+const token = await (async () => {
+  if (!QUIEN.includes('@')) {
+    const base64url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+    return `eyJhbGciOiJub25lIn0.${base64url({ sub: QUIEN })}.`;
+  }
+
+  const r = await fetch(`${API}/sesion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ correo: QUIEN, clave: CLAVE })
+  });
+
+  if (!r.ok) {
+    console.error(`No se pudo abrir sesion como ${QUIEN}: ${r.status} ${await r.text()}`);
+    process.exit(1);
+  }
+  return (await r.json()).token;
+})();
+
+/**
+ * Los identificadores se generan en cada corrida, y no son fijos.
+ *
+ * Con UUID escritos a mano la prueba solo pasaba la primera vez: en la segunda el
+ * caso ya existia, «el primer envio registra, no actualiza» fallaba, y lo que se
+ * veia era una prueba rota donde no habia nada roto. Un identificador nuevo por
+ * corrida es ademas lo que hace el dispositivo de verdad.
+ */
+const ORIGEN_CASO = crypto.randomUUID();
+
+/**
+ * El caso SIN autorizacion de la familia, aparte.
+ *
+ * Las pruebas de fotografia lo necesitan por su nombre: sobre el se comprueba que
+ * sin consentimiento no se emite permiso de subida.
+ */
+const ORIGEN_SIN_CONSENTIMIENTO = crypto.randomUUID();
 
 const CASO = {
-  origenId: '00000000-0000-4000-8000-0000000000aa',
+  origenId: ORIGEN_CASO,
   control: {
-    registradorNombre: 'Ana Lider (prueba)',
+    // Nombre reconocible A PROPOSITO: es lo que permite encontrar y borrar lo que
+    // esta prueba deja, sobre todo cuando corre contra la base real.
+    registradorNombre: 'Prueba de ciclo (API)',
     registradorOrg: 'Mesa de sistematizacion',
     registradorTel: null,
     fuenteDato: 'presencial',
@@ -65,7 +140,9 @@ const CASO = {
     vulnerabilidad: {
       gestantes: 0, lactantes: 0, discapacidadN: 0, discapacidadTipo: [],
       enfCronicaN: 0, requiereMedicamento: null, medicamentoCual: null,
-      etnia: null, victimaConflicto: null
+      etnia: null, victimaConflicto: null,
+      // Fallecidos y heridos: el bloque que pidio el terreno el 16 de agosto.
+      fallecidos: 0, heridosLeves: 2, heridosGraves: 1
     },
     afiliacion: ['comite_reforma'],
     afiliacionCual: null
@@ -85,7 +162,31 @@ const CASO = {
     requiereVivienda: ['remocion', 'eval_estructural'],
     serviciosAfectados: ['agua']
   },
-  anexoRural: null,
+  // El anexo rural viaja con datos a proposito. Se descubrio el 16 de agosto que la
+  // API lo recibia y no lo guardaba en ninguna parte: en un municipio que vive del
+  // cafe, eso es perder la mitad del dano. Si vuelve a pasar, esta prueba lo dice.
+  anexoRural: {
+    predioNombre: 'Predio inventado',
+    areaHa: 3.5,
+    tenenciaPredio: null,
+    tieneTitulo: null,
+    viaAcceso: 'transitable',
+    cultivos: ['cafe', 'aguacate'],
+    cultivosOtro: 'Se cayo toda la aguacatera',
+    areaCultivoAfectadaHa: 1.25,
+    perdidaPct: 60,
+    perdidaEstimadaCopMinor: null,
+    bovinosPerdidos: 0,
+    porcinosPerdidos: 0,
+    avesPerdidas: 12,
+    otrosAnimales: null,
+    infraProductiva: ['beneficiadero'],
+    infraProductivaOtro: 'Tanque de agua del beneficiadero',
+    requiereAgro: ['insumos'],
+    requiereAgroOtro: 'Plantulas de aguacate',
+    maquinariaAfectada: true,
+    maquinariaDetalle: 'Guadana y despulpadora bajo el derrumbe'
+  },
   anexoUrbano: null,
   anexoConvenio: {
     afiliadaFederacion: false,
@@ -99,6 +200,7 @@ const CASO = {
     yaRecibioAyuda: null,
     ayudaCual: null,
     ayudaQuien: null,
+    necesidadesOtra: 'Necesitan quien les ayude a mover el derrumbe',
     observaciones: 'Caso de prueba del ciclo completo'
   }
 };
@@ -140,7 +242,7 @@ comprobar(dos.cuerpo.yaExistia === true, 'el reenvio actualiza, no duplica');
 // --- sin autorizacion la identidad no debe viajar ---------------------------
 const sinConsentimiento = await enviar({
   ...CASO,
-  origenId: '00000000-0000-4000-8000-0000000000bb',
+  origenId: ORIGEN_SIN_CONSENTIMIENTO,
   control: { ...CASO.control, consentimiento: false }
 });
 comprobar(sinConsentimiento.estado === 200, `caso sin consentimiento se acepta (${sinConsentimiento.estado})`);
@@ -149,12 +251,248 @@ comprobar(sinConsentimiento.estado === 200, `caso sin consentimiento se acepta (
 const sinToken = await enviar(CASO, false);
 comprobar(sinToken.estado === 401 && sinToken.cuerpo.clase === 'sesion', `sin token: 401 clase sesion (${sinToken.estado}/${sinToken.cuerpo.clase})`);
 
-const incompleto = await enviar({ origenId: '00000000-0000-4000-8000-0000000000cc' });
+const incompleto = await enviar({ origenId: crypto.randomUUID() });
 comprobar(incompleto.estado === 422 && incompleto.cuerpo.clase === 'rechazo', `incompleto: 422 clase rechazo (${incompleto.estado}/${incompleto.cuerpo.clase})`);
+
+// =============================================================================
+// FOTOGRAFIAS
+//
+// El camino de tres pasos del ADR 003 seccion 5: se pide permiso, se suben los
+// bloques al almacenamiento sin pasar por la API, y la API los une y verifica.
+//
+// Lo que de verdad se prueba aqui son dos cosas que en terreno cuestan caro:
+//
+//   REANUDACION  se sube media fotografia, se corta a proposito —que es lo que
+//                hace la senal de una vereda— y se comprueba que al volver la API
+//                dice exactamente cuales bloques faltan. Si eso se rompe, el
+//                voluntario vuelve a gastar sus datos desde cero cada vez.
+//
+//   INTEGRIDAD   se sube un bloque danado DEL TAMANO CORRECTO. Comprobar tamanos
+//                no lo detecta: una imagen corrupta pesa lo mismo que la buena.
+//                La suma si, y la fotografia se rechaza en vez de quedar guardada
+//                sin que nadie pueda abrirla el dia que la entidad pida verla.
+// =============================================================================
+
+const api = async (metodo, ruta, cuerpo) => {
+  const r = await fetch(`${API}${ruta}`, {
+    method: metodo,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' })
+    },
+    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo)
+  });
+  const texto = await r.text();
+  return { estado: r.status, cuerpo: texto ? JSON.parse(texto) : null };
+};
+
+const sha256 = (datos) => createHash('sha256').update(datos).digest('hex');
+
+/** Una imagen de mentira del tamano pedido, con la firma de un JPEG al principio. */
+const imagen = (bytes) => {
+  const datos = Buffer.alloc(bytes);
+  // Contenido variado y no un relleno constante: con todos los bytes iguales, unos
+  // bloques pegados en el orden equivocado darian la MISMA suma y la prueba de
+  // integridad pasaria sin comprobar nada.
+  for (let i = 0; i < bytes; i++) datos[i] = (i * 31 + 7) % 251;
+  Buffer.from([0xff, 0xd8, 0xff, 0xe0]).copy(datos, 0);
+  return datos;
+};
+
+const pedirPermiso = (fotoId, datos, casoOrigenId = CASO.origenId) =>
+  api('POST', '/fotos/url-prefirmada', {
+    fotoId,
+    casoOrigenId,
+    tipo: 'fachada',
+    bytes: datos.length,
+    tipoMime: 'image/jpeg',
+    suma: sha256(datos)
+  });
+
+const subirBloque = async (bloque, datos) => {
+  const r = await fetch(bloque.url, {
+    method: 'PUT',
+    body: datos.subarray(bloque.desde, bloque.hasta)
+  });
+  return r.ok;
+};
+
+// --- una foto corriente, de 200 KB, se parte igual --------------------------
+const FOTO = crypto.randomUUID();
+const DATOS = imagen(200 * 1024);
+
+const permiso = await pedirPermiso(FOTO, DATOS);
+comprobar(permiso.estado === 200, `autoriza la fotografia (${permiso.estado})`);
+comprobar(
+  permiso.cuerpo?.modo === 'bloques',
+  `una foto de 200 KB tambien se parte (${permiso.cuerpo?.modo})`
+);
+comprobar(
+  permiso.cuerpo?.tamanoBloque === 64 * 1024 && permiso.cuerpo?.total === 4,
+  `en 4 bloques de 64 KiB (${permiso.cuerpo?.total} de ${permiso.cuerpo?.tamanoBloque})`
+);
+comprobar(
+  /content-length/i.test(permiso.cuerpo?.pendientes?.[0]?.url ?? ''),
+  'el permiso de cada bloque lleva el tamano dentro de la firma'
+);
+
+// --- se cae la senal a la mitad ---------------------------------------------
+comprobar(await subirBloque(permiso.cuerpo.pendientes[0], DATOS), 'sube el bloque 1');
+comprobar(await subirBloque(permiso.cuerpo.pendientes[1], DATOS), 'sube el bloque 2');
+
+const aMedias = await api('POST', `/fotos/${FOTO}/confirmar`, { ruta: permiso.cuerpo.ruta });
+comprobar(
+  aMedias.estado === 422,
+  `no se cierra una imagen a la que le faltan bloques (${aMedias.estado})`
+);
+
+const avance = await api('GET', `/fotos/${FOTO}/estado`);
+comprobar(
+  avance.cuerpo?.recibidos?.length === 2,
+  `el estado dice cuanto lleva sin preguntarle al celular (${avance.cuerpo?.recibidos?.length} de 4)`
+);
+
+// --- vuelve la senal: solo se firma lo que falta ----------------------------
+const reanuda = await pedirPermiso(FOTO, DATOS);
+comprobar(
+  reanuda.cuerpo?.recibidos?.length === 2,
+  'al reanudar, la API sabe que los dos primeros bloques ya llegaron'
+);
+comprobar(
+  reanuda.cuerpo?.pendientes?.map((b) => b.numero).join(',') === '3,4',
+  `solo se vuelven a firmar los que faltan: ${reanuda.cuerpo?.pendientes?.map((b) => b.numero)}`
+);
+
+for (const bloque of reanuda.cuerpo.pendientes) {
+  comprobar(await subirBloque(bloque, DATOS), `sube el bloque ${bloque.numero}`);
+}
+
+const cerrada = await api('POST', `/fotos/${FOTO}/confirmar`, { ruta: reanuda.cuerpo.ruta });
+comprobar(cerrada.estado === 200, `la API une los bloques y cierra (${cerrada.estado})`);
+comprobar(
+  cerrada.cuerpo?.bytes === DATOS.length,
+  `la imagen pesa lo que debia: ${cerrada.cuerpo?.bytes} de ${DATOS.length}`
+);
+comprobar(
+  cerrada.cuerpo?.suma === sha256(DATOS),
+  'la suma de lo guardado es la de la imagen original: se unio en orden y sin danarse'
+);
+
+// Lo que quedo en el almacenamiento. Dos comprobaciones distintas, cada una en el
+// entorno donde significa algo.
+if (LOCAL) {
+  const guardada = Buffer.from(
+    await (await fetch(urlObjeto(cerrada.cuerpo.ruta))).arrayBuffer()
+  );
+  comprobar(
+    guardada.equals(DATOS),
+    `lo guardado es identico a lo capturado (${guardada.length} bytes)`
+  );
+} else {
+  // Lo que se exige es que NO la entregue. El codigo exacto puede variar: un bucket
+  // recien creado responde 404 durante unos minutos, mientras propaga el nombre de
+  // estilo virtual host, y despues pasa a 403 AccessDenied. Atarse a uno de los dos
+  // haria fallar la prueba por una razon que no tiene que ver con el permiso.
+  const anonima = await fetch(urlObjeto(cerrada.cuerpo.ruta));
+  const cuerpoAnonimo = await anonima.text();
+  comprobar(
+    !anonima.ok && !cuerpoAnonimo.includes('\uFFFD') && cuerpoAnonimo.includes('<Error>'),
+    `una peticion anonima a la fotografia NO la entrega (${anonima.status})`
+  );
+}
+
+// --- reintentos: confirmar y pedir permiso son idempotentes -----------------
+const reconfirma = await api('POST', `/fotos/${FOTO}/confirmar`, { ruta: cerrada.cuerpo.ruta });
+comprobar(reconfirma.cuerpo?.yaEstaba === true, 'confirmar dos veces es idempotente');
+
+const repermiso = await pedirPermiso(FOTO, DATOS);
+comprobar(
+  repermiso.cuerpo?.modo === 'confirmada',
+  `pedir permiso de una foto ya guardada no manda subirla otra vez (${repermiso.cuerpo?.modo})`
+);
+
+// --- integridad: un bloque danado del tamano correcto -----------------------
+const FOTO_MALA = crypto.randomUUID();
+const permisoMalo = await pedirPermiso(FOTO_MALA, DATOS);
+
+for (const bloque of permisoMalo.cuerpo.pendientes) {
+  if (bloque.numero === 2) {
+    // Mismo tamano, contenido distinto: exactamente lo que una comprobacion de
+    // tamanos no puede ver.
+    const danado = Buffer.alloc(bloque.hasta - bloque.desde, 0x00);
+    const r = await fetch(bloque.url, { method: 'PUT', body: danado });
+    comprobar(r.ok, 'el bloque danado sube: pesa lo que debia');
+    continue;
+  }
+  await subirBloque(bloque, DATOS);
+}
+
+const rechazada = await api('POST', `/fotos/${FOTO_MALA}/confirmar`, {
+  ruta: permisoMalo.cuerpo.ruta
+});
+comprobar(
+  rechazada.estado === 422 && rechazada.cuerpo?.clase === 'rechazo',
+  `una imagen danada NO se da por guardada (${rechazada.estado}/${rechazada.cuerpo?.clase})`
+);
+
+// Que no quede guardada se comprueba por la API, que sirve en los dos entornos: la
+// fotografia sigue sin confirmar y sin un solo bloque, o sea que hay que subirla
+// entera otra vez.
+const trasRechazo = await api('GET', `/fotos/${FOTO_MALA}/estado`);
+comprobar(
+  trasRechazo.cuerpo?.confirmada === false && trasRechazo.cuerpo?.recibidos?.length === 0,
+  'la imagen danada no queda a medias: se descartan tambien sus bloques'
+);
+
+if (LOCAL) {
+  const noQuedo = await fetch(urlObjeto(permisoMalo.cuerpo.ruta));
+  comprobar(
+    noQuedo.status === 404,
+    `y no queda nada guardado en el almacenamiento (${noQuedo.status})`
+  );
+}
+
+// --- sin autorizacion de la familia no se firma nada ------------------------
+const sinPermiso = await pedirPermiso(
+  crypto.randomUUID(),
+  imagen(100 * 1024),
+  ORIGEN_SIN_CONSENTIMIENTO
+);
+comprobar(
+  sinPermiso.estado === 422 && sinPermiso.cuerpo?.clase === 'rechazo',
+  `sin consentimiento no se emite autorizacion (${sinPermiso.estado}/${sinPermiso.cuerpo?.clase})`
+);
+
+// --- cancelar una subida a medias libera lo transmitido ---------------------
+const FOTO_BOTADA = crypto.randomUUID();
+const permisoBotado = await pedirPermiso(FOTO_BOTADA, DATOS);
+await subirBloque(permisoBotado.cuerpo.pendientes[0], DATOS);
+const urlBloque1 = permisoBotado.cuerpo.pendientes[0].url.split('?')[0];
+
+const cancelada = await api('DELETE', `/fotos/${FOTO_BOTADA}`);
+comprobar(cancelada.estado === 204, `se cancela una subida a medias (${cancelada.estado})`);
+if (LOCAL) {
+  comprobar(
+    (await fetch(urlBloque1)).status === 404,
+    'los bloques ya transmitidos se borran: no se quedan pagando alquiler'
+  );
+}
+comprobar(
+  (await api('GET', `/fotos/${FOTO_BOTADA}/estado`)).estado === 422,
+  'cancelada, la fotografia ya no existe para la API'
+);
+comprobar(
+  (await api('DELETE', `/fotos/${FOTO}`)).estado === 422,
+  'una fotografia ya guardada no se borra desde aqui'
+);
 
 console.log('');
 if (fallos.length) {
   console.error(`FALLARON ${fallos.length} comprobaciones`);
   process.exit(1);
 }
-console.log('Ciclo completo verificado contra la API y la base reales.');
+console.log('Ciclo completo verificado contra la API, la base y el almacenamiento reales.');
+console.log('');
+console.log('Casos que dejo esta corrida, por si hay que borrarlos:');
+console.log(`  ${ORIGEN_CASO}`);
+console.log(`  ${ORIGEN_SIN_CONSENTIMIENTO}`);
