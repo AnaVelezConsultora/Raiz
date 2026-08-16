@@ -59,15 +59,25 @@ export class AlmacenamientoService {
         uso.disponible <= AlmacenamientoService.MARGEN_MINIMO_BYTES);
   });
 
+  /**
+   * El numero que se muestra es la cuota del origen que queda libre, NO el espacio
+   * libre del telefono. Nombrarlo mal manda al voluntario a borrar fotos personales
+   * creyendo que es eso lo que se le acaba. El consejo si es el correcto: el
+   * navegador calcula la cuota como fraccion del disco libre, asi que liberar
+   * espacio en el celular es lo que la sube.
+   */
   readonly avisoEspacio = computed(() => {
     const uso = this._uso();
     if (!uso || !this.espacioBajo()) return '';
-    return `Quedan ${this.formatear(uso.disponible)} en el celular. Libere espacio ` +
-      'antes de tomar otra foto para no perder lo capturado.';
+    return `Queda poco espacio para Raíz (${this.formatear(uso.disponible)}). ` +
+      'Libere espacio en el celular antes de tomar otra foto: si se llena, la captura falla.';
   });
 
   private readonly soportado =
     typeof navigator !== 'undefined' && navigator.storage !== undefined;
+
+  /** Freno de la vigilancia; null mientras no haya vigilancia montada. */
+  private detenerVigilancia: (() => void) | null = null;
 
   /**
    * Pide al navegador que no desaloje los datos de este sitio.
@@ -119,14 +129,32 @@ export class AlmacenamientoService {
     }
   }
 
-  /** Vigila la cuota mientras la pantalla está abierta y al volver del segundo plano. */
-  vigilar(): void {
-    if (!this.soportado) return;
+  /**
+   * Vigila la cuota mientras la pantalla está abierta y al volver del segundo plano.
+   *
+   * Es idempotente y devuelve con que pararla. Sin lo primero, una segunda llamada
+   * dejaria dos temporizadores midiendo en silencio y nadie lo notaria; sin lo
+   * segundo, el temporizador y el escucha no se pueden retirar nunca.
+   *
+   * @returns funcion que detiene la vigilancia.
+   */
+  vigilar(): () => void {
+    if (!this.soportado) return () => undefined;
+    if (this.detenerVigilancia) return this.detenerVigilancia;
+
     void this.medirUso();
-    window.setInterval(() => void this.medirUso(), 30_000);
-    document.addEventListener('visibilitychange', () => {
+    const temporizador = window.setInterval(() => void this.medirUso(), 30_000);
+    const alVolver = () => {
       if (document.visibilityState === 'visible') void this.medirUso();
-    });
+    };
+    document.addEventListener('visibilitychange', alVolver);
+
+    this.detenerVigilancia = () => {
+      window.clearInterval(temporizador);
+      document.removeEventListener('visibilitychange', alVolver);
+      this.detenerVigilancia = null;
+    };
+    return this.detenerVigilancia;
   }
 
   /** Formatea bytes para mostrarlos a un voluntario, no a un ingeniero. */

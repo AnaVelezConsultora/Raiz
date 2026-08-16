@@ -514,12 +514,14 @@
               ],
               "etiquetas": [
                 "FrontEnd",
-                "defecto"
+                "defecto",
+                "hecha"
               ],
               "origen": "hallazgos-revision.md H11, ADR 003",
               "sugerido": [
                 "HKevinH"
-              ]
+              ],
+              "nota": "HECHA, con una salvedad que importa. Los tres criterios estan cumplidos y probados: se pide la cuota al arrancar y se reintenta al guardar el primer caso —para entonces el navegador ya tiene senales de uso y la concede mucho mas—, se vigila el espacio cada 30 s y al volver del segundo plano, y el aviso sale ENCIMA del boton de camara, que es donde sirve y no en unos ajustes que nadie abre.\n\nLo que los criterios NO cubren es el 'quiero' de la historia. Pedir y avisar no impiden el desalojo: si navigator.storage.persist() se deniega —lo normal en iPhone mientras la PWA no este en la pantalla de inicio— el dato sigue siendo desalojable con los tres criterios en verde. Ese riesgo residual se movio a HU 1.3.16 en vez de dejarlo escondido detras de una historia marcada.\n\nNo confundir con el fallo de WebKit del mismo dia (commit 4d26c35, 'Error preparing Blob/File data to be stored in object store'): ese era reescribir un Blob ya leido de IndexedDB, se arreglo con la version 2 del esquema local, y no tiene que ver con el espacio.\n\nDe paso se corrigieron dos cosas del propio aviso: llamaba 'espacio en el celular' a lo que es cuota del origen —y mandaba a borrar fotos personales de mas—, y vigilar() dejaba un temporizador y un escucha que nadie podia retirar."
             },
             {
               "id": "HU 1.3.2",
@@ -805,6 +807,24 @@
               ],
               "origen": "prueba en iPhone del 15 de agosto de 2026; enmienda a ESTADO.md seccion 2",
               "nota": "CAMBIA UNA DECISION ESCRITA, y por eso es una historia y no un ajuste. ESTADO.md dice «el caso viaja solo; la fotografia espera el boton», con un argumento que no era malo: un caso son 3 KB y veinte fotografias son 4 MB del plan de datos de alguien.\n\nLa decision se revisa con lo aprendido en campo: el boton no protege al voluntario, le pasa una tarea. Y una fotografia que se queda en el celular no es un ahorro, es evidencia del dano que no llega. APENAS HAYA RED, SUBEN — sin distinguir wifi de datos moviles.\n\nLo que se conserva es la valvula: con el ahorro de datos activo no sale nada sin pedirlo, y nunca hay envio en segundo plano con la aplicacion cerrada.\n\nPedido en campo con estas palabras: «quitarle tareas al voluntario, que esta buscando atender y entregar ayudas a quienes realmente las necesitan»."
+            },
+            {
+              "id": "HU 1.3.16",
+              "titulo": "Que el celular no descarte Raiz cuando le falte espacio",
+              "como": "lider territorial",
+              "quiero": "que si el telefono no le garantiza espacio a Raiz, la aplicacion me diga como asegurarlo",
+              "para": "que lo capturado no desaparezca por una decision del telefono que yo nunca vi",
+              "criterios": [
+                "Cuando se deniega la cuota persistente se le ofrece al voluntario instalar Raiz en la pantalla de inicio",
+                "En Android se usa el evento beforeinstallprompt; en iPhone se dan las instrucciones, porque ese evento no existe",
+                "Tras instalar se vuelve a pedir la persistencia y el resultado se confirma en pantalla",
+                "Prueba automatica de la rama denegada"
+              ],
+              "etiquetas": [
+                "FrontEnd"
+              ],
+              "origen": "HU 1.3.1, riesgo residual: los tres criterios se cumplen y el dato sigue desalojable",
+              "nota": "Sale de cerrar HU 1.3.1 el 16 de agosto de 2026. Aquella pide y avisa; esta es la unica de las dos que puede cumplir el 'quiero' comun, porque en WebKit la cuota persistente se concede practicamente solo con la aplicacion instalada en la pantalla de inicio.\n\nEl aviso que ya existe en la lista de casos NO cubre esto: informa del riesgo cuando hay pendientes, y no ofrece salida ninguna."
             }
           ]
         },
