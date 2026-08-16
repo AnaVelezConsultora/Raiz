@@ -233,6 +233,12 @@ for (const [marcador, archivo] of Object.entries(IMAGENES)) {
   console.log(`  ${marcador} <- ${archivo}`);
 }
 
+html = html.replaceAll(
+  '{{IMG_TABLERO}}',
+  await comoDatos(`${AQUI}capturas/tablero.jpg`, 'image/jpeg')
+);
+console.log('  IMG_TABLERO <- capturas/tablero.jpg');
+
 html = html.replaceAll('{{DIAGRAMA}}', DIAGRAMA);
 html = html.replaceAll('{{DIAGRAMA_CICLO}}', DIAGRAMA_CICLO);
 
