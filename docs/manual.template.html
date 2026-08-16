@@ -22,6 +22,9 @@
     --linea-suave: #f0f1ee;
     --verde: #2b3a2e;
     --ladrillo: #9b2617;
+    --negro: #0d0f0d;
+    --sobre-negro: #f4f2ec;
+    --tenue-negro: #9aa39b;
     --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
     --sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
     --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
@@ -68,6 +71,25 @@
     border-bottom: 1px solid var(--linea-suave);
   }
   .lamina:last-child { border-bottom: 0; }
+
+  /* Laminas negras al abrir y al cerrar.
+     No es decoracion: separan el manual de lo que sea que este alrededor cuando se
+     proyecta, y le dan un final a algo que en la pantalla es una sola tira de scroll.
+     El negro es el mismo en tema claro y en oscuro; lo demas cambia. */
+  .lamina.negro {
+    background: var(--negro);
+    color: var(--sobre-negro);
+    border-bottom: 0;
+    max-width: none;
+  }
+  .lamina.negro > * { max-width: 58rem; margin-left: auto; margin-right: auto; }
+  .lamina.negro .numero,
+  .lamina.negro .lema,
+  .lamina.negro .pie { color: var(--tenue-negro); }
+  .lamina.negro .pie { border-top-color: rgba(244, 242, 236, 0.18); }
+  .lamina.negro .regla dt { color: var(--tenue-negro); }
+  .lamina.negro .nota { border-left-color: var(--sobre-negro); color: var(--tenue-negro); }
+  .lamina.negro .nota strong { color: var(--sobre-negro); }
 
   .numero {
     font-family: var(--mono);
@@ -178,7 +200,7 @@
 </style>
 
 <!-- ===================================================================== -->
-<section class="lamina portada">
+<section class="lamina negro portada">
   <img class="sello" src="{{IMG_SELLO}}" alt="Sello: Ingenieros de Sistemas Unidos por Colombia · Raíz"
        onerror="this.style.display='none'" />
   <h1>Cómo registrar a una familia con Raíz</h1>
@@ -557,6 +579,17 @@
 
 <!-- ===================================================================== -->
 <section class="lamina">
+  <p class="numero">El ciclo completo</p>
+  <h2>Qué pasa con un caso después de que usted lo guarda</h2>
+  <p class="grande">
+    Su trabajo termina cuando toca Guardar. Lo que sigue es lo que convierte ese
+    registro en algo que una entidad tiene que responder.
+  </p>
+  {{DIAGRAMA_CICLO}}
+</section>
+
+<!-- ===================================================================== -->
+<section class="lamina negro">
   <p class="numero">Para recordar</p>
   <h2>Cinco cosas y ya</h2>
   <dl class="regla grande">
