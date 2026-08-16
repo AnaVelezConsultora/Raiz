@@ -39,8 +39,15 @@ import { SesionService } from '../../core/services/sesion.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor pila" style="padding:2rem 1rem 3rem;max-width:26rem">
-      <header class="pila-sm">
-        <h1>Entrar a Raíz</h1>
+      <header class="pila-sm" style="align-items:center;text-align:center">
+        <!-- El sello del equipo, en la unica pantalla donde hay espacio para leerlo.
+             Si el archivo no esta, la pantalla sigue funcionando: es identidad, no
+             funcion, y no puede ser lo que impida entrar a nadie. -->
+        <img src="marca/raiz.png" alt="Ingenieros de Sistemas Unidos por Colombia · Raíz"
+             width="128" height="128"
+             style="display:block;width:min(9rem,42vw);height:auto;margin:0 auto"
+             onerror="this.style.display='none'" />
+        <h1 style="margin-top:.4rem">Entrar a Raíz</h1>
         <p class="tenue" style="margin:0">
           Necesita conexión solo para entrar. Después puede registrar familias en la
           vereda sin señal, y sincronizar cuando vuelva a tenerla.
