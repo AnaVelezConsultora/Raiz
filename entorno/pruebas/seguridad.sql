@@ -112,14 +112,18 @@ begin;
     select count(*) into ajenos  from familias where registrador_nombre like 'Beto%';
     select count(*) into en_vista from v_familias_tablero;
 
-    if propios <> 1 then
-      raise exception 'FALLO P2: Ana no ve su propio caso (vio %)', propios;
+    -- Se comprueba la PROPIEDAD, no un conteo exacto. Antes se exigia 'exactamente
+    -- una fila', y cualquier prueba que dejara un caso mas en la base hacia fallar
+    -- esta, que no tiene nada que ver. Lo que importa es que Ana vea lo suyo y NADA
+    -- de otro, y eso es cierto con un caso o con doscientos.
+    if propios < 1 then
+      raise exception 'FALLO P2: Ana no ve ninguno de sus casos';
     end if;
     if ajenos <> 0 then
       raise exception 'FALLO P2: Ana ve % caso(s) de Beto en la tabla', ajenos;
     end if;
-    if en_vista <> 1 then
-      raise exception 'FALLO P2: v_familias_tablero le muestra a Ana % filas, esperado 1', en_vista;
+    if en_vista <> propios then
+      raise exception 'FALLO P2: la vista le muestra a Ana % filas y la tabla %', en_vista, propios;
     end if;
     raise notice 'OK  P2a  Ana ve su caso y solo el suyo, en tabla y en vista';
   end $$;
@@ -136,8 +140,8 @@ begin;
     select count(*) into propios from familias where registrador_nombre like 'Beto%';
     select count(*) into ajenos  from familias where registrador_nombre like 'Ana%';
 
-    if propios <> 1 then
-      raise exception 'FALLO P2: Beto no ve su propio caso (vio %)', propios;
+    if propios < 1 then
+      raise exception 'FALLO P2: Beto no ve ninguno de sus casos';
     end if;
     if ajenos <> 0 then
       raise exception 'FALLO P2: Beto ve % caso(s) de Ana', ajenos;

@@ -25,8 +25,21 @@ if (!SUB) {
 const base64url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
 const token = `eyJhbGciOiJub25lIn0.${base64url({ sub: SUB })}.`;
 
+/**
+ * Identificador de origen NUEVO en cada corrida.
+ *
+ * Antes era fijo, y entonces la prueba solo pasaba contra una base recien creada:
+ * en la segunda corrida el primer envio ya encontraba el caso y la comprobacion de
+ * "el primer envio registra, no actualiza" fallaba. Una prueba que depende del
+ * estado que dejo la anterior ensena al equipo a desconfiar del rojo.
+ *
+ * La idempotencia se sigue verificando igual: los dos envios de esta corrida usan
+ * este mismo identificador.
+ */
+const ORIGEN = crypto.randomUUID();
+
 const CASO = {
-  origenId: '00000000-0000-4000-8000-0000000000aa',
+  origenId: ORIGEN,
   control: {
     registradorNombre: 'Ana Lider (prueba)',
     registradorOrg: 'Mesa de sistematizacion',
@@ -65,7 +78,9 @@ const CASO = {
     vulnerabilidad: {
       gestantes: 0, lactantes: 0, discapacidadN: 0, discapacidadTipo: [],
       enfCronicaN: 0, requiereMedicamento: null, medicamentoCual: null,
-      etnia: null, victimaConflicto: null
+      etnia: null, victimaConflicto: null,
+      // Fallecidos y heridos: el bloque que pidio el terreno el 16 de agosto.
+      fallecidos: 0, heridosLeves: 2, heridosGraves: 1
     },
     afiliacion: ['comite_reforma'],
     afiliacionCual: null
@@ -85,7 +100,31 @@ const CASO = {
     requiereVivienda: ['remocion', 'eval_estructural'],
     serviciosAfectados: ['agua']
   },
-  anexoRural: null,
+  // El anexo rural viaja con datos a proposito. Se descubrio el 16 de agosto que la
+  // API lo recibia y no lo guardaba en ninguna parte: en un municipio que vive del
+  // cafe, eso es perder la mitad del dano. Si vuelve a pasar, esta prueba lo dice.
+  anexoRural: {
+    predioNombre: 'Predio inventado',
+    areaHa: 3.5,
+    tenenciaPredio: null,
+    tieneTitulo: null,
+    viaAcceso: 'transitable',
+    cultivos: ['cafe', 'aguacate'],
+    cultivosOtro: 'Se cayo toda la aguacatera',
+    areaCultivoAfectadaHa: 1.25,
+    perdidaPct: 60,
+    perdidaEstimadaCopMinor: null,
+    bovinosPerdidos: 0,
+    porcinosPerdidos: 0,
+    avesPerdidas: 12,
+    otrosAnimales: null,
+    infraProductiva: ['beneficiadero'],
+    infraProductivaOtro: 'Tanque de agua del beneficiadero',
+    requiereAgro: ['insumos'],
+    requiereAgroOtro: 'Plantulas de aguacate',
+    maquinariaAfectada: true,
+    maquinariaDetalle: 'Guadana y despulpadora bajo el derrumbe'
+  },
   anexoUrbano: null,
   anexoConvenio: {
     afiliadaFederacion: false,
@@ -99,6 +138,7 @@ const CASO = {
     yaRecibioAyuda: null,
     ayudaCual: null,
     ayudaQuien: null,
+    necesidadesOtra: 'Necesitan quien les ayude a mover el derrumbe',
     observaciones: 'Caso de prueba del ciclo completo'
   }
 };
@@ -140,7 +180,7 @@ comprobar(dos.cuerpo.yaExistia === true, 'el reenvio actualiza, no duplica');
 // --- sin autorizacion la identidad no debe viajar ---------------------------
 const sinConsentimiento = await enviar({
   ...CASO,
-  origenId: '00000000-0000-4000-8000-0000000000bb',
+  origenId: crypto.randomUUID(),
   control: { ...CASO.control, consentimiento: false }
 });
 comprobar(sinConsentimiento.estado === 200, `caso sin consentimiento se acepta (${sinConsentimiento.estado})`);
@@ -149,7 +189,7 @@ comprobar(sinConsentimiento.estado === 200, `caso sin consentimiento se acepta (
 const sinToken = await enviar(CASO, false);
 comprobar(sinToken.estado === 401 && sinToken.cuerpo.clase === 'sesion', `sin token: 401 clase sesion (${sinToken.estado}/${sinToken.cuerpo.clase})`);
 
-const incompleto = await enviar({ origenId: '00000000-0000-4000-8000-0000000000cc' });
+const incompleto = await enviar({ origenId: crypto.randomUUID() });
 comprobar(incompleto.estado === 422 && incompleto.cuerpo.clase === 'rechazo', `incompleto: 422 clase rechazo (${incompleto.estado}/${incompleto.cuerpo.clase})`);
 
 console.log('');

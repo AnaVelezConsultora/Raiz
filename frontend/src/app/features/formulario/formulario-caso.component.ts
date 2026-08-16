@@ -98,7 +98,7 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
 
       @if (ofreciendoSiguiente()) {
         <div class="contenedor pila-sm">
-          <strong>Guardado. Esta casa alojaba mas de una familia.</strong>
+          <strong>Guardado. Esta casa alojaba más de una familia.</strong>
           <span class="tenue">
             Se copia el lugar y el estado de la casa. Los datos de la familia se piden
             de nuevo.
@@ -110,9 +110,9 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
         </div>
       } @else if (preguntandoAlSalir()) {
         <div class="contenedor pila-sm">
-          <strong>Que hacemos con este registro?</strong>
+          <strong>¿Qué hacemos con este registro?</strong>
           <span class="tenue">
-            Guardarlo lo deja en el celular y se enviara cuando haya senal.
+            Guardarlo lo deja en el celular y se enviará cuando haya señal.
             Descartarlo lo borra de una vez.
           </span>
           <div class="fila" style="flex-wrap:nowrap">
@@ -131,7 +131,8 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
           {{ paso() === 1 ? 'Salir' : 'Atras' }}
         </button>
         @if (paso() < 4) {
-          <button type="button" class="btn-primario" style="flex:2" (click)="avanzar()">
+          <button type="button" class="btn-primario" style="flex:2"
+                  [disabled]="faltaResponder()" (click)="avanzar()">
             Continuar
           </button>
         } @else {
@@ -157,9 +158,9 @@ export class FormularioCasoComponent implements OnInit {
   private readonly destruccion = inject(DestroyRef);
 
   readonly titulos = [
-    'Quien reporta y donde',
-    'Quienes viven ahi',
-    'La vivienda y el dano',
+    'Quién reporta y dónde',
+    'Quiénes viven ahí',
+    'La vivienda y el daño',
     'Fotos, prioridad y necesidad'
   ];
 
@@ -250,7 +251,49 @@ export class FormularioCasoComponent implements OnInit {
     this.fotos.set(await this.almacenFotos.porCaso(caso.id));
   }
 
+  /**
+   * True cuando el total de personas y la suma por edades no coinciden.
+   *
+   * Bloquea Continuar en el paso del hogar, y solo ahi. Se descubrio en la primera
+   * prueba en terreno: el total decia 7, la suma por edades daba 1, y el caso se podia
+   * enviar asi. Aguas abajo ese registro no sirve —la ayuda se asigna por edades— y
+   * nadie va a volver a llamar a esa familia para reconstruirlo.
+   *
+   * Solo bloquea cuando los dos numeros existen: mientras el desagregado va en cero
+   * no hay contradiccion, hay un formulario a medio llenar.
+   */
+  descuadreDelHogar(): boolean {
+    if (this.paso() !== 2) return false;
+
+    const grupo = this.form();
+    if (!grupo) return false;
+
+    const total = Number(grupo.get('hogar.personasTotal')?.value) || 0;
+    const composicion = grupo.get('composicion')?.value as Record<string, unknown>;
+    if (!composicion) return false;
+
+    const suma = Object.values(composicion).reduce<number>((a, v) => a + (Number(v) || 0), 0);
+    return total > 0 && suma > 0 && total !== suma;
+  }
+
+  /**
+   * True cuando el paso actual tiene algo sin responder que no se puede saltar.
+   *
+   * Son dos, y las dos salieron de la primera prueba en terreno:
+   *
+   * En el paso 1, la autorizacion de la familia. Antes era una casilla, y una casilla
+   * sin marcar no distingue "dijo que no" de "nadie pregunto". De esa respuesta depende
+   * si el nombre de una persona se guarda; no puede quedar decidida por omision.
+   *
+   * En el paso 2, que el total y el desagregado por edades coincidan.
+   */
+  faltaResponder(): boolean {
+    if (this.paso() === 1) return this.form()?.get('control.consentimiento')?.value == null;
+    return this.descuadreDelHogar();
+  }
+
   async avanzar(): Promise<void> {
+    if (this.faltaResponder()) return;
     await this.persistir();
     this.paso.update((p) => Math.min(4, p + 1));
     window.scrollTo({ top: 0 });
