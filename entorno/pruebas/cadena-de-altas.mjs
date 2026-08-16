@@ -86,6 +86,35 @@ comprobar(
   `y dice que falta: ${(incompleto.cuerpo?.detalles ?? []).join(' | ')}`
 );
 
+// --- nada llega al proveedor de identidad sin pasar el control --------------
+//
+// Un dato invalido que llegue a Cognito deja una cuenta creada que no puede
+// entrar y no tiene perfil. Por cada campo se comprueba lo mismo: 422, y CERO
+// cuentas en el proveedor.
+const malos = [
+  ['sin correo',   { correo: 'esto-no-es-un-correo' }],
+  ['un solo nombre', { nombre: 'Juan' }],
+  ['sin cedula',   { documento: '12' }],
+  ['sin telefono', { telefono: '300' }],
+  ['clave floja',  { clave: 'abcd-2345-efgh' }]
+];
+
+for (const [que, cambio] of malos) {
+  const base = {
+    correo: `malo.${marca}.${Math.random().toString(36).slice(2, 8)}@ejemplo.test`,
+    nombre: 'Persona De Prueba',
+    documento: `50${marca}`.slice(0, 10),
+    telefono: '3005556677',
+    clave: 'Clave.De.Prueba.2026',
+    rol: 'lider'
+  };
+  const r = await api('POST', '/voluntarios', custodio, { ...base, ...cambio });
+  comprobar(
+    r.estado === 422 && (r.cuerpo?.detalles ?? []).length > 0,
+    `${que}: se rechaza antes de crear nada (${r.estado} · ${(r.cuerpo?.detalles ?? [])[0] ?? ''})`
+  );
+}
+
 // --- el coordinador crea un lider ------------------------------------------
 // Contra la nube no se puede actuar como el coordinador recien creado sin su clave,
 // asi que esa mitad de la cadena se comprueba en local, donde el token no se firma.

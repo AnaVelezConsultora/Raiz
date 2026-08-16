@@ -1,4 +1,4 @@
-import { ROLES_QUE_PUEDE_CREAR, Rol, faltantesDeClave, puedeCrear } from '@raiz/dominio';
+import { ROLES_QUE_PUEDE_CREAR, Rol, faltantesDeAlta, puedeCrear } from '@raiz/dominio';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ADMINISTRADOR_IDENTIDAD,
@@ -200,40 +200,24 @@ export class RegistrarVoluntarioService {
     return digitos.startsWith('57') ? `+${digitos}` : `+57${digitos}`;
   }
 
+  /**
+   * Nada llega al proveedor de identidad sin pasar por aqui.
+   *
+   * La regla no vive en este archivo sino en el contrato compartido, y esa es la
+   * parte que importa: la aplicacion comprueba lo MISMO antes de ofrecer el boton.
+   * Con la regla escrita dos veces, el dia que una cambie la otra deja pasar lo que
+   * la primera rechaza — y el sintoma de eso es una cuenta creada a medias, que es
+   * justo lo que esta comprobacion existe para evitar.
+   */
   private validar(alta: AltaVoluntario): void {
-    const faltantes: string[] = [];
-
-    // Comprobacion deliberadamente laxa: la forma exacta la valida Cognito, que es
-    // quien manda. Aqui solo se evita gastar un viaje de red en algo evidente.
-    if (!alta?.correo?.includes('@')) faltantes.push('correo debe ser una direccion valida');
-    // La clave se comprueba AQUI y no se le deja al proveedor de identidad, que la
-    // rechaza tarde: despues de haber creado la cuenta. Cuando eso pasa queda un
-    // usuario que existe, no puede entrar y no tiene perfil, y el custodio recibe un
-    // «reintente» que es mentira, porque la misma clave vuelve a fallar.
-    const faltaEnLaClave = faltantesDeClave(alta?.clave ?? '');
-    if (faltaEnLaClave.length > 0) {
-      faltantes.push(`la clave necesita ${faltaEnLaClave.join(', ')}`);
-    }
-
-    // Nombres COMPLETOS: se exigen dos palabras. Un «Juan» suelto no distingue a
-    // nadie el dia que una entidad pregunte quien levanto un caso.
-    const nombre = (alta?.nombre ?? '').trim();
-    if (nombre.split(/\s+/).filter(Boolean).length < 2) {
-      faltantes.push('nombre debe traer nombres y apellidos');
-    }
-
-    const documento = (alta?.documento ?? '').replace(/\D/g, '');
-    if (documento.length < 5 || documento.length > 15) {
-      faltantes.push('documento debe ser una cedula de entre 5 y 15 digitos');
-    }
-
-    const telefono = (alta?.telefono ?? '').replace(/\D/g, '');
-    if (telefono.length < 7) {
-      faltantes.push('telefono es obligatorio y debe tener al menos 7 digitos');
-    }
+    const faltantes = faltantesDeAlta(alta);
 
     if (faltantes.length > 0) {
-      throw new ErrorRechazo('No se puede dar de alta al voluntario.', faltantes);
+      throw new ErrorRechazo(
+        'No se puede dar de alta al voluntario.',
+        faltantes.map((f) => `falta ${f}`)
+      );
     }
   }
+
 }

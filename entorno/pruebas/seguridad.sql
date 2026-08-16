@@ -108,8 +108,12 @@ begin;
     ajenos  int;
     en_vista int;
   begin
-    select count(*) into propios from familias where registrador_nombre like 'Ana%';
-    select count(*) into ajenos  from familias where registrador_nombre like 'Beto%';
+    -- Se cuenta lo que Ana ALCANZA, no lo que lleva su nombre escrito. El nombre del
+    -- registrador es texto libre: la prueba del ciclo de la API firma casos con la
+    -- identidad de Ana y el nombre «Prueba de ciclo», y con el filtro por nombre esta
+    -- comprobacion fallaba por datos de otra prueba y no por un defecto.
+    select count(*) into propios  from familias;
+    select count(*) into ajenos   from familias where registrador_nombre like 'Beto%';
     select count(*) into en_vista from v_familias_tablero;
 
     -- Se comprueba la PROPIEDAD, no un conteo exacto. Antes se exigia 'exactamente
@@ -137,7 +141,7 @@ begin;
   do $$
   declare propios int; ajenos int;
   begin
-    select count(*) into propios from familias where registrador_nombre like 'Beto%';
+    select count(*) into propios from familias;
     select count(*) into ajenos  from familias where registrador_nombre like 'Ana%';
 
     if propios < 1 then
@@ -476,11 +480,18 @@ begin;
     end if;
     raise notice 'OK  P8a  un lider no puede colgar fotografias en el caso de otro';
 
-    select count(*) into visibles from fotos;
+    -- La propiedad, no un conteo: TODA fotografia que Ana alcance tiene que colgar
+    -- de una familia que Ana tambien alcanza. Contar «cero fotos» era cierto solo
+    -- mientras Ana no tuviera ninguna, y dejo de serlo en cuanto otra prueba le
+    -- registro un caso con foto — fallando por datos y no por un defecto.
+    select count(*) into visibles
+      from fotos f
+     where not exists (select 1 from familias fa where fa.id = f.familia_id);
+
     if visibles <> 0 then
-      raise exception 'FALLO P8: Ana ve % fotografia(s) que no son de sus casos', visibles;
+      raise exception 'FALLO P8: Ana alcanza % fotografia(s) de casos que no puede ver', visibles;
     end if;
-    raise notice 'OK  P8b  un lider no ve las fotografias de casos ajenos';
+    raise notice 'OK  P8b  toda fotografia que un lider ve cuelga de un caso suyo';
   end $$;
 rollback;
 

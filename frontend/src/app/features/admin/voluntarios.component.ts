@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AUTH, AuthPort, PerfilAdministrable } from '../../core/domain/auth.model';
-import { ROLES_QUE_PUEDE_CREAR, Rol, faltantesDeClave, sugerirClave } from '../../core/domain/enums';
+import {
+  ROLES_QUE_PUEDE_CREAR,
+  Rol,
+  faltantesDeAlta,
+  faltantesDeClave,
+  sugerirClave
+} from '../../core/domain/enums';
 import { SesionService } from '../../core/services/sesion.service';
 
 /** Etiquetas de rol en el idioma del proyecto, no del esquema. */
@@ -108,14 +114,18 @@ const ROLES: readonly { v: Rol; t: string; explica: string }[] = [
                    (input)="alta.clave.set(valor($event))" autocomplete="off" />
             <button type="button" class="btn-secundario" (click)="sugerirClave()">Sugerir</button>
           </div>
-          <!-- Se avisa ANTES de enviar. El proveedor la rechaza tarde, cuando la
-               cuenta ya existe, y ese estado a medias es el que confunde a todos. -->
+          <!-- Se avisa ANTES de enviar, y de TODO lo que falta, no solo de la clave.
+               El proveedor de identidad valida tarde —cuando la cuenta ya existe— y
+               ese estado a medias es el que confunde a todos. -->
           @if (alta.clave() && faltaEnLaClave().length > 0) {
             <span class="error">La clave necesita {{ faltaEnLaClave().join(', ') }}.</span>
           }
+          @if (altaEmpezada() && faltaEnElAlta().length > 0) {
+            <span class="pista">Falta {{ faltaEnElAlta().join(' · ') }}.</span>
+          }
 
           <button type="button" class="btn-primario btn-ancho btn-grande"
-                  [disabled]="creando() || faltaEnLaClave().length > 0" (click)="crear()">
+                  [disabled]="creando() || faltaEnElAlta().length > 0" (click)="crear()">
             {{ creando() ? 'Creando...' : 'Crear la cuenta' }}
           </button>
         </section>
@@ -246,6 +256,33 @@ export class VoluntariosComponent implements OnInit {
 
   /** Lo que le falta a la clave escrita. Vacío si sirve. */
   readonly faltaEnLaClave = computed(() => faltantesDeClave(this.alta.clave()));
+
+  /**
+   * Lo que le falta al alta completa. Vacío si se puede mandar.
+   *
+   * Es la MISMA función que usa la API antes de llamar al proveedor de identidad.
+   * No se comprueba aquí por comodidad: el proveedor valida tarde —después de haber
+   * creado la cuenta— así que un dato que llegue sin comprobar puede dejar un
+   * usuario que existe, no puede entrar y no tiene perfil. Que la regla sea una sola
+   * es lo que impide que esta pantalla ofrezca un botón que va a fallar.
+   */
+  readonly faltaEnElAlta = computed(() =>
+    faltantesDeAlta({
+      correo: this.alta.correo(),
+      nombre: this.alta.nombre(),
+      documento: this.alta.documento(),
+      telefono: this.alta.telefono(),
+      clave: this.alta.clave()
+    })
+  );
+
+  /** True cuando ya se escribió algo: no se regaña a quien no ha empezado. */
+  readonly altaEmpezada = computed(() =>
+    Boolean(
+      this.alta.correo() || this.alta.nombre() || this.alta.documento() ||
+      this.alta.telefono() || this.alta.clave()
+    )
+  );
 
   async crear(): Promise<void> {
     this.creando.set(true);

@@ -107,3 +107,66 @@ export function sugerirClave(): string {
   // aqui que devolver una que el proveedor va a rechazar despues de crear la cuenta.
   throw new Error('No se pudo generar una clave que cumpla la politica.');
 }
+
+/** Lo que se declara para dar de alta a alguien. Es el DTO que cruza la red. */
+export interface DatosDeAlta {
+  correo: string;
+  nombre: string;
+  documento: string;
+  telefono: string;
+  clave: string;
+}
+
+/**
+ * Que le falta a un alta. Vacio si se puede mandar.
+ *
+ * -----------------------------------------------------------------------------------
+ * ESTA FUNCION EXISTE PARA QUE NADA SE CREE A MEDIAS
+ * -----------------------------------------------------------------------------------
+ *
+ * El alta toca dos sistemas: el proveedor de identidad y la base. El proveedor valida
+ * TARDE —despues de haber creado la cuenta— asi que cualquier dato que se le mande sin
+ * comprobar puede dejar un usuario que existe, no puede entrar y no tiene perfil.
+ *
+ * Por eso se comprueba antes, y por eso la comprobacion vive aqui y no en cada lado:
+ * la aplicacion la usa para no ofrecer un boton que va a fallar, y la API la usa para
+ * no llamar al proveedor. Escrita dos veces, el dia que una cambie la otra deja pasar
+ * lo que la primera rechaza, y el sintoma vuelve a ser una cuenta a medias.
+ *
+ * Lo que NO comprueba: si el correo ya tiene cuenta. Eso solo lo sabe el proveedor, y
+ * no es un error de forma sino de contenido — se responde despues, sin haber creado
+ * nada.
+ */
+export function faltantesDeAlta(alta: Partial<DatosDeAlta>): string[] {
+  const falta: string[] = [];
+
+  // Comprobacion deliberadamente laxa para el correo: la forma exacta la valida el
+  // proveedor, y aqui solo se evita gastar un viaje de red en algo evidente.
+  const correo = (alta.correo ?? '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    falta.push('un correo valido');
+  }
+
+  // Nombres COMPLETOS: se exigen dos palabras. Un «Juan» suelto no distingue a nadie
+  // el dia que una entidad pregunte quien levanto un caso.
+  if ((alta.nombre ?? '').trim().split(/\s+/).filter(Boolean).length < 2) {
+    falta.push('nombres y apellidos');
+  }
+
+  const documento = (alta.documento ?? '').replace(/\D/g, '');
+  if (documento.length < 5 || documento.length > 15) {
+    falta.push('una cedula de entre 5 y 15 digitos');
+  }
+
+  const telefono = (alta.telefono ?? '').replace(/\D/g, '');
+  if (telefono.length < 7) {
+    falta.push('un telefono de al menos 7 digitos');
+  }
+
+  const enLaClave = faltantesDeClave(alta.clave ?? '');
+  if (enLaClave.length > 0) {
+    falta.push(`una clave con ${enLaClave.join(', ')}`);
+  }
+
+  return falta;
+}
