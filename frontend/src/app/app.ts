@@ -30,7 +30,12 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
   template: `
     <header style="background:var(--accent);color:#fff;padding:.5rem 1rem">
       <div class="contenedor fila" style="justify-content:space-between;padding:0;gap:.5rem">
-        <strong style="font-family:var(--serif);font-size:1.05rem">Raíz · {{ municipio.nombre() }}</strong>
+        <!-- El titulo es un enlace a la lista, y no es adorno: instalada en el
+             celular, la aplicacion NO TIENE BARRA DE NAVEGADOR, asi que sin esto
+             quien entra a Voluntarios se queda encerrado. -->
+        <a routerLink="/casos"
+           style="font-family:var(--serif);font-size:1.05rem;font-weight:700;
+                  color:#fff;text-decoration:none">Raíz · {{ municipio.nombre() }}</a>
         <span class="mono" style="font-size:.72rem;opacity:.92">
           {{ sync.enLinea() ? 'EN LINEA' : 'SIN CONEXION' }}
           @if (sync.totalPendientes() > 0) {

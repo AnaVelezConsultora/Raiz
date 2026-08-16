@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AUTH, AuthPort, PerfilAdministrable } from '../../core/domain/auth.model';
 import { ROLES_QUE_PUEDE_CREAR, Rol } from '../../core/domain/enums';
 import { SesionService } from '../../core/services/sesion.service';
@@ -37,10 +38,14 @@ const ROLES: readonly { v: Rol; t: string; explica: string }[] = [
  */
 @Component({
   selector: 'app-voluntarios',
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor pila" style="padding:1rem 1rem 4rem">
       <header class="pila-sm">
+        <a routerLink="/casos" class="pastilla" style="align-self:flex-start">
+          ← Casos
+        </a>
         <h1>Voluntarios</h1>
         <p class="tenue">
           {{ activos().length }} con acceso · {{ sinAcceso().length }} sin acceso
