@@ -43,57 +43,60 @@ const IMAGENES = {
  */
 const DIAGRAMA = `
 <figure>
-  <svg class="recorrido" viewBox="0 0 900 260" role="img"
-       aria-label="Recorrido de un caso: se captura sin senal en la vereda, viaja al llegar la senal, queda en el registro unico y se remite a la entidad con radicado">
+  <svg class="recorrido" viewBox="0 0 900 230" role="img"
+       aria-label="Recorrido de un caso: se registra sin senal en la vereda, se guarda en el celular, viaja al llegar la senal, y termina en una remision a la entidad con radicado">
     <defs>
       <marker id="punta" viewBox="0 0 10 10" refX="9" refY="5"
-              markerWidth="7" markerHeight="7" orient="auto">
-        <path d="M0 0 L10 5 L0 10 z" fill="#7b8071" />
+              markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
       </marker>
     </defs>
 
-    <!-- bandas: sin senal / con senal -->
-    <rect x="0" y="0" width="430" height="52" fill="#e7dfc9" />
-    <rect x="450" y="0" width="450" height="52" fill="#dfe4d4" />
-    <text x="18" y="33" font-family="ui-monospace, monospace" font-size="15"
-          letter-spacing="2" fill="#7f5406">SIN SEÑAL · LA VEREDA</text>
-    <text x="468" y="33" font-family="ui-monospace, monospace" font-size="15"
-          letter-spacing="2" fill="#2b3a2e">CON SEÑAL · EL PUEBLO</text>
+    <g font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.6"
+       fill="var(--tinta-tenue)">
+      <text x="0" y="14">SIN SEÑAL · LA VEREDA</text>
+      <text x="470" y="14">CON SEÑAL · EL PUEBLO</text>
+    </g>
 
-    <!-- 1. captura -->
-    <rect x="18" y="86" width="180" height="120" rx="10" fill="#fbf6ea" stroke="#d8cfb8" />
-    <text x="38" y="120" font-family="ui-serif, Georgia, serif" font-size="21" fill="#232b24">1 · Registra</text>
-    <text x="38" y="148" font-size="15" fill="#4b544a">La familia, la casa,</text>
-    <text x="38" y="170" font-size="15" fill="#4b544a">la coordenada y las</text>
-    <text x="38" y="192" font-size="15" fill="#4b544a">fotos. Sin internet.</text>
+    <!-- La linea de tiempo. Una sola, continua: el caso no cambia de manos, cambia
+         de momento. La marca vertical es donde aparece la senal. -->
+    <line x1="0" y1="34" x2="430" y2="34" stroke="var(--linea)" stroke-width="6" />
+    <line x1="470" y1="34" x2="900" y2="34" stroke="var(--verde)" stroke-width="6" />
+    <line x1="450" y1="20" x2="450" y2="48" stroke="var(--tinta-tenue)" stroke-width="2"
+          stroke-dasharray="3 3" />
 
-    <!-- 2. guarda -->
-    <rect x="230" y="86" width="180" height="120" rx="10" fill="#fbf6ea" stroke="#d8cfb8" />
-    <text x="250" y="120" font-family="ui-serif, Georgia, serif" font-size="21" fill="#232b24">2 · Se guarda</text>
-    <text x="250" y="148" font-size="15" fill="#4b544a">En el celular, de una.</text>
-    <text x="250" y="170" font-size="15" fill="#4b544a">Aunque se apague o</text>
-    <text x="250" y="192" font-size="15" fill="#4b544a">se cierre la app.</text>
+    <g fill="var(--tinta)" font-family="ui-serif, Georgia, serif" font-size="20">
+      <text x="0" y="86">1 · Registra</text>
+      <text x="235" y="86">2 · Se guarda</text>
+      <text x="470" y="86">3 · Viaja</text>
+      <text x="705" y="86">4 · Se exige</text>
+    </g>
 
-    <line x1="204" y1="146" x2="226" y2="146" stroke="#7b8071" stroke-width="2" marker-end="url(#punta)" />
-    <line x1="416" y1="146" x2="462" y2="146" stroke="#7b8071" stroke-width="2" marker-end="url(#punta)" />
+    <g fill="var(--tinta-suave)" font-size="14">
+      <text x="0" y="112">La familia, la casa,</text>
+      <text x="0" y="132">la coordenada y las</text>
+      <text x="0" y="152">fotos. Sin internet.</text>
 
-    <!-- 3. viaja -->
-    <rect x="468" y="86" width="180" height="120" rx="10" fill="#fbf6ea" stroke="#d8cfb8" />
-    <text x="488" y="120" font-family="ui-serif, Georgia, serif" font-size="21" fill="#232b24">3 · Viaja</text>
-    <text x="488" y="148" font-size="15" fill="#4b544a">El caso se envía solo;</text>
-    <text x="488" y="170" font-size="15" fill="#4b544a">las fotos esperan el</text>
-    <text x="488" y="192" font-size="15" fill="#4b544a">botón o el wifi.</text>
+      <text x="235" y="112">En el celular, de una.</text>
+      <text x="235" y="132">Aunque se apague o</text>
+      <text x="235" y="152">se cierre la aplicación.</text>
 
-    <line x1="654" y1="146" x2="696" y2="146" stroke="#7b8071" stroke-width="2" marker-end="url(#punta)" />
+      <text x="470" y="112">El caso se envía solo;</text>
+      <text x="470" y="132">las fotos esperan el</text>
+      <text x="470" y="152">botón o el wifi.</text>
 
-    <!-- 4. exigible -->
-    <rect x="702" y="86" width="180" height="120" rx="10" fill="#2b3a2e" />
-    <text x="722" y="120" font-family="ui-serif, Georgia, serif" font-size="21" fill="#fbf6ea">4 · Se exige</text>
-    <text x="722" y="148" font-size="15" fill="#dfe4d4">Código propio, remisión</text>
-    <text x="722" y="170" font-size="15" fill="#dfe4d4">a la entidad, radicado</text>
-    <text x="722" y="192" font-size="15" fill="#dfe4d4">y días sin respuesta.</text>
+      <text x="705" y="112">Código propio, remisión</text>
+      <text x="705" y="132">a la entidad, radicado</text>
+      <text x="705" y="152">y días sin respuesta.</text>
+    </g>
 
-    <text x="18" y="240" font-size="15" fill="#7b8071">
+    <g stroke="var(--tinta-tenue)" stroke-width="1.5" color="var(--tinta-tenue)">
+      <line x1="196" y1="60" x2="222" y2="60" marker-end="url(#punta)" />
+      <line x1="431" y1="60" x2="457" y2="60" marker-end="url(#punta)" />
+      <line x1="666" y1="60" x2="692" y2="60" marker-end="url(#punta)" />
+    </g>
+
+    <text x="0" y="196" font-size="14" fill="var(--tinta-tenue)">
       Entre el paso 2 y el 3 pueden pasar horas o días. El caso no se pierde.
     </text>
   </svg>
