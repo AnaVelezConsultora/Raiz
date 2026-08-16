@@ -113,8 +113,25 @@ export class PerfilRepositorioPostgres implements PerfilRepositorioPort {
     });
   }
 
+  /**
+   * Perfil de quien acaba de autenticarse.
+   *
+   * PONE IDENTIDAD, AUNQUE ESTO OCURRA AL ENTRAR
+   *
+   * El razonamiento de antes era que al iniciar sesion todavia no hay sesion que
+   * poner. Tiene un hueco: el proveedor ACABA de devolver el `sub`, asi que la
+   * identidad si existe en ese instante. Poniendola, la politica `perfil_lee` hace
+   * lo que promete —cada quien ve su propia fila— y no hace falta abrirle la tabla
+   * entera al rol de la API para resolver el ingreso.
+   *
+   * Eso es lo que cambia respecto a la politica `perfil_lee_en_login`, que se
+   * retira: era correcta y estaba acotada por rol, pero dejaba `perfiles` visible
+   * completa desde cualquier consulta que se escribiera por el camino sin
+   * identidad. Cerrarla vuelve a dejar UN solo mecanismo de acceso a los datos, que
+   * es lo que permite verificarlo en un solo lugar.
+   */
   async porSub(sub: string): Promise<Perfil | null> {
-    return this.pool.sinIdentidad(async (cliente) => {
+    return this.pool.comoUsuario({ sub }, async (cliente) => {
       const { rows } = await cliente.query<Fila>(
         `select id, nombre, documento, rol, organizacion_id, telefono, activo
            from perfiles

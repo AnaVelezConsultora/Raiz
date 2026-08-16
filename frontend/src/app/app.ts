@@ -30,9 +30,14 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
   template: `
     <header style="background:var(--accent);color:#fff;padding:.5rem 1rem">
       <div class="contenedor fila" style="justify-content:space-between;padding:0;gap:.5rem">
-        <!-- El titulo es un enlace a la lista, y no es adorno: instalada en el
-             celular, la aplicacion NO TIENE BARRA DE NAVEGADOR, asi que sin esto
-             quien entra a Voluntarios se queda encerrado. -->
+        <!-- Solo el nombre, en la serif del sello. Se intento reducir el arbol del logo
+             a un trazo de 26 px y a ese tamano dejaba de leerse como arbol: lo que
+             funciona impreso no siempre funciona en la barra de un celular. El sello
+             completo va en la pantalla de entrada, que es donde hay espacio.
+
+             Y es un ENLACE a la lista, no un rotulo: instalada en el celular la
+             aplicacion no tiene barra de navegador, asi que sin esto quien entra a
+             Voluntarios se queda sin forma de volver. -->
         <a routerLink="/casos"
            style="font-family:var(--serif);font-size:1.05rem;font-weight:700;
                   color:#fff;text-decoration:none">Raíz · {{ municipio.nombre() }}</a>

@@ -49,11 +49,10 @@ const NIVELES_INHABITABLES: readonly string[] = [
               <option [value]="o.v">{{ o.t }}</option>
             }
           </select>
-          <span class="pista">Los arrendatarios se registran: aplican a subsidio de arriendo.</span>
         </div>
 
         <div class="campo">
-          <label for="hog">Cuantas familias vivian en esa misma casa o estructura</label>
+          <label for="hog">Cuántas familias vivían en esa misma casa o estructura</label>
           <div class="fila" style="flex-wrap:nowrap">
             <app-contador formControlName="hogaresEnEstructura" [minimo]="1"
                           etiqueta="Familias en la misma estructura" />
@@ -62,7 +61,7 @@ const NIVELES_INHABITABLES: readonly string[] = [
         </div>
 
         <div class="campo">
-          <label for="afec">Nivel de afectacion</label>
+          <label for="afec">Nivel de afectación</label>
           <select id="afec" formControlName="afectacion">
             <!-- Sin preseleccion. Antes venia en "moderado", asi que un paso que nadie
                  lleno describia una casa con dano moderado que no tiene. -->
@@ -77,12 +76,12 @@ const NIVELES_INHABITABLES: readonly string[] = [
              "no es habitable" de "no me preguntaron", y de este dato depende si la
              familia entra en la lista de quienes necesitan techo esta noche. -->
         <div class="campo">
-          <label>Se puede vivir ahi hoy</label>
+          <label>¿Se puede vivir ahí hoy?</label>
           <div class="pastillas">
             <button type="button" class="pastilla" [class.activa]="habitable() === true"
-                    (click)="fijarHabitable(true)">Si, es habitable</button>
+                    (click)="fijarHabitable(true)">Sí, es habitable</button>
             <button type="button" class="pastilla" [class.activa]="habitable() === false"
-                    (click)="fijarHabitable(false)">No se puede vivir ahi</button>
+                    (click)="fijarHabitable(false)">No se puede vivir ahí</button>
           </div>
           @if (habitable() === null) {
             <span class="pista">Sin responder.</span>
@@ -175,13 +174,57 @@ const NIVELES_INHABITABLES: readonly string[] = [
             <span class="rango">Aves perdidas</span>
             <app-contador formControlName="avesPerdidas" etiqueta="Aves perdidas" />
           </div>
+
+          <!-- La maquinaria es insumo de la cadena productiva igual que el cultivo, y
+               quedarse por fuera del listado es exactamente como se pierde en el
+               camino: si no está escrita, no entra en ninguna reclamación. -->
+          <div class="campo">
+            <label>¿Perdió o se le dañó maquinaria o vehículos de trabajo?</label>
+            <div class="pastillas">
+              <button type="button" class="pastilla"
+                      [class.activa]="maquinaria() === true"
+                      (click)="fijarMaquinaria(true)">Sí</button>
+              <button type="button" class="pastilla"
+                      [class.activa]="maquinaria() === false"
+                      (click)="fijarMaquinaria(false)">No</button>
+            </div>
+          </div>
+
+          @if (maquinaria() === true) {
+            <div class="campo">
+              <label for="maq">¿Cuál y qué le pasó?</label>
+              <textarea id="maq" rows="2" formControlName="maquinariaDetalle"
+                        placeholder="Guadaña, moto de trabajo, despulpadora, tractor..."></textarea>
+            </div>
+          }
         </section>
 
         <app-pastillas etiqueta="Cultivos afectados" [opciones]="opcCultivos" [(seleccion)]="cultivos" />
+        <section class="pila-sm" formGroupName="rural">
+          <div class="campo">
+            <label for="cult-otro">Otro cultivo o pérdida que no esté en la lista</label>
+            <input id="cult-otro" type="text" formControlName="cultivosOtro"
+                   placeholder="Se cayó toda la aguacatera, se perdió la naranja..." />
+          </div>
+        </section>
+
         <app-pastillas etiqueta="Infraestructura productiva afectada"
                        [opciones]="opcInfra" [(seleccion)]="infraProductiva" />
-        <app-pastillas etiqueta="Que requiere para reactivar produccion"
+        <section class="pila-sm" formGroupName="rural">
+          <div class="campo">
+            <label for="infra-otro">Otra infraestructura afectada</label>
+            <input id="infra-otro" type="text" formControlName="infraProductivaOtro" />
+          </div>
+        </section>
+
+        <app-pastillas etiqueta="Qué requiere para reactivar la producción"
                        [opciones]="opcAgro" [(seleccion)]="requiereAgro" />
+        <section class="pila-sm" formGroupName="rural">
+          <div class="campo">
+            <label for="agro-otro">Otra cosa que necesita para volver a producir</label>
+            <input id="agro-otro" type="text" formControlName="requiereAgroOtro" />
+          </div>
+        </section>
       } @else {
         <section class="pila-sm" formGroupName="urbano">
           <h3>Anexo urbano</h3>
@@ -232,6 +275,17 @@ export class PasoViviendaComponent {
   readonly estratos = OPCIONES.estrato;
   readonly opcRequiereVivienda = OPCIONES.requiereVivienda;
   readonly opcServicios = OPCIONES.servicios;
+  /** Tres estados: sin responder, si, no. Sin responder no es lo mismo que no tenia. */
+  maquinaria(): boolean | null {
+    const v = this.form().get('rural.maquinariaAfectada')?.value;
+    return v === true || v === false ? v : null;
+  }
+
+  fijarMaquinaria(afectada: boolean): void {
+    this.form().get('rural.maquinariaAfectada')?.setValue(afectada);
+    if (!afectada) this.form().get('rural.maquinariaDetalle')?.setValue(null);
+  }
+
   readonly opcCultivos = OPCIONES.cultivos;
   readonly opcInfra = OPCIONES.infraProductiva;
   readonly opcAgro = OPCIONES.requiereAgro;

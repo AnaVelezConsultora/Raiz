@@ -89,6 +89,13 @@ const token = await (async () => {
  * corrida es ademas lo que hace el dispositivo de verdad.
  */
 const ORIGEN_CASO = crypto.randomUUID();
+
+/**
+ * El caso SIN autorizacion de la familia, aparte.
+ *
+ * Las pruebas de fotografia lo necesitan por su nombre: sobre el se comprueba que
+ * sin consentimiento no se emite permiso de subida.
+ */
 const ORIGEN_SIN_CONSENTIMIENTO = crypto.randomUUID();
 
 const CASO = {
@@ -133,7 +140,9 @@ const CASO = {
     vulnerabilidad: {
       gestantes: 0, lactantes: 0, discapacidadN: 0, discapacidadTipo: [],
       enfCronicaN: 0, requiereMedicamento: null, medicamentoCual: null,
-      etnia: null, victimaConflicto: null
+      etnia: null, victimaConflicto: null,
+      // Fallecidos y heridos: el bloque que pidio el terreno el 16 de agosto.
+      fallecidos: 0, heridosLeves: 2, heridosGraves: 1
     },
     afiliacion: ['comite_reforma'],
     afiliacionCual: null
@@ -153,7 +162,31 @@ const CASO = {
     requiereVivienda: ['remocion', 'eval_estructural'],
     serviciosAfectados: ['agua']
   },
-  anexoRural: null,
+  // El anexo rural viaja con datos a proposito. Se descubrio el 16 de agosto que la
+  // API lo recibia y no lo guardaba en ninguna parte: en un municipio que vive del
+  // cafe, eso es perder la mitad del dano. Si vuelve a pasar, esta prueba lo dice.
+  anexoRural: {
+    predioNombre: 'Predio inventado',
+    areaHa: 3.5,
+    tenenciaPredio: null,
+    tieneTitulo: null,
+    viaAcceso: 'transitable',
+    cultivos: ['cafe', 'aguacate'],
+    cultivosOtro: 'Se cayo toda la aguacatera',
+    areaCultivoAfectadaHa: 1.25,
+    perdidaPct: 60,
+    perdidaEstimadaCopMinor: null,
+    bovinosPerdidos: 0,
+    porcinosPerdidos: 0,
+    avesPerdidas: 12,
+    otrosAnimales: null,
+    infraProductiva: ['beneficiadero'],
+    infraProductivaOtro: 'Tanque de agua del beneficiadero',
+    requiereAgro: ['insumos'],
+    requiereAgroOtro: 'Plantulas de aguacate',
+    maquinariaAfectada: true,
+    maquinariaDetalle: 'Guadana y despulpadora bajo el derrumbe'
+  },
   anexoUrbano: null,
   anexoConvenio: {
     afiliadaFederacion: false,
@@ -167,6 +200,7 @@ const CASO = {
     yaRecibioAyuda: null,
     ayudaCual: null,
     ayudaQuien: null,
+    necesidadesOtra: 'Necesitan quien les ayude a mover el derrumbe',
     observaciones: 'Caso de prueba del ciclo completo'
   }
 };

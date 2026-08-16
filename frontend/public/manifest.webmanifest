@@ -8,8 +8,8 @@
   "orientation": "portrait",
   "scope": "./",
   "start_url": "./",
-  "background_color": "#edefea",
-  "theme_color": "#0e5c63",
+  "background_color": "#f1ead8",
+  "theme_color": "#2b3a2e",
   "categories": ["utilities", "productivity"],
   "shortcuts": [
     {

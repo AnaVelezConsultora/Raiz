@@ -36,8 +36,13 @@ COPY entorno/postgres/01-roles.sql      ./002-roles.sql
 COPY supabase/schema.sql                ./003-schema.sql
 COPY entorno/postgres/60-grants.sql     ./004-grants.sql
 COPY entorno/postgres/65-acceso-api.sql ./005-acceso-api.sql
-COPY entorno/postgres/55-fotos-subida.sql ./006-fotos-subida.sql
-COPY entorno/postgres/56-perfiles-alta.sql ./007-perfiles-alta.sql
+COPY entorno/postgres/55-fotos-subida.sql     ./006-fotos-subida.sql
+COPY entorno/postgres/56-perfiles-alta.sql    ./007-perfiles-alta.sql
+# Llego numerada como 006 en su rama y aqui va de 008: en produccion ya figuran
+# aplicadas una 006 y una 007 con otro contenido, y la clave del registro es el
+# NOMBRE. Dejarle el 006 no habria roto nada —se habria aplicado igual, por
+# llamarse distinto— pero la secuencia dejaria de leerse como una sola historia.
+COPY entorno/postgres/66-campos-de-terreno.sql ./008-campos-de-terreno.sql
 
 # Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con
 # esas palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
