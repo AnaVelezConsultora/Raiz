@@ -13,46 +13,24 @@
      de dia y se lee desde la ultima fila.
      ========================================================================= */
 
+  /* UN SOLO MUNDO VISUAL, Y ES NEGRO.
+     No hay tema claro ni oscuro: la pagina se compromete con uno. Las trece imagenes
+     son pantallas de un celular —claras, luminosas— y sobre negro se leen como lo que
+     son, pantallas encendidas. Los colores son los del sello de Raiz, subidos de tono
+     lo justo para que respiren sobre el fondo: el verde profundo del sello se vuelve
+     invisible en negro, asi que aqui vive su version clara. */
   :root {
-    --fondo: #ffffff;
-    --tinta: #1a1d1a;
-    --tinta-suave: #55605a;
+    --fondo: #0d0f0d;
+    --tinta: #f4f2ec;
+    --tinta-suave: #b6bdb5;
     --tinta-tenue: #8a938c;
-    --linea: #e4e6e2;
-    --linea-suave: #f0f1ee;
-    --verde: #2b3a2e;
-    --ladrillo: #9b2617;
-    --negro: #0d0f0d;
-    --sobre-negro: #f4f2ec;
-    --tenue-negro: #9aa39b;
+    --linea: rgba(244, 242, 236, 0.18);
+    --linea-suave: rgba(244, 242, 236, 0.08);
+    --verde: #a7c0aa;
+    --ladrillo: #e08a7d;
     --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
     --sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
     --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
-  }
-
-  /* El visor puede estar en claro, en oscuro, o sin escoger. Sin la guarda, un
-     sistema oscuro le ganaria a quien pidio claro a proposito. */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']) {
-      --fondo: #141614;
-      --tinta: #eceee9;
-      --tinta-suave: #a9b1aa;
-      --tinta-tenue: #7c847d;
-      --linea: #2b2f2c;
-      --linea-suave: #202320;
-      --verde: #a7c0aa;
-      --ladrillo: #e08a7d;
-    }
-  }
-  :root[data-theme='dark'] {
-    --fondo: #141614;
-    --tinta: #eceee9;
-    --tinta-suave: #a9b1aa;
-    --tinta-tenue: #7c847d;
-    --linea: #2b2f2c;
-    --linea-suave: #202320;
-    --verde: #a7c0aa;
-    --ladrillo: #e08a7d;
   }
 
   body {
@@ -71,25 +49,6 @@
     border-bottom: 1px solid var(--linea-suave);
   }
   .lamina:last-child { border-bottom: 0; }
-
-  /* Laminas negras al abrir y al cerrar.
-     No es decoracion: separan el manual de lo que sea que este alrededor cuando se
-     proyecta, y le dan un final a algo que en la pantalla es una sola tira de scroll.
-     El negro es el mismo en tema claro y en oscuro; lo demas cambia. */
-  .lamina.negro {
-    background: var(--negro);
-    color: var(--sobre-negro);
-    border-bottom: 0;
-    max-width: none;
-  }
-  .lamina.negro > * { max-width: 58rem; margin-left: auto; margin-right: auto; }
-  .lamina.negro .numero,
-  .lamina.negro .lema,
-  .lamina.negro .pie { color: var(--tenue-negro); }
-  .lamina.negro .pie { border-top-color: rgba(244, 242, 236, 0.18); }
-  .lamina.negro .regla dt { color: var(--tenue-negro); }
-  .lamina.negro .nota { border-left-color: var(--sobre-negro); color: var(--tenue-negro); }
-  .lamina.negro .nota strong { color: var(--sobre-negro); }
 
   .numero {
     font-family: var(--mono);
@@ -192,15 +151,26 @@
      rectangulo claro flotando. */
   svg.recorrido { width: 100%; height: auto; display: block; overflow: visible; }
 
+  /* En papel se invierte: nadie imprime veinte laminas negras, y el manual tambien
+     se reparte fotocopiado. */
   @media print {
-    :root { --fondo: #fff; --tinta: #111; }
+    :root {
+      --fondo: #fff;
+      --tinta: #111;
+      --tinta-suave: #333;
+      --tinta-tenue: #666;
+      --linea: #ccc;
+      --linea-suave: #e6e6e6;
+      --verde: #2b3a2e;
+      --ladrillo: #9b2617;
+    }
     .lamina { page-break-after: always; border: 0; padding: 1.5rem 1rem; }
     body { font-size: 11.5pt; }
   }
 </style>
 
 <!-- ===================================================================== -->
-<section class="lamina negro portada">
+<section class="lamina portada">
   <img class="sello" src="{{IMG_SELLO}}" alt="Sello: Ingenieros de Sistemas Unidos por Colombia · Raíz"
        onerror="this.style.display='none'" />
   <h1>Cómo registrar a una familia con Raíz</h1>
@@ -620,7 +590,7 @@
 </section>
 
 <!-- ===================================================================== -->
-<section class="lamina negro">
+<section class="lamina">
   <p class="numero">Para recordar</p>
   <h2>Cinco cosas y ya</h2>
   <dl class="regla grande">
