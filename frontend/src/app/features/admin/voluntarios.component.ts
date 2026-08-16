@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AUTH, AuthPort, PerfilAdministrable } from '../../core/domain/auth.model';
-import { ROLES_QUE_PUEDE_CREAR, Rol } from '../../core/domain/enums';
+import { ROLES_QUE_PUEDE_CREAR, Rol, faltantesDeClave, sugerirClave } from '../../core/domain/enums';
 import { SesionService } from '../../core/services/sesion.service';
 
 /** Etiquetas de rol en el idioma del proyecto, no del esquema. */
@@ -108,9 +108,14 @@ const ROLES: readonly { v: Rol; t: string; explica: string }[] = [
                    (input)="alta.clave.set(valor($event))" autocomplete="off" />
             <button type="button" class="btn-secundario" (click)="sugerirClave()">Sugerir</button>
           </div>
+          <!-- Se avisa ANTES de enviar. El proveedor la rechaza tarde, cuando la
+               cuenta ya existe, y ese estado a medias es el que confunde a todos. -->
+          @if (alta.clave() && faltaEnLaClave().length > 0) {
+            <span class="error">La clave necesita {{ faltaEnLaClave().join(', ') }}.</span>
+          }
 
           <button type="button" class="btn-primario btn-ancho btn-grande"
-                  [disabled]="creando()" (click)="crear()">
+                  [disabled]="creando() || faltaEnLaClave().length > 0" (click)="crear()">
             {{ creando() ? 'Creando...' : 'Crear la cuenta' }}
           </button>
         </section>
@@ -228,22 +233,19 @@ export class VoluntariosComponent implements OnInit {
   }
 
   /**
-   * Una clave que se pueda dictar por teléfono.
+   * Una clave que cumple la política del proveedor y se puede dictar por teléfono.
    *
-   * Sin caracteres que se confundan al leerlos en voz alta —ni O ni 0, ni l ni 1— y
-   * en dos bloques: la coordinación se la va a dictar a alguien que está en una
-   * vereda, no la va a copiar y pegar.
+   * La genera el dominio compartido, no esta pantalla. Escrita aquí, sugería
+   * `abcd-2345-efgh`: sin mayúscula, y con un guion que Cognito no cuenta como
+   * símbolo. La cuenta se creaba, el proveedor rechazaba la clave DESPUÉS, y quedaba
+   * un voluntario que existe, no puede entrar y no tiene perfil.
    */
   sugerirClave(): void {
-    const letras = 'abcdefghjkmnpqrstuvwxyz';
-    const numeros = '23456789';
-    const alAzar = (fuente: string, n: number) =>
-      Array.from({ length: n }, () => fuente[Math.floor(Math.random() * fuente.length)]).join('');
-
-    this.alta.clave.set(
-      `${alAzar(letras, 4)}-${alAzar(numeros, 4)}-${alAzar(letras, 4)}`
-    );
+    this.alta.clave.set(sugerirClave());
   }
+
+  /** Lo que le falta a la clave escrita. Vacío si sirve. */
+  readonly faltaEnLaClave = computed(() => faltantesDeClave(this.alta.clave()));
 
   async crear(): Promise<void> {
     this.creando.set(true);

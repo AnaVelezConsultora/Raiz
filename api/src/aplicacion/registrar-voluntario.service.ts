@@ -1,4 +1,4 @@
-import { ROLES_QUE_PUEDE_CREAR, Rol, puedeCrear } from '@raiz/dominio';
+import { ROLES_QUE_PUEDE_CREAR, Rol, faltantesDeClave, puedeCrear } from '@raiz/dominio';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ADMINISTRADOR_IDENTIDAD,
@@ -206,7 +206,14 @@ export class RegistrarVoluntarioService {
     // Comprobacion deliberadamente laxa: la forma exacta la valida Cognito, que es
     // quien manda. Aqui solo se evita gastar un viaje de red en algo evidente.
     if (!alta?.correo?.includes('@')) faltantes.push('correo debe ser una direccion valida');
-    if (!alta?.clave || alta.clave.length < 8) faltantes.push('la clave debe tener al menos 8 caracteres');
+    // La clave se comprueba AQUI y no se le deja al proveedor de identidad, que la
+    // rechaza tarde: despues de haber creado la cuenta. Cuando eso pasa queda un
+    // usuario que existe, no puede entrar y no tiene perfil, y el custodio recibe un
+    // «reintente» que es mentira, porque la misma clave vuelve a fallar.
+    const faltaEnLaClave = faltantesDeClave(alta?.clave ?? '');
+    if (faltaEnLaClave.length > 0) {
+      faltantes.push(`la clave necesita ${faltaEnLaClave.join(', ')}`);
+    }
 
     // Nombres COMPLETOS: se exigen dos palabras. Un «Juan» suelto no distingue a
     // nadie el dia que una entidad pregunte quien levanto un caso.
