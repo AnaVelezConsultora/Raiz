@@ -137,7 +137,7 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
           </button>
         } @else {
           <button type="button" class="btn-primario" style="flex:2" (click)="finalizar()">
-            {{ yaEstaGuardado() ? 'Guardar cambios' : 'Guardar caso' }}
+            {{ esEdicion() ? 'Guardar cambios' : 'Guardar caso' }}
           </button>
         }
       </div>
@@ -201,6 +201,9 @@ export class FormularioCasoComponent implements OnInit {
    */
   protected readonly yaEstaGuardado = signal(false);
 
+  /** True si se abrio un caso que ya estaba en el celular. Solo rotula el boton. */
+  protected readonly esEdicion = signal(false);
+
   /** True mientras se le pregunta al voluntario si guarda o descarta. */
   readonly preguntandoAlSalir = signal(false);
 
@@ -246,6 +249,12 @@ export class FormularioCasoComponent implements OnInit {
       (base ? this.factory.crearEnMismaEstructura(base) : this.factory.crear(this.aZona(zonaParam)));
 
     this.yaEstaGuardado.set(existente !== undefined);
+    // SE ABRIO UNO QUE YA ESTABA, no se esta capturando uno nuevo. Es lo que decide
+    // el rotulo del boton, y no `yaEstaGuardado`: ese se pone en true en cuanto el
+    // caso se persiste, que ocurre en cada paso, asi que a mitad de la primera
+    // captura el boton pasaba a decir «Guardar cambios» — cuando lo que la persona
+    // esta haciendo es, precisamente, guardar el caso por primera vez.
+    this.esEdicion.set(existente !== undefined);
     this.heredado.set(existente === undefined && base !== undefined);
 
     this.caso.set(caso);
