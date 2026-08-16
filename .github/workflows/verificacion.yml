@@ -121,6 +121,8 @@ jobs:
       # esta lista de pasos existe para evitar. Ver el hallazgo H15.
       - name: Acceso de la API
         run: $PSQL -f entorno/postgres/65-acceso-api.sql
+      - name: Campos que pidio el terreno
+        run: $PSQL -f entorno/postgres/66-campos-de-terreno.sql
       - name: Catalogos
         run: $PSQL -f entorno/postgres/70-semillas-catalogos.sql
 

@@ -95,6 +95,17 @@ export interface Vulnerabilidad {
   discapacidadN: number;
   discapacidadTipo: string[];
   enfCronicaN: number;
+  /**
+   * Fallecidos y heridos del hogar.
+   *
+   * Separados por gravedad porque asi se pueden sumar por vereda, y esa suma es lo
+   * que una entidad de salud puede atender. Grave se define por el hecho —fue
+   * remitido o atendido en un hospital— y no por criterio medico: quien llena la
+   * ficha es un lider comunal.
+   */
+  fallecidos: number;
+  heridosLeves: number;
+  heridosGraves: number;
   requiereMedicamento: boolean | null;
   medicamentoCual: string | null;
   etnia: string | null;
@@ -171,7 +182,19 @@ export interface AnexoRural {
   avesPerdidas: number;
   otrosAnimales: string | null;
   infraProductiva: string[];
+  infraProductivaOtro: string | null;
   requiereAgro: string[];
+  requiereAgroOtro: string | null;
+  /**
+   * Maquinaria y vehiculos afectados o perdidos.
+   *
+   * Son insumo de la cadena productiva, y quedarse por fuera del listado es
+   * exactamente como se pierden en el camino. El detalle va en texto: una guadana, un
+   * tractor y una moto de trabajo no se parecen en nada, y agruparlos ahora seria
+   * inventar un catalogo sin haber visto los datos.
+   */
+  maquinariaAfectada: boolean | null;
+  maquinariaDetalle: string | null;
 }
 
 /** Bloque 6. Anexo convenio de la federacion. */
@@ -188,6 +211,8 @@ export interface Triaje {
   necesidadesInmediatas: string[];
   yaRecibioAyuda: boolean | null;
   ayudaCual: string | null;
+  /** Lo que la lista cerrada no alcanza a decir. La acompana, no la reemplaza. */
+  necesidadesOtra: string | null;
   ayudaQuien: string | null;
   observaciones: string | null;
 }

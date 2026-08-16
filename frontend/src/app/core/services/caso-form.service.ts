@@ -69,7 +69,10 @@ export class CasoFormService {
       vulnerabilidad: this.fb.group({
         gestantes: [caso.hogar.vulnerabilidad.gestantes],
         discapacidadN: [caso.hogar.vulnerabilidad.discapacidadN],
-        enfCronicaN: [caso.hogar.vulnerabilidad.enfCronicaN]
+        enfCronicaN: [caso.hogar.vulnerabilidad.enfCronicaN],
+        fallecidos: [caso.hogar.vulnerabilidad.fallecidos ?? 0],
+        heridosLeves: [caso.hogar.vulnerabilidad.heridosLeves ?? 0],
+        heridosGraves: [caso.hogar.vulnerabilidad.heridosGraves ?? 0]
       }),
       vivienda: this.fb.group({
         tenencia: [caso.vivienda?.tenencia ?? Tenencia.Propietario, Validators.required],
@@ -90,6 +93,11 @@ export class CasoFormService {
         areaCultivoAfectadaHa: [caso.anexoRural?.areaCultivoAfectadaHa],
         perdidaPct: [caso.anexoRural?.perdidaPct, [Validators.min(0), Validators.max(100)]],
         bovinosPerdidos: [caso.anexoRural?.bovinosPerdidos ?? 0],
+        cultivosOtro: [caso.anexoRural?.cultivosOtro ?? null],
+        infraProductivaOtro: [caso.anexoRural?.infraProductivaOtro ?? null],
+        requiereAgroOtro: [caso.anexoRural?.requiereAgroOtro ?? null],
+        maquinariaAfectada: [caso.anexoRural?.maquinariaAfectada ?? null],
+        maquinariaDetalle: [caso.anexoRural?.maquinariaDetalle ?? null],
         avesPerdidas: [caso.anexoRural?.avesPerdidas ?? 0]
       }),
       urbano: this.fb.group({
@@ -103,6 +111,7 @@ export class CasoFormService {
       }),
       triaje: this.fb.group({
         prioridad: [caso.triaje?.prioridad ?? Prioridad.P2, Validators.required],
+        necesidadesOtra: [caso.triaje?.necesidadesOtra ?? null],
         observaciones: [caso.triaje?.observaciones]
       })
     });
@@ -161,7 +170,10 @@ export class CasoFormService {
           ...caso.hogar.vulnerabilidad,
           gestantes: Number(v.vulnerabilidad.gestantes),
           discapacidadN: Number(v.vulnerabilidad.discapacidadN),
-          enfCronicaN: Number(v.vulnerabilidad.enfCronicaN)
+          enfCronicaN: Number(v.vulnerabilidad.enfCronicaN),
+          fallecidos: Number(v.vulnerabilidad.fallecidos),
+          heridosLeves: Number(v.vulnerabilidad.heridosLeves),
+          heridosGraves: Number(v.vulnerabilidad.heridosGraves)
         },
         afiliacion: seleccion.afiliacion,
         afiliacionCual: v.hogar.afiliacionCual
@@ -190,7 +202,7 @@ export class CasoFormService {
             tieneTitulo: caso.anexoRural?.tieneTitulo ?? null,
             viaAcceso: v.rural.viaAcceso,
             cultivos: seleccion.cultivos,
-            cultivosOtro: caso.anexoRural?.cultivosOtro ?? null,
+            cultivosOtro: v.rural.cultivosOtro,
             areaCultivoAfectadaHa: this.aNumeroOpcional(v.rural.areaCultivoAfectadaHa),
             perdidaPct: this.aNumeroOpcional(v.rural.perdidaPct),
             perdidaEstimadaCopMinor: caso.anexoRural?.perdidaEstimadaCopMinor ?? null,
@@ -199,7 +211,11 @@ export class CasoFormService {
             avesPerdidas: Number(v.rural.avesPerdidas),
             otrosAnimales: caso.anexoRural?.otrosAnimales ?? null,
             infraProductiva: seleccion.infraProductiva,
-            requiereAgro: seleccion.requiereAgro
+            infraProductivaOtro: v.rural.infraProductivaOtro,
+            requiereAgro: seleccion.requiereAgro,
+            requiereAgroOtro: v.rural.requiereAgroOtro,
+            maquinariaAfectada: v.rural.maquinariaAfectada,
+            maquinariaDetalle: v.rural.maquinariaDetalle
           }
         : null,
       anexoUrbano: esRural
@@ -228,6 +244,7 @@ export class CasoFormService {
         yaRecibioAyuda: caso.triaje?.yaRecibioAyuda ?? null,
         ayudaCual: caso.triaje?.ayudaCual ?? null,
         ayudaQuien: caso.triaje?.ayudaQuien ?? null,
+        necesidadesOtra: v.triaje.necesidadesOtra,
         observaciones: v.triaje.observaciones
       }
     };
@@ -270,6 +287,9 @@ interface ValoresVulnerabilidad {
   gestantes: Numerico;
   discapacidadN: Numerico;
   enfCronicaN: Numerico;
+  fallecidos: Numerico;
+  heridosLeves: Numerico;
+  heridosGraves: Numerico;
 }
 
 /** Forma tipada del valor crudo del formulario. Evita `any` en el mapeo. */
@@ -319,6 +339,11 @@ interface ValoresFormulario {
     perdidaPct: number | string | null;
     bovinosPerdidos: number | string;
     avesPerdidas: number | string;
+    cultivosOtro: string | null;
+    infraProductivaOtro: string | null;
+    requiereAgroOtro: string | null;
+    maquinariaAfectada: boolean | null;
+    maquinariaDetalle: string | null;
   };
   urbano: {
     estrato: string | null;
@@ -326,7 +351,7 @@ interface ValoresFormulario {
     medioVidaDesc: string | null;
   };
   convenio: { afiliadaFederacion: boolean; aplicaConvenio: boolean };
-  triaje: { prioridad: Prioridad; observaciones: string | null };
+  triaje: { prioridad: Prioridad; necesidadesOtra: string | null; observaciones: string | null };
 }
 
 /** Catalogo de opciones para las pastillas. Centralizado para no duplicar literales. */

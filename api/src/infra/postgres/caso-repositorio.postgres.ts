@@ -42,6 +42,7 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
     return this.pool.comoUsuario({ sub: identidad.sub }, async (cliente) => {
       const fila = await this.guardarFamilia(cliente, caso);
       await this.guardarVivienda(cliente, fila.id, caso);
+      await this.guardarProduccion(cliente, fila.id, caso);
 
       return { origenId: caso.origenId, codigo: fila.codigo, yaExistia: fila.ya_existia };
     });
@@ -78,13 +79,15 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         afiliacion, afiliacion_cual,
         afiliada_federacion, aplica_convenio, convenio_linea, convenio_obs,
         prioridad, necesidades_inmediatas, ya_recibio_ayuda, ayuda_cual, ayuda_quien,
-        observaciones
+        observaciones,
+        fallecidos, heridos_leves, heridos_graves, necesidades_otra
       ) values (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::zona_t, $11, $12, $13, $14,
         $15, $16, $17, $18::gps_fuente_t, $19, $20, $21, $22, $23, $24, $25, $26,
         $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
         $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
-        $48, $49, $50, $51, $52::prioridad_t, $53::necesidad_t[], $54, $55, $56, $57
+        $48, $49, $50, $51, $52::prioridad_t, $53::necesidad_t[], $54, $55, $56, $57,
+        $58, $59, $60, $61
       )
       on conflict (origen_id) do update set
         fecha_registro = excluded.fecha_registro,
@@ -100,6 +103,10 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         prioridad = excluded.prioridad,
         necesidades_inmediatas = excluded.necesidades_inmediatas,
         observaciones = excluded.observaciones,
+        fallecidos = excluded.fallecidos,
+        heridos_leves = excluded.heridos_leves,
+        heridos_graves = excluded.heridos_graves,
+        necesidades_otra = excluded.necesidades_otra,
         actualizado_en = now()
       returning id, codigo, (xmax = 0) as ya_existia`;
 
@@ -123,7 +130,11 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       cv?.convenioLinea ?? [], cv?.convenioObs ?? null,
       t?.prioridad ?? 'p3', t?.necesidadesInmediatas ?? [],
       t?.yaRecibioAyuda ?? null, t?.ayudaCual ?? null, t?.ayudaQuien ?? null,
-      t?.observaciones ?? null
+      t?.observaciones ?? null,
+      // Fallecidos y heridos, y lo que la familia pidio con sus palabras. Salieron de
+      // la primera ficha llenada en terreno el 16 de agosto.
+      vul.fallecidos ?? 0, vul.heridosLeves ?? 0, vul.heridosGraves ?? 0,
+      t?.necesidadesOtra ?? null
     ];
 
     try {
@@ -170,6 +181,58 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         v.dondeDuerme, v.requiereVivienda, v.serviciosAfectados,
         urb?.estrato ?? null, urb?.tipoUnidad ?? null,
         urb?.perdioMedioVida ?? null, urb?.medioVidaDesc ?? null, urb?.requiereUrbano ?? []
+      ]);
+    } catch (e) {
+      throw this.traducir(e, caso.origenId);
+    }
+  }
+
+  /**
+   * Guarda el anexo rural: predio, cultivos, animales, infraestructura y maquinaria.
+   *
+   * POR QUE ESTE METODO NO EXISTIA Y ES UN DEFECTO, NO UNA FUNCION NUEVA
+   *
+   * La aplicacion captura este bloque completo desde el primer dia y lo manda en cada
+   * envio. El servidor lo recibia y lo tiraba: guardaba familia y vivienda, y el anexo
+   * rural no se escribia en ninguna parte. En un municipio que vive del cafe y del
+   * aguacate, eso es perder justo la mitad del dano — la que no se ve en una foto de
+   * la casa y la que sostiene una peticion de reactivacion productiva.
+   *
+   * Se borra y se reinserta, igual que la vivienda: un reenvio del mismo caso no debe
+   * dejar dos predios colgando del mismo hogar.
+   */
+  private async guardarProduccion(
+    cliente: PoolClient,
+    familiaId: string,
+    caso: CasoParaSincronizar
+  ): Promise<void> {
+    const r = caso.anexoRural;
+    if (!r) return;
+
+    const sql = `
+      insert into produccion (
+        familia_id, predio_nombre, area_ha, tenencia_predio, tiene_titulo, via_acceso,
+        cultivos, cultivos_otro, area_cultivo_afectada_ha, perdida_pct,
+        perdida_estimada_cop_minor,
+        bovinos_perdidos, porcinos_perdidos, aves_perdidas, otros_animales,
+        infra_productiva, infra_productiva_otro,
+        requiere_agro, requiere_agro_otro,
+        maquinaria_afectada, maquinaria_detalle
+      ) values (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+        $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+      )`;
+
+    try {
+      await cliente.query('delete from produccion where familia_id = $1', [familiaId]);
+      await cliente.query(sql, [
+        familiaId, r.predioNombre, r.areaHa, r.tenenciaPredio, r.tieneTitulo, r.viaAcceso,
+        r.cultivos, r.cultivosOtro, r.areaCultivoAfectadaHa, r.perdidaPct,
+        r.perdidaEstimadaCopMinor,
+        r.bovinosPerdidos, r.porcinosPerdidos, r.avesPerdidas, r.otrosAnimales,
+        r.infraProductiva, r.infraProductivaOtro,
+        r.requiereAgro, r.requiereAgroOtro,
+        r.maquinariaAfectada, r.maquinariaDetalle
       ]);
     } catch (e) {
       throw this.traducir(e, caso.origenId);

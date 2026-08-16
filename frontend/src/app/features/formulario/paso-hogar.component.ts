@@ -144,6 +144,24 @@ import { PastillasComponent } from '../../shared/pastillas.component';
         </div>
       </section>
 
+      <!-- Fallecidos y heridos. Faltaba por completo y es el dato que primero pide
+           una entidad de salud. Se separan por gravedad porque así se pueden sumar
+           por vereda; grave se define por el hecho —fue remitido a un hospital— y no
+           por un criterio médico, porque quien llena la ficha es un líder comunal. -->
+      <section class="pila-sm" formGroupName="vulnerabilidad">
+        <h3>Personas fallecidas o heridas</h3>
+        <p class="pista">Dejar en cero si no hubo. Es de esta familia, no de la vereda.</p>
+        <div class="rejilla-condiciones">
+          <span class="rango">Fallecidas</span>
+          <app-contador formControlName="fallecidos" etiqueta="Personas fallecidas" />
+          <span class="rango">Heridas, atendidas en casa</span>
+          <app-contador formControlName="heridosLeves" etiqueta="Personas heridas leves" />
+          <span class="rango">Heridas, llevadas a un hospital</span>
+          <app-contador formControlName="heridosGraves"
+                        etiqueta="Personas heridas remitidas a un hospital" />
+        </div>
+      </section>
+
       <!-- Antes preguntaba "a qué organización pertenece la familia", que da por
            sentado que pertenece a alguna. La mayoría no pertenece a ninguna, y esa
            familia es justamente la que más riesgo tiene de quedar invisible. -->
