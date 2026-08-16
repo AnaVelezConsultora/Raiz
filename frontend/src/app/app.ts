@@ -30,6 +30,10 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
   template: `
     <header style="background:var(--accent);color:#fff;padding:.5rem 1rem">
       <div class="contenedor fila" style="justify-content:space-between;padding:0;gap:.5rem">
+        <!-- Solo el nombre, en la serif del sello. Se intento reducir el arbol del logo
+             a un trazo de 26 px y a ese tamano dejaba de leerse como arbol: lo que
+             funciona impreso no siempre funciona en la barra de un celular. El sello
+             completo va en la pantalla de entrada, que es donde hay espacio. -->
         <strong style="font-family:var(--serif);font-size:1.05rem">Raíz · {{ municipio.nombre() }}</strong>
         <span class="mono" style="font-size:.72rem;opacity:.92">
           {{ sync.enLinea() ? 'EN LINEA' : 'SIN CONEXION' }}

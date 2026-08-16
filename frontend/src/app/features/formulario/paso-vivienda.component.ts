@@ -49,7 +49,6 @@ const NIVELES_INHABITABLES: readonly string[] = [
               <option [value]="o.v">{{ o.t }}</option>
             }
           </select>
-          <span class="pista">Los arrendatarios se registran: aplican a subsidio de arriendo.</span>
         </div>
 
         <div class="campo">

@@ -13,6 +13,37 @@ servidor y el contrato que comparten llevan siempre el mismo número.
 
 ---
 
+## 0.4.0 — 16 de agosto de 2026
+
+**La primera versión que salió de una ficha llenada en terreno.** Un líder registró una
+familia de noche y sin internet, y devolvió una lista de lo que faltaba. Casi todo esto
+sale de ahí.
+
+- **El total de personas y las edades tienen que coincidir para continuar.** Antes se
+  podía enviar un caso que decía siete personas y repartía una. Ese registro no sirve
+  para pedir nada, porque la ayuda se asigna por edades, y nadie vuelve a llamar a esa
+  familia para arreglarlo.
+- **La autorización de la familia se pregunta con dos botones y no se puede saltar.**
+  Una casilla sin marcar no distinguía «dijo que no» de «nadie preguntó», y de esa
+  respuesta depende si el nombre de una persona se guarda.
+- **Se registran personas fallecidas y heridas**, separando las que fueron llevadas a un
+  hospital. Es lo primero que pide una entidad de salud y no existía.
+- **Se registra la maquinaria y los vehículos de trabajo**, y hay campo abierto en
+  cultivos, infraestructura, reactivación y necesidades. Una casa puede quedar intacta y
+  la familia sin sustento.
+- **El bloque de cultivos por fin se guarda.** La aplicación lo capturaba desde el primer
+  día y el servidor lo desechaba: se perdía la mitad del daño en un municipio que vive
+  del café.
+- La coordenada se puede abrir en el mapa, y la aplicación avisa cuando la precisión es
+  tan baja que dos casas vecinas caen en el mismo punto.
+- Vereda, corregimiento y centro poblado son un solo campo; los campos obligatorios
+  dicen que lo son; la interfaz tiene tildes.
+- **La aplicación toma los colores del sello del equipo.**
+- El mapa público se genera desde la base y no desde un archivo escrito a mano.
+- Hay [manual de campo](manual.html) para los líderes.
+
+---
+
 ## 0.2.0 — 15 de agosto de 2026
 
 **La herramienta dejó de vivir solo en los computadores del equipo.** La aplicación
