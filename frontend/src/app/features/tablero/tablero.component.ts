@@ -191,6 +191,24 @@ export class TableroComponent implements OnInit, AfterViewInit, OnDestroy {
   private mapa: import('leaflet').Map | null = null;
   private capa: import('leaflet').LayerGroup | null = null;
 
+  /**
+   * Leaflet, venga como venga.
+   *
+   * Leaflet se publica al estilo viejo —CommonJS—, y quien lo empaqueta decide dónde
+   * queda lo que exporta: el servidor de desarrollo lo desenvuelve y entrega las
+   * funciones arriba; la compilación de producción las deja colgando de `default`.
+   *
+   * Sin esta línea, `L.map` es `undefined` SOLO en lo publicado. Costó un despliegue:
+   * las cifras salían bien y el mapa quedaba en blanco con `t.map is not a function` en
+   * la consola, un fallo que ninguna prueba contra el servidor de desarrollo puede ver
+   * porque ahí el paquete es otro.
+   */
+  private async leaflet(): Promise<typeof import('leaflet')> {
+    const modulo = await import('leaflet');
+    return ((modulo as { default?: typeof import('leaflet') }).default ??
+      modulo) as typeof import('leaflet');
+  }
+
   constructor() {
     // Repinta cuando cambian los datos o los filtros, sin que cada uno tenga que
     // acordarse de llamar al mapa.
@@ -223,7 +241,7 @@ export class TableroComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   async ngAfterViewInit(): Promise<void> {
     this.asegurarEstilos();
-    const L = await import('leaflet');
+    const L = await this.leaflet();
 
     // Sevilla, Valle del Cauca. Es el encuadre inicial; en cuanto haya puntos, el
     // mapa se ajusta a ellos.
@@ -270,7 +288,7 @@ export class TableroComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   private async pintar(filas: ResumenTablero[]): Promise<void> {
     if (!this.capa || !this.mapa) return;
-    const L = await import('leaflet');
+    const L = await this.leaflet();
 
     this.capa.clearLayers();
     const puntos: [number, number][] = [];

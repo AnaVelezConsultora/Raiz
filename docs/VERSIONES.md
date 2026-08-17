@@ -13,6 +13,18 @@ servidor y el contrato que comparten llevan siempre el mismo número.
 
 ---
 
+## 0.6.1 — 16 de agosto de 2026
+
+**El mapa del tablero salía en blanco.** Las cifras estaban bien y debajo no había nada.
+Duró lo que tardó abrirlo: se publicó, se vio y se corrigió.
+
+La causa es de las que no se ven probando: la librería del mapa se empaqueta distinto
+para publicar que para trabajar, y en lo publicado no arrancaba. Ahora la prueba
+automática abre el tablero **sobre el paquete que se sube**, no sobre el de desarrollo,
+así que un fallo así vuelve a aparecer antes y no en el celular de un coordinador.
+
+---
+
 ## 0.6.0 — 16 de agosto de 2026
 
 **Un tablero para decidir a dónde van los recursos.** Hasta ahora los datos entraban y
