@@ -375,6 +375,36 @@ primero que hay que saber es qué versión tiene en la mano.
 se fueron. Es una decisión tomada sabiendo el precio: quien no programa solo puede
 probar lo que ya está publicado. Ver [DEUDA-TECNICA.md](DEUDA-TECNICA.md).
 
+### Hay dónde mirar los datos, y ninguna vista abre sin sesión
+
+Desde la 0.6.0 la mesa tiene **tablero**: cifras —familias, personas, menores, mayores
+de 60, riesgo de vida, casos sin ubicar— y un mapa con un punto por afectación, con
+filtros por zona y por prioridad. Vive dentro de la misma aplicación con la que se
+captura, no al lado, y es el contenedor donde se colgarán las vistas de gestión que
+vengan.
+
+**La puerta es un permiso, no una lista de roles.** `verTodosLosCasos` es la misma
+frontera que `es_mesa()` en las políticas de PostgreSQL: coordinación y custodia entran,
+el líder no. Y ocultar el enlace no es la protección — la consulta lee una vista
+`security_invoker`, así que quien filtra es la base. Contra el entorno local la custodia
+ve cuatro casos y Ana, líder, tres.
+
+**Lo que viaja al navegador no tiene identidad.** El resumen que alimenta el tablero no
+lleva nombre, documento ni teléfono: lo que no sale de la base no se puede filtrar mal
+en el cliente. El punto ubica la afectación, no la vivienda.
+
+**Sin conexión no hay tablero, a propósito.** No guarda cifras para mostrarlas después.
+Es lo contrario de la captura, que sí tiene que funcionar en el monte: mostrar los
+números de ayer sin decirlo, en una reunión con una entidad, es peor que no mostrar
+nada.
+
+**Se cerró de paso un hueco que apareció probándolo.** Las tres guardas de ruta
+devolvían «pase» cuando el paquete se compilaba sin dirección de API, que es como se
+trabajaba en desarrollo: cualquiera abría cualquier pantalla sin identificarse. Ya no
+hay excepción, y está comprobado que las seis rutas terminan en `/acceso`. Capturar sin
+señal no dependía de eso: la guarda exige **haber entrado** en el dispositivo, no un
+token vigente.
+
 ### El bloqueo real que queda
 
 **Nadie ha probado esto en campo.** El código puede estar perfecto y el formulario

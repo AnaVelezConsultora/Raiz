@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { Caso, FiltroCasos, FotoLocal, ResumenCaso } from './caso.model';
+import { Caso, FiltroCasos, FotoLocal, ResumenCaso, ResumenTablero } from './caso.model';
 
 /**
  * Puertos del dominio (Dependency Inversion).
@@ -112,6 +112,25 @@ export interface SincronizacionPort {
   cancelarFoto(fotoId: string): Promise<void>;
 }
 
+/**
+ * Consulta de casos contra el servidor.
+ *
+ * Separado de {@link SincronizacionPort} a proposito: aquel MANDA lo capturado y este
+ * PREGUNTA por lo que hay. Se parecen en que hablan con la misma API y se diferencian
+ * en todo lo demas — uno tiene que funcionar sin senal y con reintentos, el otro no
+ * tiene sentido sin conexion.
+ */
+export interface TableroPort {
+  /**
+   * Los casos que quien pregunta alcanza.
+   *
+   * No recibe filtro de rol: quien decide es la politica por fila del servidor. La
+   * misma llamada le devuelve todo a la mesa y lo suyo a un lider.
+   */
+  listarCasos(): Promise<ResumenTablero[]>;
+}
+
 export const CASO_STORAGE = new InjectionToken<CasoStoragePort>('CASO_STORAGE');
+export const TABLERO = new InjectionToken<TableroPort>('TABLERO');
 export const FOTO_STORAGE = new InjectionToken<FotoStoragePort>('FOTO_STORAGE');
 export const SINCRONIZACION = new InjectionToken<SincronizacionPort>('SINCRONIZACION');

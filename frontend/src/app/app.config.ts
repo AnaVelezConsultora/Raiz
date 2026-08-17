@@ -4,11 +4,12 @@ import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
 import { AUTH } from './core/domain/auth.model';
-import { CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION } from './core/domain/ports';
+import { CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION, TABLERO } from './core/domain/ports';
 import { DexieCasoStorageService } from './core/infra/dexie-caso-storage.service';
 import { DexieFotoStorageService } from './core/infra/dexie-foto-storage.service';
 import { ApiAuthAdapter } from './core/infra/api-auth.adapter';
 import { ApiSyncAdapter } from './core/infra/api-sync.adapter';
+import { ApiTableroAdapter } from './core/infra/api-tablero.adapter';
 
 /**
  * Composicion de la aplicacion.
@@ -33,6 +34,7 @@ export const appConfig: ApplicationConfig = {
     { provide: CASO_STORAGE, useExisting: DexieCasoStorageService },
     { provide: FOTO_STORAGE, useExisting: DexieFotoStorageService },
     { provide: SINCRONIZACION, useExisting: ApiSyncAdapter },
-    { provide: AUTH, useExisting: ApiAuthAdapter }
+    { provide: AUTH, useExisting: ApiAuthAdapter },
+    { provide: TABLERO, useExisting: ApiTableroAdapter }
   ]
 };

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PoolClient } from 'pg';
-import { CasoParaSincronizar, CasoSincronizado } from '@raiz/dominio';
+import { CasoParaSincronizar, CasoSincronizado, Prioridad, ResumenTablero, Zona } from '@raiz/dominio';
 import {
   CasoRepositorioPort,
   ErrorRechazo,
@@ -8,6 +8,27 @@ import {
   Identidad
 } from '../../dominio/puertos';
 import { PostgresPool } from './pool';
+
+/** Fila del tablero, tal como sale de la vista. */
+interface FilaTablero {
+  id: string | number;
+  codigo: string;
+  zona: Zona;
+  municipio: string;
+  lugar: string | null;
+  prioridad: Prioridad | null;
+  personas_total: number | null;
+  menores: number | null;
+  adultos_mayores: number | null;
+  estado_verificacion: string;
+  afectacion: string | null;
+  habitable: boolean | null;
+  lat: string | number | null;
+  lon: string | number | null;
+  n_fotos: string | number | null;
+  remisiones_sin_respuesta: string | number | null;
+  fecha_registro: unknown;
+}
 
 /** Fila devuelta al registrar. */
 interface FilaRegistro {
@@ -37,6 +58,50 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
   private readonly log = new Logger(CasoRepositorioPostgres.name);
 
   constructor(private readonly pool: PostgresPool) {}
+
+  /**
+   * Los casos que quien pide alcanza, resumidos para el tablero.
+   *
+   * Se lee de `v_familias_tablero`, que lleva `security_invoker`: las politicas de la
+   * tabla de origen siguen corriendo, de modo que la mesa ve todo y un lider ve lo
+   * suyo. No hay ningun `where` de permisos en esta consulta y no debe haberlo.
+   *
+   * NO SE PIDEN NI NOMBRE NI TELEFONO, aunque la vista los tenga y quien pregunta
+   * pueda verlos: esta pantalla cuenta, ubica y prioriza. Traer identidad al navegador
+   * por comodidad es repartir datos personales sin que nadie los necesite.
+   */
+  async listar(identidad: Identidad): Promise<ResumenTablero[]> {
+    return this.pool.comoUsuario({ sub: identidad.sub }, async (cliente) => {
+      const { rows } = await cliente.query<FilaTablero>(
+        `select id, codigo, zona, municipio, lugar, prioridad, personas_total,
+                menores, adultos_mayores, estado_verificacion, afectacion, habitable,
+                lat, lon, n_fotos, remisiones_sin_respuesta, fecha_registro
+           from v_familias_tablero
+          order by fecha_registro desc nulls last, codigo desc`
+      );
+
+      return rows.map((f) => ({
+        id: String(f.id),
+        codigo: f.codigo,
+        zona: f.zona,
+        municipio: f.municipio,
+        lugar: f.lugar,
+        prioridad: f.prioridad,
+        personasTotal: f.personas_total ?? 0,
+        menores: f.menores ?? 0,
+        adultosMayores: f.adultos_mayores ?? 0,
+        estadoVerificacion: f.estado_verificacion,
+        afectacion: f.afectacion,
+        habitable: f.habitable,
+        // PostgreSQL entrega `numeric` como texto para no perder precision.
+        lat: f.lat === null ? null : Number(f.lat),
+        lon: f.lon === null ? null : Number(f.lon),
+        nFotos: Number(f.n_fotos ?? 0),
+        remisionesSinRespuesta: Number(f.remisiones_sin_respuesta ?? 0),
+        fechaRegistro: f.fecha_registro === null ? null : String(f.fecha_registro).slice(0, 10)
+      }));
+    });
+  }
 
   async registrar(caso: CasoParaSincronizar, identidad: Identidad): Promise<CasoSincronizado> {
     return this.pool.comoUsuario({ sub: identidad.sub }, async (cliente) => {

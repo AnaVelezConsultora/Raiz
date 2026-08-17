@@ -1,4 +1,4 @@
-import { CasoParaSincronizar, CasoSincronizado, Rol } from '@raiz/dominio';
+import { CasoParaSincronizar, CasoSincronizado, ResumenTablero, Rol } from '@raiz/dominio';
 
 /**
  * Puertos del dominio del servidor.
@@ -23,6 +23,16 @@ export interface VerificadorTokenPort {
 
 /** Persistencia de casos. Lo implementa el adaptador de PostgreSQL. */
 export interface CasoRepositorioPort {
+  /**
+   * Los casos que quien pide puede ver, resumidos.
+   *
+   * QUIEN VE QUE NO SE DECIDE AQUI. La consulta corre con la identidad de quien pide
+   * sobre `v_familias_tablero`, que lleva `security_invoker`: la mesa recibe todo y un
+   * lider recibe lo suyo, sin que este puerto sepa de roles. Por eso la misma ruta
+   * sirve al tablero de la mesa y a la vista del lider.
+   */
+  listar(identidad: Identidad): Promise<ResumenTablero[]>;
+
   /**
    * Registra el caso a nombre de quien lo envia.
    *
