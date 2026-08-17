@@ -205,7 +205,26 @@ fi
 BUCKET_FOTOS="${S3_BUCKET_FOTOS:-raiz-fotos-$CUENTA}"
 ORIGEN_FOTOS="https://$BUCKET_FOTOS.s3.$REGION.amazonaws.com"
 
-CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.$DOMINIO $ORIGEN_FOTOS; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+# -----------------------------------------------------------------------------
+# LAS TESELAS DEL MAPA VIENEN DE OPENSTREETMAP
+# -----------------------------------------------------------------------------
+#
+# El tablero de la mesa dibuja un mapa, y las imagenes de fondo las sirve
+# OpenStreetMap. Sin este origen en `img-src`, el navegador las bloquea y queda un
+# mapa gris con los puntos flotando: funciona a medias y el error no menciona la
+# politica.
+#
+# QUE SE LE CUENTA A UN TERCERO. Al pedir una tesela se revela la ZONA que alguien
+# esta mirando —z/x/y, un cuadro de varios kilometros— nunca un caso ni una
+# familia. Los datos de las familias no salen de nuestro dominio: los puntos los
+# dibuja el navegador con lo que respondio la API.
+#
+# Va el host exacto y no un comodin. Si algun dia se decide no depender de un
+# tercero, la alternativa es servir las teselas propias, y entonces esta linea
+# desaparece en vez de crecer.
+ORIGEN_TESELAS="https://tile.openstreetmap.org"
+
+CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: $ORIGEN_TESELAS; font-src 'self'; connect-src 'self' https://api.$DOMINIO $ORIGEN_FOTOS; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 cat >"$TMP/cabeceras.json" <<JSON
 {

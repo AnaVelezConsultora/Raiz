@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { invitadoGuard, rolGuard, sesionGuard } from './core/guards/sesion.guard';
+import { invitadoGuard, permisoGuard, rolGuard, sesionGuard } from './core/guards/sesion.guard';
 import { Rol } from './core/domain/enums';
 
 /**
@@ -52,6 +52,17 @@ export const routes: Routes = [
     canActivate: [sesionGuard, rolGuard(Rol.Custodio, Rol.Coordinador)],
     loadComponent: () =>
       import('./features/admin/voluntarios.component').then((m) => m.VoluntariosComponent)
+  },
+  {
+    path: 'tablero',
+    title: 'Tablero · Raíz',
+    // La puerta es un PERMISO y no una lista de roles: `verTodosLosCasos` es la misma
+    // frontera que `es_mesa()` usa en las politicas de la base. Quien se salte esta
+    // guarda encuentra una pantalla vacia, porque el servidor le responde con lo que su
+    // rol alcanza.
+    canActivate: [sesionGuard, permisoGuard('verTodosLosCasos')],
+    loadComponent: () =>
+      import('./features/tablero/tablero.component').then((m) => m.TableroComponent)
   },
   { path: '**', redirectTo: 'casos' }
 ];

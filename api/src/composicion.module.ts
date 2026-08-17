@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AdministrarPerfilesService } from './aplicacion/administrar-perfiles.service';
+import { ConsultarCasosService } from './aplicacion/consultar-casos.service';
 import { RegistrarCasoService } from './aplicacion/registrar-caso.service';
 import { RegistrarVoluntarioService } from './aplicacion/registrar-voluntario.service';
 import { SesionService } from './aplicacion/sesion.service';
@@ -51,6 +52,7 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
   providers: [
     PostgresPool,
     RegistrarCasoService,
+    ConsultarCasosService,
     SesionService,
     RegistrarVoluntarioService,
     AdministrarPerfilesService,

@@ -1,6 +1,7 @@
-import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
-import { CasoParaSincronizar, CasoSincronizado } from '@raiz/dominio';
+import { Body, Controller, Get, HttpCode, Logger, Post } from '@nestjs/common';
+import { CasoParaSincronizar, CasoSincronizado, ResumenTablero } from '@raiz/dominio';
 import { RegistrarCasoService } from '../aplicacion/registrar-caso.service';
+import { ConsultarCasosService } from '../aplicacion/consultar-casos.service';
 import { ErrorRechazo, Identidad } from '../dominio/puertos';
 import { Quien } from './ruta-abierta.decorador';
 
@@ -21,7 +22,23 @@ import { Quien } from './ruta-abierta.decorador';
 export class CasosController {
   private readonly log = new Logger(CasosController.name);
 
-  constructor(private readonly registrar: RegistrarCasoService) {}
+  constructor(
+    private readonly registrar: RegistrarCasoService,
+    private readonly consultar: ConsultarCasosService
+  ) {}
+
+  /**
+   * Los casos que quien pregunta puede ver.
+   *
+   * UNA SOLA RUTA PARA DOS PANTALLAS. El tablero de la mesa y la vista del lider piden
+   * lo mismo y reciben cosas distintas, porque quien decide es la politica por fila y
+   * no un parametro. Dos rutas —una «de admin» y otra «mia»— serian dos sitios donde
+   * equivocarse con el mismo permiso.
+   */
+  @Get()
+  listar(@Quien() identidad: Identidad): Promise<ResumenTablero[]> {
+    return this.consultar.ejecutar(identidad);
+  }
 
   @Post()
   @HttpCode(200)

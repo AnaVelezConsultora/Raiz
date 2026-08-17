@@ -250,3 +250,39 @@ export interface CasoSincronizado {
   /** True si el caso ya existia y este envio lo actualizo. */
   yaExistia: boolean;
 }
+
+/**
+ * Una fila del tablero: lo que la mesa necesita ver de un caso, y nada mas.
+ *
+ * NO LLEVA IDENTIDAD, y esa ausencia es deliberada. `v_familias_tablero` si expone
+ * nombre y telefono a quien tiene permiso, pero esta pantalla no los usa: sirve para
+ * contar, ubicar y priorizar. Mandarlos al navegador «por si acaso» seria repartir
+ * datos personales de familias damnificadas por una comodidad que nadie pidio.
+ *
+ * El dia que una pantalla necesite el nombre —el detalle de un caso, la remision— se
+ * pide en su propia ruta, donde se puede mirar quien la llama y por que.
+ *
+ * @version 0.1.0
+ */
+export interface ResumenTablero {
+  id: string;
+  /** Consecutivo institucional RZ-AAAA-NNNNNN. */
+  codigo: string;
+  zona: Zona;
+  municipio: string;
+  /** Vereda o barrio, lo que aplique. */
+  lugar: string | null;
+  prioridad: Prioridad | null;
+  personasTotal: number;
+  menores: number;
+  adultosMayores: number;
+  estadoVerificacion: string;
+  /** Nivel de afectacion de la vivienda principal, si se registro. */
+  afectacion: string | null;
+  habitable: boolean | null;
+  lat: number | null;
+  lon: number | null;
+  nFotos: number;
+  remisionesSinRespuesta: number;
+  fechaRegistro: string | null;
+}

@@ -55,6 +55,11 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
           <span style="font-size:.78rem;opacity:.9">
             {{ sesion.nombre() }} · {{ sesion.rol() }}
           </span>
+          @if (sesion.permisos()?.verTodosLosCasos) {
+            <a routerLink="/tablero"
+               style="color:#fff;font-size:.75rem;text-decoration:underline;
+                      text-underline-offset:.2rem">Tablero</a>
+          }
           @if (puedeAdministrar()) {
             <a routerLink="/voluntarios"
                style="color:#fff;font-size:.75rem;text-decoration:underline;
