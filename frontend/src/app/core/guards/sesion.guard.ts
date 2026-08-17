@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { environment } from '../../../environments/environment';
+import { Permisos } from '../domain/auth.model';
 import { Rol } from '../domain/enums';
 import { SesionService } from '../services/sesion.service';
 
@@ -20,15 +20,22 @@ import { SesionService } from '../services/sesion.service';
  *
  * Un voluntario con la sesion expirada en una vereda sin senal DEBE poder entrar y
  * seguir capturando. Lo que el servidor rechazara es el envio, y de eso avisa la
- * pantalla de sincronizacion.
+ * pantalla de sincronizacion. Lo que se exige es haber entrado alguna vez en este
+ * dispositivo.
  *
- * Mientras la API no este configurada, la aplicacion opera en modo local y la
- * guarda deja pasar: exigir sesion contra un servidor inexistente dejaria la
- * herramienta inutilizable.
+ * AQUI NO HAY EXCEPCION POR CONFIGURACION, y antes si la habia: cuando `apiUrl` venia
+ * vacia, las tres guardas devolvian `true` y cualquiera llegaba a cualquier pantalla.
+ * La intencion era poder trabajar en la interfaz sin levantar el servidor, y el precio
+ * resulto ser el contrario del que se creia: la aplicacion que abre sin identificarse
+ * no es la misma que se prueba, asi que una pantalla que depende de la sesion se veia
+ * «funcionando» sin haberse probado nunca. Y lo que hay detras es un padron de personas
+ * afectadas.
+ *
+ * Para trabajar sin la nube esta el entorno local —`cd entorno && make arriba`—, que da
+ * un servidor de verdad con usuarios de prueba. La comodidad se resuelve levantando el
+ * entorno, no abriendo la puerta.
  */
 export const sesionGuard: CanActivateFn = (_ruta, estado) => {
-  if (!environment.apiUrl) return true;
-
   const sesion = inject(SesionService);
   const router = inject(Router);
 
@@ -42,13 +49,35 @@ export const sesionGuard: CanActivateFn = (_ruta, estado) => {
 /** Exige uno de los roles indicados. Se compone con sesionGuard. */
 export function rolGuard(...permitidos: Rol[]): CanActivateFn {
   return () => {
-    if (!environment.apiUrl) return true;
-
     const sesion = inject(SesionService);
     const router = inject(Router);
     const rol = sesion.rol();
 
     if (rol !== null && permitidos.includes(rol)) return true;
+
+    return router.createUrlTree(['/casos']);
+  };
+}
+
+/**
+ * Exige un PERMISO, no una lista de roles.
+ *
+ * `rolGuard(Custodio, Coordinador)` obliga a repetir la lista en cada ruta, y esa
+ * lista se separa de la de la base el dia que alguien agrega un rol. Pidiendo el
+ * permiso, la puerta es la misma que ya declara `permisosDe` en el dominio compartido
+ * — y `verTodosLosCasos` es, ademas, la misma frontera que `es_mesa()` usa en las
+ * politicas de PostgreSQL.
+ *
+ * Sigue siendo comodidad de navegacion: quien se la salte encuentra una pantalla
+ * vacia, porque el servidor le responde con lo que su rol alcanza y nada mas.
+ */
+export function permisoGuard(permiso: keyof Permisos): CanActivateFn {
+  return () => {
+    const sesion = inject(SesionService);
+    const router = inject(Router);
+    const permisos = sesion.permisos();
+
+    if (permisos?.[permiso]) return true;
 
     return router.createUrlTree(['/casos']);
   };

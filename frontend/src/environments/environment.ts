@@ -11,10 +11,20 @@
  * no conoce la base: manda el token de la sesion en la cabecera y el servidor decide.
  * Un secreto en el paquete que se descarga al celular no es un secreto.
  *
- * `apiUrl` vacio es un estado legitimo y no un descuido: la aplicacion opera
- * completamente en modo local, guardando en el dispositivo. Es lo que permite
- * capturar en la vereda y tambien lo que permite trabajar en la interfaz sin
- * levantar el servidor.
+ * POR QUE YA NO ESTA VACIA
+ *
+ * Aqui `apiUrl` iba en blanco, y con eso la aplicacion abria sin identificarse: las
+ * guardas de ruta tenian una excepcion para ese caso. Se quito, porque detras hay un
+ * padron de personas afectadas y porque una pantalla que solo se prueba sin sesion no
+ * se ha probado. Sin servidor no hay a quien preguntarle quien es uno, asi que en
+ * desarrollo se apunta al entorno local.
+ *
+ * Antes de `npm start`, levantarlo: `cd entorno && make arriba`. Deja la base, S3 y
+ * Cognito en pie, con usuarios de prueba y la clave que imprime al terminar.
+ *
+ * Que capturar funcione sin senal no depende de esto: depende de haber entrado UNA vez
+ * en el dispositivo. El token puede estar vencido y la vereda no tener red; lo que el
+ * servidor rechazara entonces es el envio, no la captura.
  */
 import { Environment } from './environment.model';
 
@@ -25,8 +35,9 @@ export type { Environment };
 
 export const environment: Environment = {
   produccion: false,
-  // En desarrollo la API se levanta con `cd entorno && make arriba`.
-  apiUrl: '',
+  // El puerto es el del entorno local, y la API ya trae localhost:4200 entre sus
+  // origenes permitidos.
+  apiUrl: 'http://localhost:3021',
   municipioPorDefecto: 'Sevilla',
   departamentoPorDefecto: 'Valle del Cauca'
 };
