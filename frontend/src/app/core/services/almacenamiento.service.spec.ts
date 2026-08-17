@@ -44,6 +44,27 @@ describe('AlmacenamientoService', () => {
     expect(service.avisoEspacio()).toContain('Libere espacio en el celular');
   });
 
+  it('no genera un falso positivo cuando el uso es cero y queda espacio suficiente', async () => {
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: {
+        persisted: vi.fn().mockResolvedValue(true),
+        persist: vi.fn(),
+        estimate: vi.fn().mockResolvedValue({
+          usage: 0,
+          quota: 100 * 1024 * 1024
+        })
+      }
+    });
+
+    const service = new AlmacenamientoService();
+    await service.medirUso();
+
+    expect(service.uso()?.usado).toBe(0);
+    expect(service.espacioBajo()).toBe(false);
+    expect(service.avisoEspacio()).toBe('');
+  });
+
   it('vigila una sola vez y se puede detener', () => {
     vi.useFakeTimers();
     const estimate = vi.fn().mockResolvedValue({ usage: 0, quota: 100 * 1024 * 1024 });
