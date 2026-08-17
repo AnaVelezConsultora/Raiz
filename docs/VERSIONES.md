@@ -13,6 +13,17 @@ servidor y el contrato que comparten llevan siempre el mismo número.
 
 ---
 
+## 0.6.2 — 16 de agosto de 2026
+
+**El mapa ya dibujaba los puntos, pero el fondo seguía en blanco.** Los círculos de las
+familias estaban en su sitio y debajo no había calles ni ríos, que es lo que permite
+saber de qué vereda se está hablando.
+
+Faltaba permitirle a la aplicación pedir las imágenes del mapa por la vía que
+realmente usa. Se corrigió y no cambia nada más de lo que ya hacía.
+
+---
+
 ## 0.6.1 — 16 de agosto de 2026
 
 **El mapa del tablero salía en blanco.** Las cifras estaban bien y debajo no había nada.

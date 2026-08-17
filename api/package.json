@@ -1,6 +1,6 @@
 {
   "name": "@raiz/api",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "API de Raiz. Recibe lo que el voluntario capturo sin senal.",
   "license": "MIT",
   "scripts": {
