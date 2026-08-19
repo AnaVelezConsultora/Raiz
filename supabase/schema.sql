@@ -115,6 +115,14 @@ create table familias (
   registrador_perfil_id  uuid references perfiles(id) default auth.uid(),
   fuente_dato            text not null,        -- presencial, whatsapp, llamada, lider, otra_entidad
   consentimiento         boolean not null default false,
+  -- Ley 1581: los datos sensibles se autorizan aparte y nadie esta obligado a
+  -- darlos. Nulo es "no se pregunto", que no es lo mismo que un no.
+  autoriza_datos_sensibles    boolean,
+  autoriza_remision_entidades boolean,
+  -- Prueba de que la autorizacion se pidio: que texto se leyo y cuando respondio.
+  version_autorizacion   text,
+  autorizado_en          timestamptz,
+  sensibles_segregados_en timestamptz,
 
   -- bloque 1: ubicacion
   departamento           text not null,

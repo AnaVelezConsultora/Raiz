@@ -1,4 +1,4 @@
-import { Control, Hogar } from './caso.model';
+import { Control, Hogar, Vulnerabilidad } from './caso.model';
 
 /**
  * La regla de consentimiento, como funcion pura.
@@ -41,6 +41,60 @@ export const CAMPOS_NOMINALES = [
 ] as const satisfies readonly (keyof Hogar)[];
 
 export type CampoNominal = (typeof CAMPOS_NOMINALES)[number];
+
+/**
+ * Campos SENSIBLES en el sentido de la Ley 1581: salud, discapacidad, gestacion y
+ * origen etnico. No se conservan sin autorizacion especifica.
+ *
+ * POR QUE ESTA LISTA NACE EL 19 DE AGOSTO Y NO ANTES
+ *
+ * Porque no existia. La regla del proyecto protegia cuatro campos —nombres,
+ * apellidos, tipo y numero de documento— y todo lo demas viajaba siempre. Eso incluia
+ * gestantes, discapacidad y enfermedad cronica desde el primer dia, y desde el 16 de
+ * agosto tambien fallecidos y heridos, que agregamos nosotros sin tocar esta regla.
+ *
+ * La ley los trata aparte por una razon concreta: son los datos con los que se puede
+ * discriminar a alguien. Que una familia tenga una persona con discapacidad, o una
+ * gestante, o un muerto, no puede quedar registrado porque si.
+ *
+ * QUE PASA CON LOS NUMEROS AGREGADOS
+ *
+ * Un conteo por vereda —«31 gestantes en El Venado»— no identifica a nadie y sigue
+ * siendo util para pedir atencion. Esta regla protege el dato de CADA HOGAR, no la
+ * cifra del municipio: lo que se retira es la fila, no la estadistica.
+ */
+export const CAMPOS_SENSIBLES = [
+  'gestantes',
+  'lactantes',
+  'discapacidadN',
+  'discapacidadTipo',
+  'enfCronicaN',
+  'fallecidos',
+  'heridosLeves',
+  'heridosGraves',
+  'requiereMedicamento',
+  'medicamentoCual',
+  'etnia',
+  'victimaConflicto'
+] as const satisfies readonly (keyof Vulnerabilidad)[];
+
+export type CampoSensible = (typeof CAMPOS_SENSIBLES)[number];
+
+/** Valor neutro de cada campo sensible cuando no hay autorizacion para conservarlo. */
+const VACIO_SENSIBLE: Vulnerabilidad = {
+  gestantes: 0,
+  lactantes: 0,
+  discapacidadN: 0,
+  discapacidadTipo: [],
+  enfCronicaN: 0,
+  fallecidos: 0,
+  heridosLeves: 0,
+  heridosGraves: 0,
+  requiereMedicamento: null,
+  medicamentoCual: null,
+  etnia: null,
+  victimaConflicto: null
+};
 
 /** Resultado de aplicar la regla. */
 export interface ResultadoConsentimiento {
@@ -87,6 +141,70 @@ export function aplicarConsentimiento(
   }
 
   return { hogar: limpio, camposRetirados };
+}
+
+/** True si los datos sensibles de la familia pueden persistirse y viajar. */
+export function sensiblesPuedenViajar(
+  control: Pick<Control, 'autorizaDatosSensibles'>
+): boolean {
+  return control.autorizaDatosSensibles === true;
+}
+
+/** Resultado de aplicar la regla de datos sensibles. */
+export interface ResultadoSensibles {
+  vulnerabilidad: Vulnerabilidad;
+  camposRetirados: CampoSensible[];
+}
+
+/**
+ * Devuelve la vulnerabilidad sin datos sensibles cuando no hay autorizacion.
+ *
+ * Misma decision que con la identidad y por la misma razon: no se rechaza el caso. La
+ * familia queda contada —cuantas personas, donde, que dano— y lo que se pierde es el
+ * detalle que la ley protege. Perder el caso entero seria peor para esa familia.
+ *
+ * Los conteos vuelven a cero en vez de a nulo porque el esquema los declara no nulos:
+ * cero significa «no consta», que es exactamente lo que hay cuando nadie autorizo a
+ * preguntar.
+ */
+export function aplicarAutorizacionSensibles(
+  vulnerabilidad: Vulnerabilidad,
+  control: Pick<Control, 'autorizaDatosSensibles'>
+): ResultadoSensibles {
+  if (sensiblesPuedenViajar(control)) {
+    return { vulnerabilidad, camposRetirados: [] };
+  }
+
+  const camposRetirados = sensiblesResiduales(vulnerabilidad, control);
+
+  // Se parte del molde vacio y se le devuelven los campos que NO son sensibles, en
+  // vez de recorrer la lista borrando. La diferencia importa: escrito asi, el dia que
+  // alguien agregue un campo sensible al contrato y olvide ponerlo en la lista, ese
+  // campo queda FUERA por omision en vez de colarse por omision.
+  const limpia: Vulnerabilidad = { ...VACIO_SENSIBLE };
+
+  for (const clave of Object.keys(vulnerabilidad) as (keyof Vulnerabilidad)[]) {
+    if (!CAMPOS_SENSIBLES.includes(clave as CampoSensible)) {
+      Object.assign(limpia, { [clave]: vulnerabilidad[clave] });
+    }
+  }
+
+  return { vulnerabilidad: limpia, camposRetirados };
+}
+
+/** Igual que {@link identidadResidual}, para los campos sensibles. */
+export function sensiblesResiduales(
+  vulnerabilidad: Vulnerabilidad,
+  control: Pick<Control, 'autorizaDatosSensibles'>
+): CampoSensible[] {
+  if (sensiblesPuedenViajar(control)) return [];
+
+  return CAMPOS_SENSIBLES.filter((campo) => {
+    const valor = vulnerabilidad[campo];
+    return Array.isArray(valor)
+      ? valor.length > 0
+      : valor !== null && valor !== undefined && valor !== 0 && valor !== '';
+  });
 }
 
 /**

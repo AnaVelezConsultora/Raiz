@@ -247,6 +247,43 @@ const sinConsentimiento = await enviar({
 });
 comprobar(sinConsentimiento.estado === 200, `caso sin consentimiento se acepta (${sinConsentimiento.estado})`);
 
+// --- sin autorizacion de datos sensibles, la salud tampoco viaja -------------
+//
+// Se manda un caso CON autorizacion de datos personales pero SIN la de sensibles,
+// y con gestantes, discapacidad, enfermedad cronica, fallecidos y heridos llenos.
+// El servidor debe aceptarlo —la familia queda contada— y guardar esos campos en
+// cero. Hasta el 19 de agosto de 2026 se guardaban tal cual.
+const ORIGEN_SIN_SENSIBLES = crypto.randomUUID();
+const sinSensibles = await enviar({
+  ...CASO,
+  origenId: ORIGEN_SIN_SENSIBLES,
+  control: {
+    ...CASO.control,
+    consentimiento: true,
+    autorizaDatosSensibles: false,
+    versionAutorizacion: '1.0.0-borrador',
+    autorizadoEn: '2026-08-19T15:00:00.000Z'
+  },
+  hogar: {
+    ...CASO.hogar,
+    vulnerabilidad: {
+      ...CASO.hogar.vulnerabilidad,
+      gestantes: 2,
+      discapacidadN: 1,
+      enfCronicaN: 3,
+      fallecidos: 1,
+      heridosLeves: 2,
+      heridosGraves: 1,
+      etnia: 'inventada',
+      victimaConflicto: true
+    }
+  }
+});
+comprobar(
+  sinSensibles.estado === 200,
+  `caso sin autorizacion de sensibles se acepta (${sinSensibles.estado})`
+);
+
 // --- taxonomia de error -----------------------------------------------------
 const sinToken = await enviar(CASO, false);
 comprobar(sinToken.estado === 401 && sinToken.cuerpo.clase === 'sesion', `sin token: 401 clase sesion (${sinToken.estado}/${sinToken.cuerpo.clase})`);
@@ -496,3 +533,12 @@ console.log('');
 console.log('Casos que dejo esta corrida, por si hay que borrarlos:');
 console.log(`  ${ORIGEN_CASO}`);
 console.log(`  ${ORIGEN_SIN_CONSENTIMIENTO}`);
+console.log(`  ${ORIGEN_SIN_SENSIBLES}`);
+console.log('');
+console.log('Para comprobar que la salud NO quedo guardada en el ultimo:');
+console.log(
+  '  docker compose exec -T db psql -U postgres -d raiz -c "' +
+    'select gestantes, discapacidad_n, enf_cronica_n, fallecidos, heridos_leves,' +
+    ' heridos_graves, etnia, victima_conflicto from familias' +
+    ` where origen_id = '${ORIGEN_SIN_SENSIBLES}'"`
+);

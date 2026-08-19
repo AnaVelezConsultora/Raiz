@@ -136,7 +136,14 @@ export class CasoFormService {
         registradorOrg: v.control.registradorOrg,
         registradorTel: v.control.registradorTel,
         fuenteDato: v.control.fuenteDato,
-        consentimiento: v.control.consentimiento
+        consentimiento: v.control.consentimiento,
+        // Las tres autorizaciones y su prueba no se pierden al volcar el formulario.
+        // Se conservan del caso porque las escribe la pantalla de consentimiento y no
+        // los campos de este paso.
+        autorizaDatosSensibles: caso.control.autorizaDatosSensibles ?? null,
+        autorizaRemisionEntidades: caso.control.autorizaRemisionEntidades ?? null,
+        versionAutorizacion: caso.control.versionAutorizacion ?? null,
+        autorizadoEn: caso.control.autorizadoEn ?? null
       },
       ubicacion: {
         ...caso.ubicacion,

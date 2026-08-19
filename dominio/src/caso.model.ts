@@ -37,20 +37,58 @@ export interface Control {
   registradorTel: string | null;
   fuenteDato: FuenteDato;
   /**
-   * Autorizacion de tratamiento de datos, Ley 1581 de 2012.
-   * En false la identidad NO viaja. La regla se aplica con {@link aplicarConsentimiento}.
-   */
-  /**
-   * Autorizacion de la familia. null es SIN RESPONDER, y no es lo mismo que un no.
+   * Autorizacion para tratar los DATOS PERSONALES de la familia.
    *
-   * Con un booleano de dos estados, un formulario que nadie lleno se veia igual que
-   * una familia que dijo que no. De esta respuesta depende si el nombre y el documento
-   * de una persona se guardan, asi que la diferencia importa.
+   * null es SIN RESPONDER, y no es lo mismo que un no: un formulario que nadie lleno
+   * no puede verse igual que una familia que dijo que no. De esta respuesta depende si
+   * el nombre y el documento de una persona se guardan.
    *
-   * Al escribir en la base, cualquier cosa distinta de true es un no: la regla de
-   * identidad no cambia.
+   * Al escribir en la base, cualquier cosa distinta de true es un no.
    */
   consentimiento: boolean | null;
+
+  /**
+   * Autorizacion para tratar DATOS SENSIBLES: salud, discapacidad, gestacion, etnia.
+   *
+   * POR QUE VA SEPARADA Y NO DENTRO DE LA ANTERIOR
+   *
+   * La Ley 1581 trata los datos sensibles aparte y establece que nadie esta obligado a
+   * autorizarlos. Si la unica forma de quedar caracterizado fuera aceptar en bloque
+   * —incluidos salud, discapacidad y gestacion— esa autorizacion seria discutible por
+   * no ser libre. Y en terreno hay familias que quieren quedar contadas y no quieren
+   * que su informacion de salud salga hacia una entidad.
+   *
+   * Sin ella, esos campos no se conservan ni viajan. Ver {@link CAMPOS_SENSIBLES}.
+   */
+  autorizaDatosSensibles: boolean | null;
+
+  /**
+   * Autorizacion para remitir el caso NOMINALMENTE a las entidades competentes.
+   *
+   * Sin ella la familia sigue contando en el consolidado —un numero no identifica a
+   * nadie— pero su nombre no sale en un listado dirigido a una entidad.
+   */
+  autorizaRemisionEntidades: boolean | null;
+
+  /**
+   * Version del texto de autorizacion que se le leyo a esta familia.
+   *
+   * La Ley 1581 exige poder consultar la autorizacion despues y conservar prueba de
+   * haber informado. Guardar «autorizo: si» no alcanza: hay que poder decir QUE TEXTO
+   * EXACTO se leyo ese dia. El texto vive versionado en
+   * docs/cumplimiento/autorizacion.md y aqui queda la version que estaba vigente.
+   */
+  versionAutorizacion: string | null;
+
+  /**
+   * Momento en que la familia respondio, en ISO.
+   *
+   * Separado de `fechaRegistro` a proposito: se puede llenar la ficha un dia y obtener
+   * la autorizacion en otro, o al reves. Confundirlos hace imposible reconstruir el
+   * consentimiento.
+   */
+  autorizadoEn: string | null;
+
   fechaRegistro: string;
 }
 

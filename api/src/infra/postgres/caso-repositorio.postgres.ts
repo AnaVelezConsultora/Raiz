@@ -145,18 +145,25 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         afiliada_federacion, aplica_convenio, convenio_linea, convenio_obs,
         prioridad, necesidades_inmediatas, ya_recibio_ayuda, ayuda_cual, ayuda_quien,
         observaciones,
-        fallecidos, heridos_leves, heridos_graves, necesidades_otra
+        fallecidos, heridos_leves, heridos_graves, necesidades_otra,
+        autoriza_datos_sensibles, autoriza_remision_entidades,
+        version_autorizacion, autorizado_en
       ) values (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::zona_t, $11, $12, $13, $14,
         $15, $16, $17, $18::gps_fuente_t, $19, $20, $21, $22, $23, $24, $25, $26,
         $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
         $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
         $48, $49, $50, $51, $52::prioridad_t, $53::necesidad_t[], $54, $55, $56, $57,
-        $58, $59, $60, $61
+        $58, $59, $60, $61,
+        $62, $63, $64, $65
       )
       on conflict (origen_id) do update set
         fecha_registro = excluded.fecha_registro,
         consentimiento = excluded.consentimiento,
+        autoriza_datos_sensibles = excluded.autoriza_datos_sensibles,
+        autoriza_remision_entidades = excluded.autoriza_remision_entidades,
+        version_autorizacion = excluded.version_autorizacion,
+        autorizado_en = excluded.autorizado_en,
         vereda = excluded.vereda, corregimiento = excluded.corregimiento,
         barrio = excluded.barrio, comuna = excluded.comuna,
         direccion_ref = excluded.direccion_ref,
@@ -199,7 +206,12 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       // Fallecidos y heridos, y lo que la familia pidio con sus palabras. Salieron de
       // la primera ficha llenada en terreno el 16 de agosto.
       vul.fallecidos ?? 0, vul.heridosLeves ?? 0, vul.heridosGraves ?? 0,
-      t?.necesidadesOtra ?? null
+      t?.necesidadesOtra ?? null,
+      // Las autorizaciones viajan como llegan, incluido el nulo: null es «no se
+      // pregunto» y no puede convertirse en un no por el camino. La regla que decide
+      // que se guarda ya se aplico antes, en el servicio.
+      c.autorizaDatosSensibles ?? null, c.autorizaRemisionEntidades ?? null,
+      c.versionAutorizacion ?? null, c.autorizadoEn ?? null
     ];
 
     try {
