@@ -9,10 +9,25 @@ reglamentario.
 
 | Archivo | Qué es | Estado |
 |---|---|---|
+| `autorizacion.md` | Texto que el voluntario lee a la familia | Borrador de Miguel, 18 ago |
+| `constancia-de-entrega.md` | Constancia de entrega y recepción institucional | Borrador de Miguel, 18 ago |
+| `articulacion-institucional.md` | Instrumento de articulación con el SNGRD | Borrador de Miguel, 18 ago |
 | `politica-tratamiento.md` | Política de tratamiento de datos personales | Por subir |
-| `autorizacion.md` | Texto que el voluntario lee a la familia | Por subir |
 | `retencion-y-supresion.md` | Tiempos de retención y procedimiento de eliminación | Por subir |
-| `oficio-remision.md` | Cláusula de finalidad para los oficios a entidades | Por definir |
+
+La constancia de entrega reemplaza a lo que esta tabla llamaba `oficio-remision.md`. El
+cambio no es de nombre: se dejó de pedirle a la entidad que **certifique** los datos y se
+le pide que los **reciba** formalmente. Es lo que puede destrabar la entrega.
+
+**Solo el primero es una autorización.** Los otros dos son instrumentos entre la
+iniciativa y las entidades. Llamarlos autorización invita a la respuesta que cierra la
+puerta: «no tenemos competencia para autorizar una plataforma comunitaria».
+
+Y el encuadre que ordena los tres: **no es absorberse en el Sistema Nacional de Gestión
+del Riesgo, es acoplarse a él.** Absorberse sería pedir que Raíz sea adoptada como censo
+oficial, que ninguna entidad puede conceder y que además nos quitaría lo que nos hace
+útiles. Quedarse por fuera sería producir información que nadie recibe. Acoplarse es
+existir como fuente comunitaria con un título claro para ser recibida, evaluada y usada.
 
 ## Formato
 
