@@ -1,0 +1,461 @@
+<title>Revisión y plan de Raíz</title>
+<style>
+  /* =========================================================================
+     Respuesta al documento de Miguel y plan de trabajo. Mismo mundo visual que
+     el manual y la propuesta del puente: negro, colores del sello, sin adorno.
+     Lo leen dos personas distintas —quien propuso y quien construye— y por eso
+     va en un solo documento: que ninguno tenga que preguntar qué le dijeron al
+     otro.
+     ========================================================================= */
+
+  :root {
+    --fondo: #0d0f0d;
+    --tinta: #f4f2ec;
+    --tinta-suave: #b6bdb5;
+    --tinta-tenue: #8a938c;
+    --linea: rgba(244, 242, 236, 0.18);
+    --linea-suave: rgba(244, 242, 236, 0.08);
+    --verde: #a7c0aa;
+    --ladrillo: #e08a7d;
+    --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  }
+
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  .bloque {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+    border-bottom: 1px solid var(--linea-suave);
+  }
+  .bloque:last-child { border-bottom: 0; }
+  .ancho { max-width: 62rem; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--tinta-tenue);
+    margin: 0 0 0.7rem;
+  }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(2.1rem, 5.5vw, 3.2rem); line-height: 1.08; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); line-height: 1.18; margin-bottom: 1rem; }
+  h3 { font-size: 1.12rem; margin: 2rem 0 0.4rem; }
+
+  p { margin: 0 0 1.1rem; }
+  .grande { font-size: 1.18rem; }
+  .tenue { color: var(--tinta-suave); }
+  strong { font-weight: 650; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--verde);
+    background: rgba(167, 192, 170, 0.09);
+    padding: 0.05em 0.35em;
+    border-radius: 2px;
+  }
+
+  ul, ol { margin: 0 0 1.1rem; padding-left: 1.2rem; }
+  li { margin-bottom: 0.55rem; }
+
+  .nota {
+    border-left: 2px solid var(--verde);
+    padding: 0.1rem 0 0.1rem 1.1rem;
+    margin: 0 0 1.2rem;
+    color: var(--tinta-suave);
+  }
+  .nota.peligro { border-left-color: var(--ladrillo); }
+  .nota.peligro strong { color: var(--ladrillo); }
+  .nota strong { color: var(--tinta); }
+  .nota p:last-child { margin-bottom: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 1.4rem; font-size: 0.97rem; }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--tinta-tenue);
+    font-weight: 400;
+    padding: 0 0.9rem 0.5rem 0;
+    border-bottom: 1px solid var(--linea);
+  }
+  td { padding: 0.7rem 0.9rem 0.7rem 0; border-bottom: 1px solid var(--linea-suave); vertical-align: top; }
+  td:first-child { color: var(--tinta-tenue); font-family: var(--mono); font-size: 0.85rem; white-space: nowrap; }
+  .veredicto { font-weight: 650; }
+  .si { color: var(--verde); }
+  .ajuste { color: var(--tinta); }
+  .luego { color: var(--tinta-tenue); }
+  .no { color: var(--ladrillo); }
+
+  .fases { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); margin-bottom: 1.2rem; }
+  .fase { border-top: 2px solid var(--linea); padding-top: 0.9rem; }
+  .fase .cuando {
+    font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--tinta-tenue); display: block; margin-bottom: 0.35rem;
+  }
+  .fase h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+  .fase p { font-size: 0.95rem; color: var(--tinta-suave); margin-bottom: 0.6rem; }
+  .fase.ahora { border-top-color: var(--ladrillo); }
+  .fase.sigue { border-top-color: var(--verde); }
+
+  .quien { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem 1.2rem; align-items: baseline; }
+  .quien dt { font-family: var(--mono); font-size: 0.85rem; color: var(--tinta-tenue); white-space: nowrap; }
+  .quien dd { margin: 0 0 0.4rem; }
+
+  .portada { min-height: 76vh; display: flex; flex-direction: column; justify-content: center; }
+  .pie {
+    font-size: 0.9rem; color: var(--tinta-tenue);
+    border-top: 1px solid var(--linea-suave); padding-top: 1.2rem; margin-top: 2.5rem;
+  }
+
+  @media print {
+    :root {
+      --fondo: #fff; --tinta: #111; --tinta-suave: #333; --tinta-tenue: #666;
+      --linea: #ccc; --linea-suave: #e6e6e6; --verde: #2b3a2e; --ladrillo: #9b2617;
+    }
+    .bloque { page-break-inside: avoid; border: 0; padding: 1.2rem 0; }
+    body { font-size: 11.5pt; }
+  }
+</style>
+
+<section class="bloque portada">
+  <p class="eyebrow">Raíz · 18 de agosto de 2026</p>
+  <h1>Revisión del documento de Miguel, y qué hacemos ahora</h1>
+  <p class="grande tenue" style="margin-top:1.2rem;max-width:36rem">
+    Contrastado contra el código, no contra la idea que tenemos del código. Sirve de
+    respuesta a Miguel y de plan de trabajo para Yoni.
+  </p>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">En cinco líneas</p>
+  <h2>Lo que hay que saber si no se lee lo demás</h2>
+  <ul class="grande">
+    <li>El documento es correcto casi entero. Lo que no cabe no es por contenido: es por calendario.</li>
+    <li>Su recomendación central <strong>ya estaba priorizada por el propio proyecto</strong>, escrita por él mismo hace días.</li>
+    <li>Hay un hallazgo jurídico <strong>más grave de lo que él alcanzó a ver</strong>, y hay que atenderlo esta semana.</li>
+    <li>Su propuesta de niveles de verificación necesita un ajuste técnico: son dos columnas, no una.</li>
+    <li>Lo que propone desplaza el puente de ayudas. Esa decisión es de la mesa, no técnica.</li>
+  </ul>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Primer hallazgo</p>
+  <h2>No es una dirección nueva. Es la suya, y ya estaba priorizada.</h2>
+  <p class="grande">
+    El documento <code>docs/ESTANDAR-PROBATORIO.md</code>, que salió de su análisis de
+    jurisprudencia, trae nueve recomendaciones numeradas. La <strong>G9</strong> pide, con
+    esas palabras, «un campo explícito de naturaleza de la observación».
+  </p>
+  <p>
+    Eso es el R0–R5 de ahora, en versión temprana. Y ese mismo documento ya dejó escrita
+    la prioridad: <strong>«G3 y G9 primero: son baratos y son los que más elevan la
+    confiabilidad»</strong>.
+  </p>
+  <div class="nota">
+    <p>
+      Importa para la decisión: lo que se propone hoy no es un giro del proyecto ni una
+      opinión contra otra. Es cumplir lo que el proyecto ya había acordado por escrito y
+      no había ejecutado.
+    </p>
+  </div>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Segundo hallazgo · el ajuste técnico</p>
+  <h2>R0–R5 y «naturaleza de la observación» son dos ejes, no uno</h2>
+  <p class="grande">Fundirlos en un campo pierde información, y la pierde en silencio.</p>
+  <dl class="quien">
+    <dt>origen</dt>
+    <dd>
+      De dónde salió el dato: lo vio quien registra, lo dijo la familia, lo contó un
+      tercero, vino del listado de otra entidad. <strong>No cambia nunca.</strong>
+    </dd>
+    <dt>verificación</dt>
+    <dd>
+      Hasta dónde está comprobado: autodeclarado, verificado en terreno, documental,
+      técnico, institucional. <strong>Cambia con el tiempo, y esa es su gracia.</strong>
+    </dd>
+  </dl>
+  <p>
+    Un caso puede ser «reportado por un tercero» —origen fijo— y aun así subir de R1 a R4
+    cuando un ingeniero lo revise. En un solo campo, o se pierde el origen o se pierde el
+    histórico.
+  </p>
+  <p class="tenue">
+    Detalle menor y del mismo tipo: el R5, «validado institucionalmente», ya existe a
+    medias en el flujo de remisiones con radicado. Hay que amarrarlos, no duplicarlos.
+  </p>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Tercer hallazgo · el serio</p>
+  <h2>Lo de los datos sensibles es peor de lo que se ve desde afuera</h2>
+  <p class="grande">
+    La regla de consentimiento vive en el paquete compartido, en una lista llamada
+    <code>CAMPOS_NOMINALES</code>. Tiene exactamente cuatro campos: nombres, apellidos,
+    tipo y número de documento. <strong>Todo lo demás viaja siempre</strong>, con
+    autorización o sin ella.
+  </p>
+  <p>
+    Eso incluye el teléfono, que ya sabíamos. Y también gestantes, personas con
+    discapacidad, enfermedad crónica o huérfana, y —desde el 16 de agosto— personas
+    fallecidas y heridas.
+  </p>
+  <div class="nota peligro">
+    <p>
+      <strong>Los campos de fallecidos y heridos los agregamos nosotros hace dos días sin
+      tocar la regla de consentimiento.</strong> La alerta de Miguel llega justo después de
+      que el problema creciera, y por nuestra mano.
+    </p>
+  </div>
+  <p>Dos agravantes que no se ven desde afuera:</p>
+  <ul>
+    <li>
+      La tabla <code>auditoria</code> guarda copia completa de la fila, antes y después.
+      Los datos de salud quedan también ahí. El frente de cumplimiento ya había detectado
+      ese choque para la identidad; nadie lo extendió a salud.
+    </li>
+    <li>
+      Ese mismo documento afirma hoy que «sin autorización de la familia la identidad no
+      viaja». Es cierto para cuatro campos y falso para el resto: otra contradicción entre
+      documentación y código.
+    </li>
+  </ul>
+  <p>
+    <strong>Y hay algo que no se arregla con código:</strong> ya hay familias reales
+    registradas con datos de salud bajo una autorización genérica. Corregir hacia adelante
+    no basta. Qué se hace con lo ya capturado —purgar, regularizar o segregar— es decisión
+    de la mesa y del frente jurídico.
+  </p>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Corrección</p>
+  <h2>Algo que dijimos ayer y era falso</h2>
+  <p class="grande">
+    Se afirmó que «cada cambio queda auditado con fecha y usuario». No es cierto: el
+    disparador de auditoría cubre <code>familias</code> y <code>remisiones</code>, y nada
+    más.
+  </p>
+  <p>
+    Los cambios en viviendas, en producción y —lo que importa para el puente de ayudas—
+    <strong>en las ayudas no quedan auditados</strong>. Justo la tabla donde iría quién
+    entregó qué a quién. Si vamos a manejar donaciones, esa auditoría va antes, no después.
+    Es una línea de SQL, pero había que mirarla en vez de suponerla.
+  </p>
+</section>
+
+<section class="bloque ancho">
+  <p class="eyebrow">Punto por punto</p>
+  <h2>Qué adoptamos, qué ajustamos, qué aplazamos</h2>
+  <table>
+    <thead>
+      <tr><th>Punto</th><th>Qué propone</th><th>Veredicto</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1, 2, 21</td>
+        <td>Capa comunitaria complementaria, no un RUD paralelo</td>
+        <td class="veredicto si">Se adopta. Cuesta un párrafo y le da futuro al proyecto</td>
+      </tr>
+      <tr>
+        <td>19</td>
+        <td>Tres autorizaciones separadas y tratamiento de datos sensibles</td>
+        <td class="veredicto si">Se adopta y sube a lo primero. Es exposición actual, no futura</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>Alerta comunitaria, no diagnóstico estructural</td>
+        <td class="veredicto si">Se adopta. Hoy la aplicación afirma como dictamen lo que es una observación</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Módulo de evento</td>
+        <td class="veredicto si">Se adopta. Una tabla y una llave. Hoy todo pertenece implícitamente al sismo</td>
+      </tr>
+      <tr>
+        <td>20</td>
+        <td>Separar dato, observación, clasificación, evaluación y decisión</td>
+        <td class="veredicto si">Se adopta, y es lo mismo que resuelven los dos ejes</td>
+      </tr>
+      <tr>
+        <td>14</td>
+        <td>Método de captura y niveles R0–R5</td>
+        <td class="veredicto ajuste">Se adopta con ajuste: dos columnas, origen y verificación</td>
+      </tr>
+      <tr>
+        <td>22</td>
+        <td>Mesa técnica al amparo de la Ley 1523</td>
+        <td class="veredicto ajuste">Ruta institucional que explora Miguel. No es trabajo de desarrollo</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>Hogar ≠ vivienda ≠ predio</td>
+        <td class="veredicto luego">Ya está: son tres tablas separadas desde el primer esquema</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>Indicadores derivados de edades</td>
+        <td class="veredicto luego">Ya está: los calcula la base, no el formulario</td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td>Trazabilidad caso → entidad → radicado → mora</td>
+        <td class="veredicto luego">Ya está. Faltan dos estados: reabierto y requiere información</td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td>Catorce estados de caso</td>
+        <td class="veredicto no">Se aplaza. Catorce estados que nadie mueve son peores que cinco que sí</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Jerarquía territorial normalizada</td>
+        <td class="veredicto no">Se normaliza en la mesa, no en la captura. En terreno nadie separa vereda de corregimiento</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td>Servicios con población afectada</td>
+        <td class="veredicto luego">Dato correcto, lugar equivocado: es un registro de infraestructura aparte</td>
+      </tr>
+      <tr>
+        <td>15, 16</td>
+        <td>Infraestructura comunitaria y territorio productivo</td>
+        <td class="veredicto luego">Ola 2. Es donde Raíz se diferencia de un censo</td>
+      </tr>
+      <tr>
+        <td>17</td>
+        <td>Cuatro tableros</td>
+        <td class="veredicto luego">De acuerdo con los cuatro; salen solos cuando haya qué mostrar</td>
+      </tr>
+      <tr>
+        <td>18</td>
+        <td>Ocho fuerzas de tarea</td>
+        <td class="veredicto no">Excelente como organización humana. No al modelo: cada rol nuevo son políticas de acceso que hay que probar</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="bloque ancho">
+  <p class="eyebrow">El plan</p>
+  <h2>Cuatro olas, y la primera no está a discusión</h2>
+  <div class="fases">
+    <div class="fase ahora">
+      <span class="cuando">Ola 0 · esta semana</span>
+      <h3>Lo jurídico y lo que ya está mal</h3>
+      <p>
+        Tres autorizaciones separadas y datos de salud bajo autorización explícita.
+        Decisión sobre lo ya capturado. Auditoría en ayudas y viviendas. Lenguaje de
+        alerta comunitaria. El encuadre institucional escrito.
+      </p>
+      <p><strong>No es opcional: es exposición de hoy.</strong></p>
+    </div>
+    <div class="fase sigue">
+      <span class="cuando">Ola 1 · una o dos semanas</span>
+      <h3>Lo que abre la puerta del CMGRD</h3>
+      <p>
+        Origen y nivel de verificación, en dos columnas. Módulo de evento. Y el tablero
+        que separa lo reportado de lo verificado, que es la diapositiva con la que se gana
+        una reunión.
+      </p>
+      <p>Ya estaba priorizado como G9 y no se había hecho.</p>
+    </div>
+    <div class="fase">
+      <span class="cuando">Ola 2</span>
+      <h3>Lo que nos diferencia</h3>
+      <p>
+        Registro de infraestructura afectada, con cuántos hogares depende de cada punto.
+        Normalización territorial en la mesa. Medios de vida con actividad económica
+        principal.
+      </p>
+    </div>
+    <div class="fase">
+      <span class="cuando">Ola 3 · con más equipo</span>
+      <h3>Lo grande</h3>
+      <p>
+        Gestión de casos ampliada, los cuatro tableros, y la mesa técnica del artículo de
+        la Ley 1523.
+      </p>
+    </div>
+  </div>
+  <div class="nota peligro">
+    <p>
+      <strong>Esto desplaza el puente de ayudas.</strong> No caben los dos con el equipo de
+      hoy. La fase 0 del puente —que la mesa registre necesidades y entregas— cabe en medio
+      <em>solo si la mesa la va a usar esta semana</em>. Si no la va a usar, sería la
+      tercera pantalla que nadie abre.
+    </p>
+  </div>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Reparto</p>
+  <h2>Quién hace qué</h2>
+  <dl class="quien">
+    <dt>Yoni</dt>
+    <dd>
+      Migración de las tres autorizaciones y de las dos columnas nuevas. Auditoría sobre
+      ayudas y viviendas. Módulo de evento con relleno de lo ya registrado. Y lo que sigue
+      pendiente de antes: respaldo de la base, fotografías comprobadas como privadas
+      contra AWS, y el despliegue en orden.
+    </dd>
+    <dt>Ana</dt>
+    <dd>
+      Front del consentimiento en tres preguntas, lenguaje de alerta comunitaria, captura
+      de origen y verificación, y el tablero de reportado contra verificado.
+    </dd>
+    <dt>Miguel</dt>
+    <dd>
+      El texto de las tres autorizaciones con criterio jurídico, la ruta de la mesa
+      técnica, y los nombres exactos de las dependencias, que sigue bloqueando la entrega
+      formal.
+    </dd>
+    <dt>la mesa</dt>
+    <dd>
+      Qué se hace con los datos de salud ya capturados. Y si el puente se usa esta semana
+      o se aplaza.
+    </dd>
+  </dl>
+  <div class="nota">
+    <p>
+      Debajo de todo esto sigue lo mismo de la semana pasada, sin dueño:
+      <strong>nadie ha probado Raíz en un teléfono Android real, en la vereda</strong>. Es
+      el mayor riesgo abierto y no depende de ninguna de estas olas.
+    </p>
+  </div>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Cierre</p>
+  <h2>La frase que resume el documento</h2>
+  <p class="grande">
+    «El terremoto es el evento que pone a funcionar la plataforma. La plataforma debe
+    sobrevivir al terremoto.»
+  </p>
+  <p>
+    Técnicamente, eso es el módulo de evento. Por eso quedó en la ola 1 y no más abajo: es
+    la diferencia entre una herramienta hecha para agosto de 2026 y una que sirva la
+    próxima vez, aquí o en otro municipio.
+  </p>
+  <p class="pie">
+    Raíz · Ingeniería al servicio de la vida · Revisión hecha contra el código el 18 de
+    agosto de 2026. Cada afirmación sobre lo que el sistema hace hoy se verificó en el
+    repositorio, no de memoria.
+  </p>
+</section>

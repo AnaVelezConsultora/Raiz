@@ -29,3 +29,8 @@ deck.html
 # son binarias y chocan en cada fusion sin aportar nada. Las del deck, que si
 # se versionan a proposito, viven en docs/capturas.
 frontend/preview-*.png
+
+# Los PDF del manual se generan con docs/armar-pdf.mjs desde docs/manual.html.
+# No se versionan: son 1,3 MB cada uno que cambian entero con cada retoque, y el
+# archivo del que salen si esta en el repositorio.
+docs/generado/

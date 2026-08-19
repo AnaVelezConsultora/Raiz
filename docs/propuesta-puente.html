@@ -1,0 +1,618 @@
+<title>Puente de ayudas</title>
+<style>
+  /* =========================================================================
+     Propuesta tecnica para Yoni. Mismo mundo visual que el manual de campo:
+     negro, los colores del sello de Raiz, y nada de adorno. Se lee en un
+     celular a las once de la noche, que es cuando este equipo lee.
+     ========================================================================= */
+
+  :root {
+    --fondo: #0d0f0d;
+    --tinta: #f4f2ec;
+    --tinta-suave: #b6bdb5;
+    --tinta-tenue: #8a938c;
+    --linea: rgba(244, 242, 236, 0.18);
+    --linea-suave: rgba(244, 242, 236, 0.08);
+    --verde: #a7c0aa;
+    --ladrillo: #e08a7d;
+    --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  }
+
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  .bloque {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+    border-bottom: 1px solid var(--linea-suave);
+  }
+  .bloque:last-child { border-bottom: 0; }
+  .ancho { max-width: 62rem; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--tinta-tenue);
+    margin: 0 0 0.7rem;
+  }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.08; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); line-height: 1.18; margin-bottom: 1rem; }
+  h3 { font-size: 1.12rem; margin: 2rem 0 0.4rem; }
+
+  p { margin: 0 0 1.1rem; }
+  .grande { font-size: 1.18rem; }
+  .tenue { color: var(--tinta-suave); }
+  strong { font-weight: 650; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--verde);
+    background: rgba(167, 192, 170, 0.09);
+    padding: 0.05em 0.35em;
+    border-radius: 2px;
+  }
+
+  ul, ol { margin: 0 0 1.1rem; padding-left: 1.2rem; }
+  li { margin-bottom: 0.55rem; }
+
+  .nota {
+    border-left: 2px solid var(--verde);
+    padding: 0.1rem 0 0.1rem 1.1rem;
+    margin: 0 0 1.2rem;
+    color: var(--tinta-suave);
+  }
+  .nota.peligro { border-left-color: var(--ladrillo); }
+  .nota.peligro strong { color: var(--ladrillo); }
+  .nota strong { color: var(--tinta); }
+  .nota p:last-child { margin-bottom: 0; }
+
+  .fases {
+    display: grid;
+    gap: 1.6rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    margin-bottom: 1.2rem;
+  }
+  .fase { border-top: 2px solid var(--linea); padding-top: 0.9rem; }
+  .fase .cuando {
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--tinta-tenue);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  .fase h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+  .fase p { font-size: 0.95rem; color: var(--tinta-suave); margin-bottom: 0.6rem; }
+  .fase.ahora { border-top-color: var(--verde); }
+
+  .decision {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.8rem 1.2rem;
+    align-items: baseline;
+  }
+  .decision dt {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--tinta-tenue);
+    white-space: nowrap;
+  }
+  .decision dd { margin: 0 0 0.4rem; }
+
+  figure { margin: 2rem 0; }
+  figcaption { font-size: 0.9rem; color: var(--tinta-tenue); margin-top: 0.8rem; }
+  svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .portada { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; }
+  .pie {
+    font-size: 0.9rem;
+    color: var(--tinta-tenue);
+    border-top: 1px solid var(--linea-suave);
+    padding-top: 1.2rem;
+    margin-top: 2.5rem;
+  }
+
+  @media print {
+    :root {
+      --fondo: #fff; --tinta: #111; --tinta-suave: #333; --tinta-tenue: #666;
+      --linea: #ccc; --linea-suave: #e6e6e6; --verde: #2b3a2e; --ladrillo: #9b2617;
+    }
+    .bloque { page-break-inside: avoid; border: 0; padding: 1.2rem 0; }
+    body { font-size: 11.5pt; }
+  }
+</style>
+
+<section class="bloque portada">
+  <p class="eyebrow">Propuesta técnica · Raíz · 17 de agosto de 2026</p>
+  <h1>Puente de ayudas</h1>
+  <p class="grande tenue" style="margin-top:1.2rem;max-width:34rem">
+    Quién necesita qué, quién lo tiene, quién lo lleva. Y por qué esto va dentro de
+    Raíz y no en otro grupo de WhatsApp.
+  </p>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">De dónde sale</p>
+  <h2>Tres problemas que ya están pasando</h2>
+  <p class="grande">
+    No son hipótesis. Son las tres cosas que hoy no funcionan cuando la comunidad
+    consigue ayuda por su cuenta:
+  </p>
+  <ol class="grande">
+    <li>Es difícil encontrar quién tenga lo que hace falta.</li>
+    <li>Aunque aparezca, hay que ir y llevarla, y muchas veces nadie puede.</li>
+    <li>
+      <strong>La misma persona recibe mucho.</strong> Todos se alarman con un caso, todos
+      ayudan a ese, y el que nadie conoce no recibe nada.
+    </li>
+  </ol>
+  <p>
+    El tercero es el importante, porque es el único que no se arregla con más voluntad.
+    Se arregla con un registro que sepa quién ya recibió — y eso es exactamente lo que
+    Raíz tiene y un grupo de WhatsApp no puede tener.
+  </p>
+</section>
+
+<section class="bloque ancho">
+  <p class="eyebrow">La decisión de fondo</p>
+  <h2>Dos capas separadas. El padrón sigue cerrado.</h2>
+  <p class="grande">
+    Esta propuesta abre una vitrina pública donde cualquiera publica lo que necesita.
+    Eso <strong>no</strong> reabre la discusión del registro abierto: son dos registros
+    distintos, y la separación es la condición para que esto pueda existir.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 300" role="img"
+         aria-label="Dos capas: el padron cerrado, donde solo entran casos levantados por lideres con cuenta; y el puente de ayudas, abierto, donde cualquiera publica una necesidad. Se tocan cuando la mesa vincula una necesidad publica con una familia del padron.">
+      <defs>
+        <marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
+        </marker>
+      </defs>
+
+      <g font-family="ui-monospace, monospace" font-size="12.5" letter-spacing="1.6" fill="var(--tinta-tenue)">
+        <text x="0" y="14">EL PADRÓN · CERRADO</text>
+        <text x="480" y="14">EL PUENTE · ABIERTO</text>
+      </g>
+
+      <rect x="0" y="28" width="400" height="150" fill="none" stroke="var(--linea)" />
+      <rect x="480" y="28" width="420" height="150" fill="none" stroke="var(--verde)" stroke-dasharray="4 4" />
+
+      <g fill="var(--tinta)" font-family="ui-serif, Georgia, serif" font-size="18">
+        <text x="24" y="62">Familias damnificadas</text>
+        <text x="504" y="62">Necesidades y ofertas</text>
+      </g>
+      <g fill="var(--tinta-suave)" font-size="14">
+        <text x="24" y="88">La levanta un líder con cuenta.</text>
+        <text x="24" y="110">Verificada por la mesa.</text>
+        <text x="24" y="132">Exigible ante una entidad.</text>
+        <text x="24" y="154">Con identidad, bajo autorización.</text>
+
+        <text x="504" y="88">Publica cualquiera, con celular</text>
+        <text x="504" y="110">verificado. Sin identidad visible.</text>
+        <text x="504" y="132">No sirve como censo y no</text>
+        <text x="504" y="154">pretende serlo.</text>
+      </g>
+
+      <g stroke="var(--tinta-tenue)" stroke-width="1.5" color="var(--tinta-tenue)">
+        <line x1="404" y1="103" x2="474" y2="103" marker-end="url(#f)" />
+        <line x1="474" y1="128" x2="404" y2="128" marker-end="url(#f)" />
+      </g>
+
+      <text x="0" y="220" font-size="14" fill="var(--verde)">
+        Se tocan en un solo punto: la mesa vincula una necesidad publicada con una familia del padrón.
+      </text>
+      <text x="0" y="244" font-size="14" fill="var(--tinta-suave)">
+        Ahí la vitrina gana trazabilidad y el padrón gana flujo, sin que una contamine al otro.
+      </text>
+      <text x="0" y="276" font-size="14" fill="var(--tinta-tenue)">
+        Una necesidad falsa en el puente cuesta un mercado mal entregado. Una familia falsa en el padrón cuesta el listado entero.
+      </text>
+    </svg>
+  </figure>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Protección de datos</p>
+  <h2>Qué se publica y qué no</h2>
+  <p class="grande">
+    Aquí es donde estas plataformas se vuelven peligrosas. La gente publica su dirección
+    y su teléfono porque necesita, y esa lista termina siendo un directorio de casas
+    vulnerables abierto en internet.
+  </p>
+  <p><strong>Se publica:</strong> qué se necesita, en qué barrio o vereda, para cuántas personas, hace cuántos días.</p>
+  <p><strong>No se publica:</strong> nombre, teléfono, dirección exacta, fotografías de personas.</p>
+  <div class="nota peligro">
+    <p>
+      El contacto aparece <strong>después</strong> de que alguien se compromete, y el puente
+      lo hace el líder del sector o la mesa. Nunca se deja a un donante y a una familia
+      solos con los datos del otro: por acoso, por condicionamiento, por proselitismo y
+      por lo que ya sabemos que pasa.
+    </p>
+  </div>
+  <p>
+    Es la misma regla que ya rige el mapa público, y sale del mismo sitio: la vista de la
+    base decide qué es visible, no la pantalla.
+  </p>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Quién publica</p>
+  <h2>Celular verificado, y el aval del líder como señal, no como puerta</h2>
+  <p>
+    Publicar exige un celular verificado con un código. No una cuenta, no una clave: con
+    eso la necesidad tiene un responsable y la misma persona publicando cuarenta veces se
+    ve.
+  </p>
+  <p>
+    Cada necesidad sale con una marca visible: <strong>verificada por un líder</strong> o
+    <strong>autodeclarada</strong>. La autodeclarada se publica igual. La marca no es para
+    censurar: es para que el donante sepa qué está mirando y decida.
+  </p>
+  <p class="tenue">
+    Es lo que los líderes ya hacen hoy por WhatsApp cuando dicen «yo respondo por esa
+    familia», solo que quedando escrito.
+  </p>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">La otra mitad</p>
+  <h2>El que tiene, y el que puede llevar</h2>
+  <p class="grande">
+    Alguien publica «tengo una estufa», «tengo ropa de bebé», «tengo cupo en un camión el
+    sábado para Cebollal». Se publica igual: qué, desde dónde, hasta cuándo.
+  </p>
+  <p>
+    Lo del cupo en el camión no es un detalle. La mitad de las donaciones que no llegan es
+    porque nadie tenía cómo moverlas, no porque no existieran. Si el transporte es una
+    oferta más, el emparejamiento lo resuelve.
+  </p>
+</section>
+
+<section class="bloque ancho">
+  <p class="eyebrow">El problema difícil</p>
+  <h2>Cuando la misma persona pide lo mismo muchas veces</h2>
+  <p class="grande">
+    Pasa, y casi nunca es abuso: el mercado se acaba, el niño se enferma otra vez, la
+    familia que estaba de posada tuvo que moverse. La tentación es poner un tope y que el
+    sistema diga que no. Sería un error.
+  </p>
+  <div class="nota">
+    <p>
+      <strong>Bloquear castiga primero a quien más necesita</strong>, porque el que sabe
+      moverse siempre encuentra la vuelta: pide con otro nombre, por otro canal, a otro
+      donante. Y además esconde el problema: si el sistema dice que no, nadie se entera de
+      que esa familia pidió tres veces.
+    </p>
+    <p><strong>La regla es: el sistema nunca decide, el sistema le muestra a quien decide.</strong></p>
+  </div>
+
+  <h3>1. Separar lo que se consume de lo que se recibe una vez</h3>
+  <p>
+    Hoy <code>ayudas.tipo_ayuda</code> es texto libre, y ahí está la raíz del problema:
+    mete en la misma bolsa el mercado y el colchón.
+  </p>
+  <ul>
+    <li>
+      <strong>Consumible</strong>, con período sugerido: mercado, agua, pañales,
+      medicamentos, aseo. Pedirlo otra vez a los quince días es que se acabó.
+    </li>
+    <li>
+      <strong>De una sola vez</strong>: colchón, estufa, tejas, herramientas, materiales.
+      Pedirlo otra vez sí es una pregunta que alguien debe hacer.
+    </li>
+  </ul>
+  <p>Un catálogo con esa distinción es lo único que hace falta para que los avisos digan algo útil.</p>
+
+  <h3>2. Avisar, con distinta fuerza</h3>
+  <dl class="decision">
+    <dt>consumible, dentro del período</dt>
+    <dd>«Recibió mercado hace 4 días.» Deja continuar pidiendo una razón de una línea, que queda escrita. La excepción no se prohíbe: se registra.</dd>
+    <dt>de una sola vez, ya entregado</dt>
+    <dd>«Ya recibió colchón el 12 de agosto.» Sigue sin bloquear, pero eso no lo aprueba un donante desde su casa: lo aprueba la mesa.</dd>
+    <dt>misma familia, dos veces</dt>
+    <dd>Se detecta al capturar, por teléfono: es la llave práctica porque es obligatorio y siempre está, mientras el documento solo existe con autorización. El esquema ya tiene <code>estado_verificacion = 'duplicado'</code> y <code>duplicado_de_id</code>.</dd>
+  </dl>
+
+  <h3>3. Y lo que de verdad reparte mejor: el orden de la lista</h3>
+  <p class="grande">
+    La vitrina no se ordena por quién publicó primero ni por quién conmueve más. Se ordena
+    por <strong>quién lleva más tiempo sin recibir nada</strong>, ponderado por el tamaño
+    del hogar.
+  </p>
+  <p>
+    La familia ruidosa no desaparece: deja de estar de primera. La familia callada de la
+    vereda que nadie conoce sube sola. Sin negarle nada a nadie y sin que un humano tenga
+    que decidir caso por caso. Es una consulta, y vale más que cualquier control.
+  </p>
+</section>
+
+<section class="bloque ancho">
+  <p class="eyebrow">Lo que ya está construido</p>
+  <h2>Casi no hay que inventar modelo</h2>
+  <p class="grande">
+    La tabla <code>ayudas</code> existe desde el primer esquema y nadie la ha usado. Cuelga
+    de cada familia y ya trae lo que esto necesita.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 130" role="img"
+         aria-label="Estados de una ayuda: identificada, gestionada cuando alguien la apadrina con reserva de 48 horas, programada cuando hay transporte, entregada cuando se confirma quien recibio, o no procede.">
+      <g font-family="ui-monospace, monospace" font-size="13" fill="var(--tinta)">
+        <text x="0" y="40">identificada</text>
+        <text x="190" y="40">gestionada</text>
+        <text x="390" y="40">programada</text>
+        <text x="590" y="40">entregada</text>
+        <text x="780" y="40">no procede</text>
+      </g>
+      <g stroke="var(--tinta-tenue)" stroke-width="1.5" color="var(--tinta-tenue)">
+        <line x1="110" y1="35" x2="175" y2="35" marker-end="url(#f2)" />
+        <line x1="290" y1="35" x2="375" y2="35" marker-end="url(#f2)" />
+        <line x1="500" y1="35" x2="575" y2="35" marker-end="url(#f2)" />
+        <line x1="690" y1="35" x2="765" y2="35" marker-end="url(#f2)" stroke-dasharray="3 3" />
+      </g>
+      <defs>
+        <marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
+        </marker>
+      </defs>
+      <g font-size="13" fill="var(--tinta-suave)">
+        <text x="0" y="70">alguien la</text>
+        <text x="0" y="90">publicó</text>
+        <text x="190" y="70">un padrino la tomó.</text>
+        <text x="190" y="90">Reserva de 48 h</text>
+        <text x="390" y="70">hay quién y cuándo</text>
+        <text x="390" y="90">la lleva</text>
+        <text x="590" y="70">confirmada por</text>
+        <text x="590" y="90">quien recibió</text>
+      </g>
+      <text x="780" y="70" font-size="13" fill="var(--tinta-tenue)">o se cayó</text>
+    </svg>
+    <figcaption>
+      Los cinco estados ya están en el esquema, con <code>fecha_entrega</code> y
+      <code>recibido_por</code>. Falta el vencimiento de la reserva y el catálogo de tipos.
+    </figcaption>
+  </figure>
+
+  <div class="nota peligro">
+    <p>
+      <strong>La reserva tiene que vencer.</strong> Es el punto que hace o rompe el sistema:
+      sin vencimiento, en dos semanas la lista está llena de reservas muertas, nadie más
+      puede ayudar, y las familias siguen esperando algo que alguien ya prometió.
+    </p>
+  </div>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">La advertencia</p>
+  <h2>La donación no puede borrar la obligación del Estado</h2>
+  <p class="grande">
+    Si un padrino le pone el techo a una familia y el sistema marca esa necesidad como
+    resuelta, la remisión a la entidad se cae y esa familia desaparece del consolidado.
+    Y entonces «la comunidad resolvió» se convierte en la razón por la que el Estado no
+    tuvo que hacerlo.
+  </p>
+  <p>
+    En el modelo ya se puede separar, y hay que hacerlo desde ahora: <code>ayudas</code>
+    distingue si quien entregó fue una <code>entidad</code> o una
+    <code>organizacion</code>. Una ayuda entregada por un donante <strong>atiende la
+    urgencia y no cierra el reclamo</strong>: la remisión sigue viva, la mora sigue
+    contando, y el reporte lo dice con todas las letras — esta familia recibió techo por
+    solidaridad, no porque alguien respondiera.
+  </p>
+</section>
+
+<section class="bloque ancho">
+  <p class="eyebrow">Cómo lo construiría</p>
+  <h2>Tres fases, y la primera no necesita cuentas</h2>
+  <p class="grande">
+    Si lo abrimos completo de una y no funciona, no vamos a saber si falló la idea o la
+    moderación.
+  </p>
+  <div class="fases">
+    <div class="fase ahora">
+      <span class="cuando">Ahora · días</span>
+      <h3>Vitrina de solo lectura</h3>
+      <p>
+        La mesa y los líderes registran necesidades desde la aplicación. La lista pública
+        las muestra sin identidad, ordenadas por equidad. Apadrinar deja nombre y celular,
+        y el puente lo hace un humano.
+      </p>
+      <p><strong>Sirve para saber si alguien de verdad apadrina.</strong></p>
+    </div>
+    <div class="fase">
+      <span class="cuando">Después</span>
+      <h3>Publicación abierta</h3>
+      <p>
+        Cualquiera publica con celular verificado. Aparece la marca de verificada por
+        líder o autodeclarada. Aquí entra la moderación de verdad.
+      </p>
+    </div>
+    <div class="fase">
+      <span class="cuando">Al final</span>
+      <h3>Ofertas y emparejamiento</h3>
+      <p>
+        El que tiene, el que lleva, y el sistema cruzando lo que hay con lo que falta,
+        transporte incluido.
+      </p>
+    </div>
+  </div>
+  <div class="nota">
+    <p>
+      <strong>El cuello de botella no va a ser el software: va a ser quién modera.</strong>
+      Una vitrina abierta sin nadie mirándola se llena de necesidades viejas, repetidas y
+      sin cerrar, y en tres semanas nadie vuelve a entrar. Antes de abrirla hay que saber
+      quién revisa, cada cuánto y con qué criterio.
+    </p>
+  </div>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">A tres años</p>
+  <h2>De la ayuda a la reconstrucción, con el mismo registro</h2>
+  <p class="grande">
+    Vale la pena verlo desde ahora porque cambia decisiones de hoy: lo que se captura en
+    el paso 3 del formulario ya es el plan de reconstrucción, familia por familia.
+  </p>
+  <p>
+    Remoción de escombros, apuntalamiento, evaluación estructural, demolición, materiales,
+    reubicación temporal o definitiva, subsidio de arriendo, reconstrucción total. Y en lo
+    rural: semillas, insumos, herramientas, reposición de animales, asistencia técnica,
+    crédito, riego, rehabilitación de vía. Eso no es auxilio: es el programa.
+  </p>
+  <dl class="decision">
+    <dt>emergencia</dt>
+    <dd>Ayudas en especie. Se mide por entregas. Es lo de esta propuesta.</dd>
+    <dt>transición</dt>
+    <dd>Arriendo, materiales, apuntalamiento, semillas para no perder el ciclo productivo. Se mide por remisiones con radicado.</dd>
+    <dt>reconstrucción</dt>
+    <dd>Subsidio de vivienda, reconstrucción, reubicación definitiva, títulos. Años.</dd>
+  </dl>
+  <p>
+    El valor de Raíz no está en ninguno por separado: está en que
+    <strong>la familia que recibió tres mercados en septiembre es la misma que en marzo
+    tiene que aparecer en el listado de subsidio</strong>, y hoy nadie puede conectar esas
+    dos cosas.
+  </p>
+  <p>
+    Para eso faltan dos piezas chicas: enrutar el daño a la entidad competente —depende de
+    los nombres exactos de las dependencias, que sigue pendiente— y la
+    <strong>revisita fechada</strong>, que convierte el registro de una foto de un día en
+    una serie. Una serie es lo que la cooperación pide y lo que ninguna entidad puede
+    rebatir.
+  </p>
+</section>
+
+<section class="bloque ancho">
+  <p class="eyebrow">Lo que pasa después</p>
+  <h2>Qué hacemos con lo que se queda sin cerrar</h2>
+  <p class="grande">
+    Estos sistemas no se mueren por falta de datos. Se mueren porque nadie confía en los
+    que hay, y dejan de confiar cuando la mitad lleva tres semanas sin moverse y nadie
+    sabe si eso es normal o es abandono.
+  </p>
+
+  <h3>Separar «abierto» de «abandonado»</h3>
+  <p>
+    Un caso puede estar abierto seis meses con toda la razón, esperando que una entidad
+    conteste. Eso no es basura: es precisamente el dato que le da valor al sistema. Lo
+    tóxico es no poder distinguirlo. Cada cosa abierta tiene que decir <strong>qué se
+    espera y de quién</strong>, y con eso se parten en dos montones que hoy se ven iguales:
+  </p>
+  <dl class="decision">
+    <dt>espera algo nuestro</dt>
+    <dd>
+      Un caso sin verificar, una necesidad que nadie ha tomado, una entrega prometida que
+      no se hizo. Es trabajo pendiente y es de la mesa.
+    </dd>
+    <dt>espera algo de un tercero</dt>
+    <dd>
+      Una remisión radicada sin respuesta. No es pendiente nuestro: es presión
+      institucional, y entre más días pasen, más vale.
+    </dd>
+  </dl>
+
+  <h3>Nada se cierra solo. Todo caduca a la vista.</h3>
+  <div class="nota peligro">
+    <p>
+      <strong>Cerrar por vencimiento arruina el registro.</strong> Un caso cerrado por
+      tiempo se ve igual que uno resuelto, y el día que haya que sustentar el listado esa
+      familia desapareció sin que nadie lo decidiera.
+    </p>
+  </div>
+  <p>
+    Lo que sí hay que hacer es que la vejez se vea. Es lo mismo que ya hacen las
+    remisiones —los días sin respuesta crecen solos, y esa es toda la gracia— aplicado al
+    resto:
+  </p>
+  <ul>
+    <li>Una necesidad que nadie toma en siete días no se borra: <strong>sube</strong> en la lista y le avisa a la mesa.</li>
+    <li>Una reserva vencida vuelve a la lista sola.</li>
+    <li>Una ayuda <code>programada</code> cuya fecha ya pasó significa que alguien prometió y no llegó. Eso hay que verlo.</li>
+    <li>Un caso sincronizado sin verificar a los quince días entra en la cola de verificación.</li>
+    <li>Un caso que lleva días en el celular sin enviarse le avisa <strong>al voluntario</strong>, no a la mesa.</li>
+  </ul>
+
+  <h3>Y cerrar bien tiene que ser fácil</h3>
+  <p>
+    Esto se subestima siempre: si cerrar cuesta trabajo, la gente no cierra, y ahí es donde
+    se acumula la basura. El vocabulario ya está y es bueno — un caso puede quedar
+    <code>no_ubicado</code> o <code>duplicado</code>; una ayuda, <code>no_procede</code>.
+    Son cierres legítimos y honestos. Falta que estén a un toque y que pidan una línea de
+    razón, no un formulario.
+  </p>
+  <p>
+    <strong>Cerrar no es borrar.</strong> Un caso cerrado por no ubicado se queda en el
+    registro, marcado. Qué se borra y cuándo es la otra conversación —la del marco de
+    tratamiento de datos, que sigue pendiente— y no se resuelve con un botón de limpieza.
+  </p>
+
+  <h3>Una pantalla, una vez por semana</h3>
+  <p class="grande">
+    Nada de lo anterior sirve si nadie lo mira. Una sola pantalla: lo que requiere
+    atención, ordenado por lo que más se puede perder, no por lo más viejo.
+  </p>
+  <p>
+    Arriba, los P0 sin verificar y las entregas prometidas que no se hicieron. Abajo, lo
+    que lleva mucho sin moverse. Y al lado, aparte, las entidades que no han contestado,
+    que no es pendiente de nadie de aquí.
+  </p>
+  <div class="nota">
+    <p>
+      Con dueño y con frecuencia: cada líder revisa lo suyo —cinco o diez casos, diez
+      minutos— y la mesa revisa el resto en la reunión semanal.
+      <strong>Hoy la mesa es una persona</strong>, así que esa pantalla tiene que caber en
+      media hora a la semana. Si no cabe, no se va a hacer.
+    </p>
+  </div>
+  <p class="tenue">
+    Nada de esto necesita tablas nuevas: los estados están, las fechas están, y los días se
+    calculan al consultar. Es una vista y una pantalla. Lo que hay que aceptar es que el
+    sistema no limpia solo: muestra lo que se está pudriendo, con nombre y con días, y
+    alguien decide. Decidir sobre doce cosas ordenadas por riesgo es posible; sobre
+    trescientos casos revueltos, no.
+  </p>
+</section>
+
+<section class="bloque">
+  <p class="eyebrow">Lo que hay que decidir antes de escribir código</p>
+  <h2>Cuatro preguntas</h2>
+  <dl class="decision">
+    <dt>1</dt>
+    <dd>¿Qué muestra exactamente la lista pública? Es la misma pregunta abierta del mapa, y conviene contestarlas juntas.</dd>
+    <dt>2</dt>
+    <dd>¿Quién modera, cada cuánto, y qué pasa con una necesidad que lleva quince días sin que nadie la tome?</dd>
+    <dt>3</dt>
+    <dd>¿Cuánto dura una reserva? Propongo 48 horas y que se pueda extender una vez.</dd>
+    <dt>4</dt>
+    <dd>¿Los períodos de cada tipo consumible los fija la mesa o vienen por defecto? Propongo por defecto y que la mesa los ajuste.</dd>
+  </dl>
+  <div class="nota peligro">
+    <p>
+      <strong>Y una que no es pregunta:</strong> dinero no entra a la aplicación. Donación
+      en especie sí. En el momento en que la herramienta reciba o intermedie plata, deja de
+      ser un instrumento de caracterización y adquiere obligaciones contables y de
+      vigilancia que nadie en este equipo quiere cargar en una emergencia. Si alguien quiere
+      dar plata, que la dé por fuera y que en Raíz quede registrada la ayuda que compró.
+    </p>
+  </div>
+  <p class="pie">
+    Raíz · Ingeniería al servicio de la vida · Propuesta para discutir, no para aprobar.
+    Todo lo que aquí se propone se apoya en tablas que ya existen en el esquema.
+  </p>
+</section>
