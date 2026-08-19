@@ -37,7 +37,11 @@ export class CasoFormService {
         registradorOrg: [caso.control.registradorOrg],
         registradorTel: [caso.control.registradorTel],
         fuenteDato: [caso.control.fuenteDato, Validators.required],
-        consentimiento: [caso.control.consentimiento]
+        consentimiento: [caso.control.consentimiento],
+        autorizaDatosSensibles: [caso.control.autorizaDatosSensibles ?? null],
+        autorizaRemisionEntidades: [caso.control.autorizaRemisionEntidades ?? null],
+        versionAutorizacion: [caso.control.versionAutorizacion ?? null],
+        autorizadoEn: [caso.control.autorizadoEn ?? null]
       }),
       ubicacion: this.fb.group({
         departamento: [caso.ubicacion.departamento, Validators.required],
@@ -137,13 +141,12 @@ export class CasoFormService {
         registradorTel: v.control.registradorTel,
         fuenteDato: v.control.fuenteDato,
         consentimiento: v.control.consentimiento,
-        // Las tres autorizaciones y su prueba no se pierden al volcar el formulario.
-        // Se conservan del caso porque las escribe la pantalla de consentimiento y no
-        // los campos de este paso.
-        autorizaDatosSensibles: caso.control.autorizaDatosSensibles ?? null,
-        autorizaRemisionEntidades: caso.control.autorizaRemisionEntidades ?? null,
-        versionAutorizacion: caso.control.versionAutorizacion ?? null,
-        autorizadoEn: caso.control.autorizadoEn ?? null
+        // Las dos autorizaciones nuevas y la prueba de que se pidieron. Las escribe
+        // la pantalla de consentimiento del paso 1, en el mismo grupo de control.
+        autorizaDatosSensibles: v.control.autorizaDatosSensibles,
+        autorizaRemisionEntidades: v.control.autorizaRemisionEntidades,
+        versionAutorizacion: v.control.versionAutorizacion,
+        autorizadoEn: v.control.autorizadoEn
       },
       ubicacion: {
         ...caso.ubicacion,
@@ -306,7 +309,11 @@ interface ValoresFormulario {
     registradorOrg: string | null;
     registradorTel: string | null;
     fuenteDato: FuenteDato;
-    consentimiento: boolean;
+    consentimiento: boolean | null;
+    autorizaDatosSensibles: boolean | null;
+    autorizaRemisionEntidades: boolean | null;
+    versionAutorizacion: string | null;
+    autorizadoEn: string | null;
   };
   ubicacion: {
     departamento: string;

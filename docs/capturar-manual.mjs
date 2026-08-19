@@ -80,7 +80,11 @@ await page.fill('#reg', 'Ana Velez');
 await page.fill('#org', 'Junta de accion comunal');
 await foto('03-quien-reporta');
 
-await page.getByRole('button', { name: 'Sí, autoriza' }).click();
+// Las tres autorizaciones del paso 1. Son tres preguntas separadas desde el 19 de
+// agosto: la ley trata los datos sensibles aparte y nadie esta obligado a darlos.
+// La prueba las responde todas que si, que es el camino que hay que poder recorrer.
+const autorizar = page.getByRole('button', { name: 'Sí, autoriza' });
+for (let i = 0; i < 3; i++) await autorizar.nth(i).click();
 await page.waitForTimeout(300);
 await foto('04-autorizacion');
 
@@ -118,7 +122,7 @@ await page.getByRole('button', { name: 'Continuar' }).click();
 await page.waitForSelector('#ten');
 await page.selectOption('#afec', 'severo');
 await page.getByText('No se puede vivir ahí', { exact: true }).click();
-await page.getByText('Hay riesgo inminente de colapso').click();
+await page.getByText('A simple vista, esta casa amenaza con caerse').click();
 await page.waitForTimeout(300);
 await foto('09-riesgo');
 
