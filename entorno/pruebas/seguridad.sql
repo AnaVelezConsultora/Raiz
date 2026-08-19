@@ -108,8 +108,12 @@ begin;
     ajenos  int;
     en_vista int;
   begin
-    select count(*) into propios from familias where registrador_nombre like 'Ana%';
-    select count(*) into ajenos  from familias where registrador_nombre like 'Beto%';
+    -- Se cuenta lo que Ana ALCANZA, no lo que lleva su nombre escrito. El nombre del
+    -- registrador es texto libre: la prueba del ciclo de la API firma casos con la
+    -- identidad de Ana y el nombre «Prueba de ciclo», y con el filtro por nombre esta
+    -- comprobacion fallaba por datos de otra prueba y no por un defecto.
+    select count(*) into propios  from familias;
+    select count(*) into ajenos   from familias where registrador_nombre like 'Beto%';
     select count(*) into en_vista from v_familias_tablero;
 
     -- Se comprueba la PROPIEDAD, no un conteo exacto. Antes se exigia 'exactamente
@@ -137,7 +141,7 @@ begin;
   do $$
   declare propios int; ajenos int;
   begin
-    select count(*) into propios from familias where registrador_nombre like 'Beto%';
+    select count(*) into propios from familias;
     select count(*) into ajenos  from familias where registrador_nombre like 'Ana%';
 
     if propios < 1 then
@@ -426,6 +430,68 @@ begin;
       'Nombre', 'Apellido', 'CC', '1234567890'
     );
     raise notice 'OK  P7d  con autorizacion la identidad si se guarda';
+  end $$;
+rollback;
+
+-- =============================================================================
+-- P8. Las fotografias heredan el permiso de su familia
+--
+-- La fotografia del dano no es un adjunto: es parte del registro de la familia, y
+-- por lo tanto es dato personal de esa familia. La politica `hija_fotos` lo dice
+-- —cuelga de `familias`— y esto lo comprueba, porque una politica que nadie
+-- ejercita es una intencion.
+--
+-- Importa por una razon concreta: la API firma permisos de subida contra la fila
+-- que esta consulta puede ver. Si un lider alcanzara la familia de otro, tambien
+-- alcanzaria a pedir permiso para escribir fotografias en el caso ajeno.
+-- =============================================================================
+begin;
+  do $$ begin perform set_config('app.user_id',
+    (select id::text from auth.users where email = 'ana@ejemplo.test'), true); end $$;
+  set local role authenticated;
+
+  do $$
+  declare
+    familia_de_beto bigint;
+    rechazado boolean := false;
+    visibles int;
+  begin
+    -- Se busca ANTES de bajar privilegios seria trampa; aqui se busca como Ana, y
+    -- justamente por eso no la encuentra: RLS la esconde.
+    select id into familia_de_beto from familias where registrador_nombre like 'Beto%';
+    if familia_de_beto is not null then
+      raise exception 'FALLO P8: Ana alcanza la familia de Beto y no deberia';
+    end if;
+
+    -- Con el identificador en la mano —que es el escenario real de un cliente
+    -- modificado— tampoco puede colgarle una fotografia.
+    begin
+      insert into fotos (familia_id, origen_id, tipo, url, bytes, tipo_mime, estado, autorizada_en)
+      select f.id, '00000000-0000-4000-8000-00000000f101', 'fachada',
+             'casos/ajeno/robada.jpg', 1024, 'image/jpeg', 'autorizada', now()
+        from familias f where f.registrador_nombre like 'Beto%';
+      -- Si RLS hizo su trabajo, el SELECT no devuelve filas y no se inserta nada.
+      if found then rechazado := false; else rechazado := true; end if;
+    exception when insufficient_privilege then rechazado := true;
+    end;
+
+    if not rechazado then
+      raise exception 'FALLO P8: Ana le colgo una fotografia al caso de Beto';
+    end if;
+    raise notice 'OK  P8a  un lider no puede colgar fotografias en el caso de otro';
+
+    -- La propiedad, no un conteo: TODA fotografia que Ana alcance tiene que colgar
+    -- de una familia que Ana tambien alcanza. Contar «cero fotos» era cierto solo
+    -- mientras Ana no tuviera ninguna, y dejo de serlo en cuanto otra prueba le
+    -- registro un caso con foto — fallando por datos y no por un defecto.
+    select count(*) into visibles
+      from fotos f
+     where not exists (select 1 from familias fa where fa.id = f.familia_id);
+
+    if visibles <> 0 then
+      raise exception 'FALLO P8: Ana alcanza % fotografia(s) de casos que no puede ver', visibles;
+    end if;
+    raise notice 'OK  P8b  toda fotografia que un lider ve cuelga de un caso suyo';
   end $$;
 rollback;
 

@@ -202,9 +202,14 @@ make abajo      # apagar conservando datos
 make limpio     # apagar y BORRAR datos
 ```
 
-**Si cambia `schema.sql`, el shim o las semillas, hace falta `make limpio`.** Los
-scripts de inicialización de PostgreSQL solo corren con el volumen vacío; sin
-borrarlo, los cambios no se aplican y se depura un fantasma.
+**Si cambia `schema.sql`, `55-fotos-subida.sql`, el shim o las semillas, hace falta
+`make limpio`.** Los scripts de inicialización de PostgreSQL solo corren con el volumen
+vacío; sin borrarlo, los cambios no se aplican y se depura un fantasma.
+
+**`make pruebas` va sobre una base recién sembrada.** Varias de sus comprobaciones
+cuentan filas —«Ana ve exactamente un caso»—, así que si antes se corrió el ciclo de la
+API, que registra casos de prueba, falla por datos y no por un defecto. El orden que no
+engaña es `make limpio && make arriba && make pruebas`, y el ciclo de la API después.
 
 ---
 

@@ -202,5 +202,60 @@ paso(9, `SIN CONEXION: la app abre y muestra ${offlineOk} caso(s). Barra: ${bann
 await foto('7-offline', 'app-offline', { fullPage: true });
 await ctx.setOffline(false);
 
+// --- 9. el tablero arranca en el paquete PUBLICADO --------------------------
+/**
+ * ESTE PASO EXISTE POR UN DESPLIEGUE ROTO, y conviene decir cual.
+ *
+ * El tablero se probo dos veces contra el servidor de desarrollo y las dos funciono.
+ * Publicado, el mapa salia en blanco con «t.map is not a function»: Leaflet se publica
+ * al estilo viejo, y el empaquetador de produccion deja lo que exporta colgando de
+ * `default` mientras el de desarrollo lo desenvuelve. Las cifras se veian bien, asi que
+ * la pantalla parecia estar.
+ *
+ * Esta prueba corre sobre `dist/`, que es el mismo paquete que se sube. Es el unico
+ * sitio del proyecto donde una diferencia asi se puede ver antes que un coordinador.
+ *
+ * Se siembra una sesion de custodia porque el tablero pide `verTodosLosCasos`, y se
+ * cortan tanto la API como las teselas: lo que se mide es que Leaflet ARRANQUE, no que
+ * OpenStreetMap este disponible desde la integracion continua.
+ */
+const mesa = await browser.newContext({ viewport: { width: 1024, height: 900 }, locale: 'es-CO' });
+await mesa.addInitScript(
+  ([clave, sesion]) => {
+    try { localStorage.setItem(clave, sesion); } catch { /* sin almacenamiento */ }
+  },
+  [
+    'raiz.sesion.local',
+    JSON.stringify({
+      ...SESION_SEMBRADA,
+      perfil: { ...SESION_SEMBRADA.perfil, nombre: 'Custodia de prueba', rol: 'custodio' }
+    })
+  ]
+);
+await mesa.route('**://api.apoyo-colombia.com/**', (ruta) => ruta.abort());
+await mesa.route('**://tile.openstreetmap.org/**', (ruta) => ruta.abort());
+
+const paginaMesa = await mesa.newPage();
+const erroresMesa = [];
+paginaMesa.on('console', (m) => {
+  if (m.type() === 'error' && !ES_RED_CORTADA(m.text())) erroresMesa.push(m.text());
+});
+paginaMesa.on('pageerror', (e) => erroresMesa.push('pageerror: ' + e.message));
+
+await paginaMesa.goto(BASE + '/tablero', { waitUntil: 'networkidle' });
+await paginaMesa.waitForSelector('h1');
+
+// `#mapa.leaflet-container` solo existe si `L.map()` corrio: es la asercion que habria
+// atajado el despliegue roto.
+const mapaVivo = (await paginaMesa.locator('#mapa.leaflet-container').count()) === 1;
+const controles = await paginaMesa.locator('.leaflet-control-zoom').count();
+paso(10, `tablero: mapa inicializado ${mapaVivo ? 'si' : 'NO'}, controles ${controles}`);
+if (!mapaVivo || erroresMesa.length > 0) {
+  console.error('El mapa no arranco en el paquete de produccion.', erroresMesa.slice(0, 3));
+  await browser.close();
+  process.exit(1);
+}
+await mesa.close();
+
 console.log('errores de consola:', errores.length ? JSON.stringify(errores.slice(0, 5)) : 'ninguno');
 await browser.close();

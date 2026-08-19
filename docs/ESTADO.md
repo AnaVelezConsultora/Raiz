@@ -71,6 +71,29 @@ llega al servidor pero la respuesta se pierde por corte de señal, el reintento
 actualiza la misma fila en lugar de crear un duplicado. Los dos lados están escritos y
 el reintento está verificado contra la API y la base reales.
 
+**Fotografías por bloques, con reanudación (HU 1.2.5).** Toda fotografía se parte
+—también una de 200 KB— y cada bloque viaja con su propio permiso firmado, directo al
+almacenamiento. Si la señal se cae en el bloque 3 de 4, lo transmitido **se queda**: al
+volver, la API dice exactamente cuál falta, porque se lo pregunta al almacenamiento y
+no al celular. Un teléfono que se quedó sin batería, o al que le reinstalaron la
+aplicación, retoma donde iba.
+
+La API une los bloques al confirmar y **verifica la imagen completa contra el SHA-256
+que declaró el dispositivo**. Contar bloques no bastaba: una imagen corrupta, unos
+bloques pegados en desorden y la imagen buena pesan lo mismo. Si no coincide, se
+descarta y se vuelve a subir, en vez de quedar guardada una foto que nadie puede abrir
+el día que la entidad pida la evidencia.
+
+No se usa la subida multiparte de S3 y el ADR 003 §5 se reescribió explicando por qué:
+exige partes de 5 MiB mínimo, así que con ella una foto de 200 KB no se puede partir.
+
+Y la fotografía dejó de tratarse como un adjunto: **no se envía una foto cuyo caso
+todavía no llegó** —antes se gastaban datos y reintentos para recibir un rechazo, y esa
+foto ya no volvía a subir—, un caso con fotos pendientes **no se muestra como enviado**
+ni lo borra la limpieza por retención, y sin autorización de la familia no se emite
+permiso de subida. Verificado con `entorno/pruebas/ciclo-api.mjs` contra la API, la base
+y el almacenamiento reales, incluida la corrupción de un bloque del tamaño correcto.
+
 **Servicio de sincronización.** Recibe el caso, fija la identidad del usuario dentro de
 la transacción para que las políticas de acceso sigan corriendo, asigna el consecutivo
 institucional y traduce cualquier fallo a las tres clases del contrato: transporte,
@@ -97,8 +120,9 @@ credenciales de AWS y sin tocar nada compartido**, que era el bloqueo anterior.
 
 **Pruebas de control de acceso.** `make pruebas` comprueba sobre la base que ninguna
 tabla quede sin políticas, que las vistas no las salten, que un líder no vea los casos
-de otro y que nadie pueda escribir en la auditoría, y falla si alguien lo rompe. Antes
-eran una lista para revisar a mano.
+de otro —ni **sus fotografías**, ni pueda colgarle una imagen a un caso ajeno— y que
+nadie pueda escribir en la auditoría, y falla si alguien lo rompe. Antes eran una lista
+para revisar a mano.
 
 **Prueba de punta a punta.** `make e2e` recorre el camino completo en diez pasos con
 veintiún asertos —entrar, sincronizar, reintentar tras un corte, subir la fotografía,
@@ -351,6 +375,36 @@ primero que hay que saber es qué versión tiene en la mano.
 se fueron. Es una decisión tomada sabiendo el precio: quien no programa solo puede
 probar lo que ya está publicado. Ver [DEUDA-TECNICA.md](DEUDA-TECNICA.md).
 
+### Hay dónde mirar los datos, y ninguna vista abre sin sesión
+
+Desde la 0.6.0 la mesa tiene **tablero**: cifras —familias, personas, menores, mayores
+de 60, riesgo de vida, casos sin ubicar— y un mapa con un punto por afectación, con
+filtros por zona y por prioridad. Vive dentro de la misma aplicación con la que se
+captura, no al lado, y es el contenedor donde se colgarán las vistas de gestión que
+vengan.
+
+**La puerta es un permiso, no una lista de roles.** `verTodosLosCasos` es la misma
+frontera que `es_mesa()` en las políticas de PostgreSQL: coordinación y custodia entran,
+el líder no. Y ocultar el enlace no es la protección — la consulta lee una vista
+`security_invoker`, así que quien filtra es la base. Contra el entorno local la custodia
+ve cuatro casos y Ana, líder, tres.
+
+**Lo que viaja al navegador no tiene identidad.** El resumen que alimenta el tablero no
+lleva nombre, documento ni teléfono: lo que no sale de la base no se puede filtrar mal
+en el cliente. El punto ubica la afectación, no la vivienda.
+
+**Sin conexión no hay tablero, a propósito.** No guarda cifras para mostrarlas después.
+Es lo contrario de la captura, que sí tiene que funcionar en el monte: mostrar los
+números de ayer sin decirlo, en una reunión con una entidad, es peor que no mostrar
+nada.
+
+**Se cerró de paso un hueco que apareció probándolo.** Las tres guardas de ruta
+devolvían «pase» cuando el paquete se compilaba sin dirección de API, que es como se
+trabajaba en desarrollo: cualquiera abría cualquier pantalla sin identificarse. Ya no
+hay excepción, y está comprobado que las seis rutas terminan en `/acceso`. Capturar sin
+señal no dependía de eso: la guarda exige **haber entrado** en el dispositivo, no un
+token vigente.
+
 ### El bloqueo real que queda
 
 **Nadie ha probado esto en campo.** El código puede estar perfecto y el formulario
@@ -423,5 +477,9 @@ para no repetir trabajo.
 - Las decisiones técnicas se escriben en el repositorio, no solo en el chat.
 
 ---
+
+Cómo se cierra una sesión de trabajo —qué se apaga, qué se queda encendido y por
+qué, y cómo comprobar que no quedaron datos de prueba en la base real— está en
+[CIERRE-DE-SESION.md](CIERRE-DE-SESION.md).
 
 Repositorio: <https://github.com/anavelezconsultoria/raiz>

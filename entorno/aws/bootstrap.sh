@@ -44,9 +44,14 @@ s3 s3api put-public-access-block \
     "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true" \
   >/dev/null
 
-# CORS para que la PWA suba con URL prefirmada directamente a S3, sin que los
+# CORS para que la PWA suba con permiso firmado directamente a S3, sin que los
 # 200 KB de cada foto atraviesen la API. Con 15.000 fotografias previstas, eso
 # es la diferencia entre pagar transferencia y computo, o no pagarlos.
+#
+# PUT es el unico metodo de escritura, y es asi porque toda fotografia sube por
+# bloques: cada bloque es un objeto con su propio permiso firmado. Sin PUT la
+# subida falla en el vuelo previo del navegador y el error no menciona CORS por
+# ninguna parte — lo que se ve es una foto que no sube.
 cat >/tmp/cors.json <<JSON
 {
   "CORSRules": [{

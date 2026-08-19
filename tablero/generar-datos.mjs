@@ -64,19 +64,38 @@ const leerDeLaBase = async () => {
   }
 
   const pool = new pg.Pool({ connectionString: url });
+  const cliente = await pool.connect();
   try {
-    const { rows } = await pool.query(`
+    // LO QUE SE PUBLICA SE LEE COMO ANONIMO, y esa es la unica linea de este archivo
+    // que de verdad protege a alguien.
+    //
+    // No basta con leer la vista publica: quien corra esto puede tener permisos que
+    // un visitante no tiene, y entonces el archivo saldria con mas de lo que el
+    // esquema autoriza a mostrar. Poniendose en el rol `anon`, lo que llega aqui es
+    // por construccion lo que cualquiera podria ver — y si manana alguien restringe
+    // la vista, esto publica menos sin que nadie toque este guion.
+    await cliente.query('set role anon');
+
+    const { rows } = await cliente.query(`
       select codigo, zona, municipio, lugar, prioridad, personas_total,
              menores, adultos_mayores, afectacion, habitable, lat, lon, fecha_registro
         from v_mapa_publico
        order by fecha_registro desc, codigo desc`);
 
-    const { rows: sin } = await pool.query(`
+    // El conteo de casos sin coordenada NO se publica: es un aviso para quien mira el
+    // tablero, y sale de la tabla, que el anonimo no alcanza. Por eso se vuelve al rol
+    // de la conexion antes de pedirlo. Si ese rol tampoco la alcanza —la API corre con
+    // politicas por fila— el numero llega en cero, que es un aviso de menos y nunca un
+    // dato de mas.
+    await cliente.query('reset role');
+
+    const { rows: sin } = await cliente.query(`
       select count(*)::int as n from familias
        where lat is null and estado_verificacion <> 'duplicado'`);
 
     return { filas: rows, sinCoordenada: sin[0]?.n ?? 0 };
   } finally {
+    cliente.release();
     await pool.end();
   }
 };

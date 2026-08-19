@@ -13,6 +13,76 @@ servidor y el contrato que comparten llevan siempre el mismo número.
 
 ---
 
+## 0.6.2 — 16 de agosto de 2026
+
+**El mapa ya dibujaba los puntos, pero el fondo seguía en blanco.** Los círculos de las
+familias estaban en su sitio y debajo no había calles ni ríos, que es lo que permite
+saber de qué vereda se está hablando.
+
+Faltaba permitirle a la aplicación pedir las imágenes del mapa por la vía que
+realmente usa. Se corrigió y no cambia nada más de lo que ya hacía.
+
+---
+
+## 0.6.1 — 16 de agosto de 2026
+
+**El mapa del tablero salía en blanco.** Las cifras estaban bien y debajo no había nada.
+Duró lo que tardó abrirlo: se publicó, se vio y se corrigió.
+
+La causa es de las que no se ven probando: la librería del mapa se empaqueta distinto
+para publicar que para trabajar, y en lo publicado no arrancaba. Ahora la prueba
+automática abre el tablero **sobre el paquete que se sube**, no sobre el de desarrollo,
+así que un fallo así vuelve a aparecer antes y no en el celular de un coordinador.
+
+---
+
+## 0.6.0 — 16 de agosto de 2026
+
+**Un tablero para decidir a dónde van los recursos.** Hasta ahora los datos entraban y
+no había dónde mirarlos juntos: para saber cuántas familias había en una vereda alguien
+tenía que pedirlo y esperar.
+
+- **Coordinación y custodia tienen un tablero con las cifras y el mapa.** Cuántas
+  familias, cuántas personas, cuántos menores, cuántos de 60 o más, cuántos en riesgo de
+  vida y cuántos casos todavía sin ubicar. Debajo, un punto por afectación, del color de
+  su prioridad, y al tocarlo el resumen del caso.
+- **Se puede filtrar por zona rural o urbana, y dejar sólo los de riesgo de vida.** Las
+  cifras y el mapa se mueven juntos: lo que se cuenta arriba es lo que se ve abajo.
+- **El líder no ve el tablero, y es a propósito.** Su trabajo es la ficha de las familias
+  que atiende. Quien reparte recursos entre veredas necesita el conjunto; quien registra,
+  no — y menos datos a la vista es menos exposición.
+- **El tablero no muestra nombres ni teléfonos.** Sirve para contar, ubicar y priorizar.
+  Y el punto ubica la afectación, no la vivienda: la coordenada tiene la precisión que
+  tuvo el celular ese día.
+- **Sin señal no hay tablero, y lo dice.** No guarda cifras para mostrarlas después:
+  enseñarle a una entidad los números de ayer sin avisar es peor que no enseñar nada.
+- El mapa sólo se descarga si se abre esta pantalla. Un líder en la vereda no gasta un
+  byte de su plan de datos en algo que no va a usar.
+
+---
+
+## 0.5.0 — 16 de agosto de 2026
+
+**Las fotografías llegan completas, y ya se sabe quién puede dar de alta a quién.**
+
+- **Las fotografías se envían por partes y se retoman donde iban.** En una red que se
+  cae cada tanto, antes se perdía la carga entera y había que empezar de nuevo. Ahora lo
+  que ya subió, subido queda.
+- **Si una fotografía llega dañada, no se guarda.** El celular y el servidor comparan la
+  imagen entera; si no coincide, se descarta y se vuelve a pedir. Una foto a medias es
+  peor que ninguna, porque parece prueba y no lo es.
+- **Las fotografías no son públicas.** No se pueden abrir con el enlace: hay que entrar
+  con una cuenta, y cada quien alcanza las de los casos que ya podía ver.
+- **La custodia crea coordinadores y los coordinadores crean quien registra**, pidiendo
+  cédula, nombres completos y teléfono. Antes las cuentas se creaban a mano por fuera.
+- **Una clave que no cumple ya no deja media cuenta creada.** Se avisa antes de guardar
+  nada, con las reglas escritas, y la aplicación propone una clave que se puede dictar
+  por teléfono sin confundir un cero con una o.
+- Hay botón para volver atrás, que faltaba: la aplicación instalada no tiene el del
+  navegador.
+
+---
+
 ## 0.4.0 — 16 de agosto de 2026
 
 **La primera versión que salió de una ficha llenada en terreno.** Un líder registró una

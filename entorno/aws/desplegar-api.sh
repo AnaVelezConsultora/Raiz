@@ -48,7 +48,7 @@ GRUPO_DESTINO="raiz-api-8080"
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 SALIDA="$AQUI/../generado"
 
-for f in nube.env red.env base.env cluster.env; do
+for f in nube.env red.env base.env cluster.env fotos.env; do
   if [ ! -f "$SALIDA/$f" ]; then
     echo "ERROR: falta entorno/generado/$f" >&2
     exit 1
@@ -187,7 +187,8 @@ cat >"$TMP/tarea.json" <<JSON
         { "name": "COGNITO_CLIENT_ID",     "value": "$COGNITO_CLIENT_ID" },
         { "name": "COGNITO_ISSUER",        "value": "$COGNITO_ISSUER" },
         { "name": "COGNITO_JWKS_URI",      "value": "$COGNITO_JWKS_URI" },
-        { "name": "ORIGENES_PERMITIDOS",   "value": "$ORIGENES" }
+        { "name": "ORIGENES_PERMITIDOS",   "value": "$ORIGENES" },
+        { "name": "S3_BUCKET_FOTOS",       "value": "$S3_BUCKET_FOTOS" }
       ],
       "secrets": [
         { "name": "DATABASE_URL", "valueFrom": "$ARN_API" }
@@ -213,7 +214,8 @@ echo "    $FAMILIA revision $REVISION"
 
 # COGNITO_ENDPOINT NO se pone, y esa ausencia es la que hace que el adaptador
 # arme la direccion real con la region. Ponerlo apuntaria a cognito-local, que en
-# la nube no existe.
+# la nube no existe. S3_ENDPOINT se omite por lo mismo, y ademas no hay ninguna
+# credencial de AWS entre estas variables: la tarea las toma de su rol.
 
 # -----------------------------------------------------------------------------
 # 5. Servicio

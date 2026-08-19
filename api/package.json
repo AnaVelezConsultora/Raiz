@@ -1,6 +1,6 @@
 {
   "name": "@raiz/api",
-  "version": "0.4.0",
+  "version": "0.6.2",
   "description": "API de Raiz. Recibe lo que el voluntario capturo sin senal.",
   "license": "MIT",
   "scripts": {
@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1111.0",
+    "@aws-sdk/client-s3": "^3.1111.0",
+    "@aws-sdk/s3-presigned-post": "^3.1111.0",
+    "@aws-sdk/s3-request-presigner": "^3.1111.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

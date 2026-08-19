@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION } from '../domain/ports';
+import { FotoLocal } from '../domain/caso.model';
+import { AvanceFoto, CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION } from '../domain/ports';
 import { RedService } from './red.service';
 
 /** Resultado de una pasada completa de la cola. */
@@ -49,6 +50,9 @@ export class SincronizacionService {
   private readonly _ultimoError = signal<string | null>(null);
   private readonly _ultimaSincronizacion = signal<string | null>(null);
   private readonly _enLinea = signal(navigator.onLine);
+  private readonly _avanceFoto = signal<AvanceFoto | null>(null);
+  private readonly _fotosEsperandoCaso = signal(0);
+  private readonly _fotosDetenidas = signal(0);
 
   readonly estado = this._estado.asReadonly();
   readonly casosPendientes = this._casosPendientes.asReadonly();
@@ -68,6 +72,45 @@ export class SincronizacionService {
 
   /** Peso de las fotografias por subir. Se muestra ANTES de gastarlo, no despues. */
   readonly bytesFotosPendientes = this._bytesFotosPendientes.asReadonly();
+
+  /**
+   * Avance de la fotografia que se esta subiendo por bloques, o null.
+   *
+   * Solo tiene valor mientras hay una subida larga en curso. Una foto comprimida a
+   * 200 KB sube de un envio y no pasa por aqui: no hay nada que dibujar entre «empezo»
+   * y «termino».
+   */
+  readonly avanceFoto = this._avanceFoto.asReadonly();
+
+  /**
+   * Cuantas fotografias no pueden salir todavia porque su caso no ha llegado.
+   *
+   * Se muestra para que el contador de pendientes no parezca atascado: son fotos que
+   * estan bien, esperando su turno, y no fotos que fallaron.
+   */
+  readonly fotosEsperandoCaso = this._fotosEsperandoCaso.asReadonly();
+
+  /**
+   * Fotografias que agotaron los reintentos: nadie las esta enviando.
+   *
+   * Se muestran aparte porque hasta ahora se sumaban a las pendientes y el contador
+   * mentia: decia que faltaban dos y solo se intentaba una.
+   */
+  readonly fotosDetenidas = this._fotosDetenidas.asReadonly();
+
+  /** El avance en palabras: «bloque 3 de 4». Vacio cuando no hay subida en curso. */
+  readonly avanceFotoTexto = computed(() => {
+    const avance = this._avanceFoto();
+    if (!avance) return '';
+    return `bloque ${avance.bloque} de ${avance.totalBloques}`;
+  });
+
+  /** El mismo avance en porcentaje, para la barra. */
+  readonly avanceFotoPorcentaje = computed(() => {
+    const avance = this._avanceFoto();
+    if (!avance || avance.bytesTotales <= 0) return 0;
+    return Math.min(100, Math.round((avance.bytesEnviados / avance.bytesTotales) * 100));
+  });
 
   /** El peso en palabras: "unos 1,2 MB". Vacio si no hay nada pendiente. */
   readonly pesoFotosPendientes = computed(() => {
@@ -101,16 +144,31 @@ export class SincronizacionService {
     });
   }
 
+  /**
+   * Cancela en el servidor la subida a medias de una fotografia que se esta borrando.
+   *
+   * Sin esto, los bloques que alcanzaron a viajar de una foto que el voluntario
+   * descarto se quedan ocupando espacio facturable, invisibles al listar el
+   * almacenamiento. Sin senal no se puede avisar y no se insiste: para eso el bucket
+   * tiene una regla que barre lo que quede a medias.
+   */
+  async cancelarFoto(fotoId: string): Promise<void> {
+    if (!navigator.onLine) return;
+    await this.transporte.cancelarFoto(fotoId);
+  }
+
   /** Recalcula los contadores de pendientes desde el almacenamiento local. */
   async refrescarContadores(): Promise<void> {
-    const [casos, fotos, bytes] = await Promise.all([
+    const [casos, fotos, bytes, detenidas] = await Promise.all([
       this.casos.contarPendientes(),
       this.fotos.contarPendientes(),
-      this.fotos.bytesPendientes()
+      this.fotos.bytesPendientes(),
+      this.fotos.contarDetenidas()
     ]);
     this._casosPendientes.set(casos);
     this._fotosPendientes.set(fotos);
     this._bytesFotosPendientes.set(bytes);
+    this._fotosDetenidas.set(detenidas);
   }
 
   /**
@@ -139,6 +197,16 @@ export class SincronizacionService {
     this._estado.set('en_curso');
     this._ultimoError.set(null);
 
+    // Si quien pide la pasada es una persona —y no el arranque automatico, que solo
+    // manda casos— se devuelven a la cola las fotografias que agotaron sus intentos.
+    // Tocar el boton ES la decision de volver a intentarlo.
+    if (!soloCasos) {
+      const revividas = await this.fotos.reactivarDetenidas();
+      if (revividas > 0) {
+        await this.refrescarContadores();
+      }
+    }
+
     try {
       const resultadoCasos = await this.enviarCasos();
       const resultadoFotos =
@@ -148,7 +216,11 @@ export class SincronizacionService {
 
       await this.refrescarContadores();
       this._ultimaSincronizacion.set(new Date().toISOString());
-      this._estado.set(resultadoCasos.interrumpida ? 'error' : 'inactiva');
+      // El estado mira las dos colas. Con solo la de casos, una pasada donde
+      // fallaron todas las fotografias terminaba en verde.
+      this._estado.set(
+        resultadoCasos.interrumpida || resultadoFotos.fallidas > 0 ? 'error' : 'inactiva'
+      );
 
       return {
         casosEnviados: resultadoCasos.enviados,
@@ -204,34 +276,107 @@ export class SincronizacionService {
     return { enviados, fallidos, interrumpida: false };
   }
 
+  /**
+   * Sube las fotografias CUYO CASO YA ESTA EN EL SERVIDOR.
+   *
+   * UNA FOTOGRAFIA NO VIAJA SOLA. En el servidor cuelga de la familia, asi que si el
+   * caso todavia no llego, la API no tiene a que colgarla y responde que ese caso no
+   * existe. Antes eso se descubria gastando: se pedia permiso, se subian bloques, se
+   * recibia un rechazo, y la fotografia quedaba marcada como fallida. Al tercer intento
+   * la cola dejaba de reintentarla — y esa foto ya no subia nunca, aunque su caso
+   * llegara diez minutos despues.
+   *
+   * Eran las dos cosas a la vez: datos del voluntario gastados para nada, y evidencia
+   * del dano de una vivienda perdida en silencio.
+   *
+   * Filtrarlas aqui no las retrasa. Los casos se envian ANTES en la misma pasada, de
+   * modo que un caso que acaba de sincronizarse ya deja pasar sus fotografias.
+   */
   private async enviarFotos(): Promise<{
     enviadas: number;
     fallidas: number;
     interrumpida: boolean;
   }> {
-    const pendientes = await this.fotos.pendientesDeSync();
+    const candidatas = await this.fotos.pendientesDeSync();
+    const pendientes = await this.conCasoYaEnviado(candidatas);
+
+    this._fotosEsperandoCaso.set(candidatas.length - pendientes.length);
+
     let enviadas = 0;
     let fallidas = 0;
 
     for (const foto of pendientes) {
-      const resultado = await this.transporte.enviarFoto(foto);
+      const resultado = await this.transporte.enviarFoto(foto, (avance) =>
+        this._avanceFoto.set(avance)
+      );
 
       if (resultado.exito) {
         await this.fotos.marcarSync({ fotoId: foto.id, urlRemota: resultado.urlRemota });
         enviadas++;
         this._fotosPendientes.update((n) => Math.max(0, n - 1));
+        this._avanceFoto.set(null);
         continue;
       }
 
-      await this.fotos.marcarSync({ fotoId: foto.id, error: resultado.error });
       fallidas++;
 
+      // EL ERROR SE DICE. Antes solo los casos escribian aqui, asi que una
+      // fotografia que no subia dejaba la pantalla igual que si no hubiera pasado
+      // nada: el voluntario tocaba el boton, veia el mismo contador y no tenia como
+      // saber si era la senal, el permiso o su telefono. Se descubrio probando en un
+      // iPhone contra la nube, que es donde tenia que descubrirse.
+      const viajo =
+        resultado.bytesEnviados && resultado.bytesEnviados > 0
+          ? ` Alcanzaron a viajar ${Math.round(resultado.bytesEnviados / 1024)} KB, que no hay que repetir.`
+          : '';
+      this._ultimoError.set(
+        `No se pudo enviar una fotografia: ${resultado.error ?? 'fallo desconocido'}.${viajo}`
+      );
+
+      // Se anota DESPUES de poner el mensaje, y sin dejar que tumbe la pasada: si el
+      // propio almacenamiento del telefono falla al escribir, el voluntario tiene que
+      // ver igual por que no subio la foto.
+      try {
+        await this.fotos.marcarSync({ fotoId: foto.id, error: resultado.error });
+      } catch (e) {
+        this._ultimoError.update(
+          (previo) => `${previo ?? ''} Ademas, este celular no pudo anotarlo: ${this.mensajeDeError(e)}`
+        );
+      }
+
       if (resultado.reintentable) {
+        // El avance NO se limpia al fallar, y esa es la diferencia que se ve en la
+        // pantalla: una subida por bloques que se corto en el cuarto de nueve dejo
+        // hechos los tres primeros, y decirle al voluntario que no se envio nada seria
+        // mentirle sobre datos que ya pago.
         return { enviadas, fallidas, interrumpida: true };
       }
+
+      this._avanceFoto.set(null);
     }
 
     return { enviadas, fallidas, interrumpida: false };
+  }
+
+  /**
+   * De estas fotografias, las que ya tienen su caso en el servidor.
+   *
+   * Se mira el codigo institucional y no el estado de la cola: el codigo lo asigna el
+   * servidor y solo existe si el caso llego de verdad. Un caso marcado como
+   * sincronizado sin codigo seria justo el estado inconsistente que no conviene creer.
+   *
+   * Los casos se consultan una vez cada uno aunque tengan tres fotografias: en un
+   * telefono de gama baja, treinta lecturas de IndexedDB de mas se notan en el pulgar.
+   */
+  private async conCasoYaEnviado(fotos: FotoLocal[]): Promise<FotoLocal[]> {
+    const casos = new Map<string, boolean>();
+
+    for (const id of new Set(fotos.map((f) => f.casoId))) {
+      const caso = await this.casos.obtener(id);
+      casos.set(id, Boolean(caso?.codigo));
+    }
+
+    return fotos.filter((f) => casos.get(f.casoId));
   }
 
   /**

@@ -402,23 +402,28 @@
               "quiero": "que la fotografía vaya directo al almacenamiento",
               "para": "que la subida sea lo más liviana y rápida posible",
               "criterios": [
-                "Politica de subida firmada y de vida corta, limitada a la ruta del caso",
-                "La politica lleva content-length-range con el tamano que el dispositivo declaro",
-                "La fotografia no atraviesa la API en ningun momento",
+                "Toda fotografia se sube por bloques, tambien una de 200 KB: lo transmitido no se vuelve a pagar",
+                "Cada bloque lleva su tamano dentro de la firma, y el permiso caduca en 15 minutos",
+                "La imagen no atraviesa la API en su viaje desde el celular",
                 "Sin consentimiento no se emite autorizacion: la regla en el borde, no en la interfaz",
                 "El objeto no queda legible sin firma",
-                "Hay ruta de confirmacion, idempotente, que VERIFICA el objeto contra el almacenamiento",
-                "La confirmacion consulta el objeto concreto, nunca listando un prefijo"
+                "Que bloques llegaron lo dice el almacenamiento, no el dispositivo: se reanuda tras perder la bateria",
+                "La confirmacion consulta cada objeto concreto, nunca listando un prefijo",
+                "Integridad de extremo a extremo: SHA-256 declarado en el dispositivo y verificado al unir",
+                "Una fotografia no se envia si su caso todavia no llego al servidor",
+                "Ruta de cancelacion que libera los bloques a medias"
               ],
               "etiquetas": [
-                "BackEnd"
+                "BackEnd",
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "ADR 003",
               "depende_de": "HU 1.2.3",
               "sugerido": [
                 "lDavidSantiago"
               ],
-              "nota": "EL LADO DEL CLIENTE YA ESTA. El adaptador declara fotoId, casoOrigenId, tipo, bytes y tipoMime; sube por POST multiparte con los campos firmados, poniendo el archivo de ultimo; y despues llama a POST /fotos/{id}/confirmar. Falta construir esos dos endpoints.\n\nEl contrato completo quedo escrito en el ADR 003 seccion 5, reescrita el 15 de agosto de 2026. Incluye por que son tres pasos y no dos: que el almacenamiento responda 204 no es que el objeto este ahi y completo, y sin confirmacion el dispositivo podria liberar la foto de su memoria creyendo que ya viajo.\n\nNO usar subida multiparte de objetos grandes: su parte minima es de 5 MB, asi que una foto de 200 KB seria una sola parte con dos viajes de red de mas."
+              "nota": "HECHA el 15 de agosto de 2026. Rama feature/hu-1.2.5-fotos.\n\nSE CAMBIO EL MECANISMO frente a lo que decia el ADR 003, y la seccion 5 se reescribio: no se usa la subida multiparte de S3 porque exige partes de 5 MiB minimo, de modo que una foto de 200 KB no se podria partir. Cada bloque es un objeto propio bajo `partes/` y la API los une al confirmar, en flujo.\n\nVerificado contra la API, PostgreSQL y el almacenamiento reales con `entorno/pruebas/ciclo-api.mjs`: 27 comprobaciones, incluida la reanudacion —se corta la subida a la mitad y solo se vuelven a firmar los bloques que faltan— y la integridad, con un bloque danado DEL TAMANO CORRECTO que se rechaza y no queda guardado.\n\nFalta correr `entorno/aws/desplegar-fotos.sh` contra AWS y volver a desplegar la API para que reciba S3_BUCKET_FOTOS."
             },
             {
               "id": "HU 1.2.6",
@@ -781,6 +786,25 @@
               ],
               "origen": "Revision del paso 3, 15 de agosto de 2026",
               "nota": "HECHA. El ofrecimiento aparece al guardar, no en la lista: el voluntario todavia esta parado frente a la casa y en la lista ya no lo esta.\n\nQue se copia el estado del inmueble fue una correccion sobre la marcha. La primera version solo copiaba el lugar, y eso dejaba el registro parcial y obligaba a re-responder el dano de la MISMA casa: la grieta es la misma grieta, y volver a preguntarla invita a que un inmueble quede con 'severo' en una familia y 'moderado' en la siguiente, de modo que la entidad recibe dos verdades del mismo predio y ninguna sirve. Lo copiado queda editable y avisado.\n\nLa navegacion va por /nuevo?desde=<id> para que la creacion siga estando en un solo lugar. Se reacciona a los parametros de la ruta y no se leen una sola vez, porque Angular reutiliza el componente cuando solo cambian y el voluntario se quedaria mirando el caso que acaba de guardar."
+            },
+            {
+              "id": "HU 1.3.15",
+              "titulo": "Que las fotografias suban solas apenas haya red",
+              "como": "lider territorial",
+              "quiero": "no tener que acordarme de tocar un boton para que las fotos viajen",
+              "para": "dedicar el tiempo a atender a la familia y no a manejar la aplicacion",
+              "criterios": [
+                "Apenas hay conexion, las fotografias salen: no se distingue wifi de datos moviles",
+                "Con el ahorro de datos activo sigue sin salir nada sin pedirlo: es la valvula del voluntario",
+                "Nunca hay envio en segundo plano con la aplicacion cerrada",
+                "Se avisa cuanto se va a gastar, pero no se pide permiso cada vez",
+                "El caso completo —texto y fotos— deja de aparecer como pendiente sin que nadie toque nada"
+              ],
+              "etiquetas": [
+                "FrontEnd"
+              ],
+              "origen": "prueba en iPhone del 15 de agosto de 2026; enmienda a ESTADO.md seccion 2",
+              "nota": "CAMBIA UNA DECISION ESCRITA, y por eso es una historia y no un ajuste. ESTADO.md dice «el caso viaja solo; la fotografia espera el boton», con un argumento que no era malo: un caso son 3 KB y veinte fotografias son 4 MB del plan de datos de alguien.\n\nLa decision se revisa con lo aprendido en campo: el boton no protege al voluntario, le pasa una tarea. Y una fotografia que se queda en el celular no es un ahorro, es evidencia del dano que no llega. APENAS HAYA RED, SUBEN — sin distinguir wifi de datos moviles.\n\nLo que se conserva es la valvula: con el ahorro de datos activo no sale nada sin pedirlo, y nunca hay envio en segundo plano con la aplicacion cerrada.\n\nPedido en campo con estas palabras: «quitarle tareas al voluntario, que esta buscando atender y entregar ayudas a quienes realmente las necesitan»."
             }
           ]
         },
@@ -957,19 +981,19 @@
       "apartados": [
         {
           "numero": "2.1",
-          "nombre": "Tablero y mapa",
+          "nombre": "Vistas de consulta dentro de la aplicacion",
           "hus": [
             {
               "id": "HU 2.1.1",
               "titulo": "DECISIÓN · Qué puede mostrar el mapa público",
               "como": "custodia de datos",
-              "quiero": "definir el nivel de agregación de la vista pública",
-              "para": "que el mapa ubique la afectación sin señalar la casa de una familia",
+              "quiero": "definir el nivel de agregación de cualquier vista que salga sin sesión",
+              "para": "que una familia no quede señalada por un mapa abierto",
               "criterios": [
-                "Tres documentos dicen que toda vista pública es agregada; el mapa no lo es: es una fila por familia con vereda, personas, menores y coordenada a 110 m",
+                "Tres documentos dicen que toda vista pública es agregada; v_mapa_publico no lo es: una fila por familia con vereda, personas, menores y coordenada a 110 m",
                 "En una vereda con pocos hogares eso puede identificar a una familia",
                 "Escoger: umbral de anonimato por vereda, retirar código y desglose, o agregar por vereda",
-                "Confirmar si el archivo del tablero estático contiene dato inventado o real"
+                "Mientras no se tome, NADA que salga de esta vista se publica sin sesión"
               ],
               "etiquetas": [
                 "decisión F7",
@@ -977,44 +1001,109 @@
                 "bloqueada"
               ],
               "origen": "hallazgos-revision.md H12",
-              "depende_de": "que la custodia de datos resuelva",
               "desbloquea": "HU 2.1.2",
-              "asignado": "yonathangutierrez"
+              "asignado": "yonathangutierrez",
+              "nota": "DEJO DE BLOQUEAR EL TRABAJO DE PANTALLAS. Las vistas de la aplicacion llevan sesion y roles, asi que no dependen de esta decision: la que depende es cualquier cosa que se publique SIN sesion.\n\nHoy lo unico en esa situacion es el tablero estatico de `tablero/`, que no esta desplegado y se usa para mostrar en reuniones. Ver HU 2.1.3.",
+              "depende_de": "que la custodia de datos resuelva"
             },
             {
               "id": "HU 2.1.2",
-              "titulo": "Sustentar una petición ante una entidad con cifras y mapa",
-              "como": "mesa de sistematización",
-              "quiero": "mostrar cuántas familias, dónde y con qué prioridad",
-              "para": "tener con qué negociar ante la entidad competente",
+              "titulo": "Cifras y mapa dentro del dashboard, para sustentar una petición",
+              "como": "integrante de la mesa",
+              "quiero": "ver cuántas familias, dónde y con qué prioridad",
+              "para": "llegar a una entidad con una cifra que se sostenga",
               "criterios": [
-                "Consume la vista pública, nunca la tabla con identidad",
-                "Funciona con los datos inventados del entorno local",
-                "Las cifras cuadran con el total consolidado: si no cuadran, se pierde la palanca"
+                "Es la primera vista DENTRO del dashboard administrativo, no una pantalla suelta",
+                "Las cifras salen de la API y obedecen las políticas por fila: cada rol suma lo que alcanza",
+                "Mapa y contadores en la misma pantalla; el mapa ubica la afectación, no la vivienda",
+                "El total cuadra con el listado: si no cuadra, se pierde la palanca",
+                "Funciona con los datos de ejemplo del entorno local"
               ],
               "etiquetas": [
-                "FrontEnd"
+                "FrontEnd",
+                "BackEnd"
               ],
               "origen": "FRENTES.md F4",
-              "depende_de": "HU 2.1.1"
+              "nota": "HECHA. Seis cifras —familias, personas, menores, mayores de 60, riesgo de vida y sin ubicar— y un mapa con un circulo por afectacion, del color de su prioridad, con filtros por zona y por P0 que mueven cifras y mapa a la vez.\n\n`GET /casos` lee `v_familias_tablero`, que es `security_invoker`: quien filtra es PostgreSQL. Comprobado contra la base local —la custodia ve 4 casos y Ana, lider, 3— y las cifras dieron exactas: 4, 18, 4, 1 y 3.\n\n`ResumenTablero` no lleva nombre, documento ni telefono: lo que no viaja no se puede filtrar mal en el navegador. Sin conexion no hay tablero, a proposito. Leaflet se carga solo al abrir la pantalla, asi que el paquete inicial no crece.\n\nRama feature/hu-2.1.4-dashboard, version 0.6.0.\n\n---\n\nNO DEPENDE DE LA HU 2.1.1. Dependia cuando se penso como pagina publica; como vista con sesion, la decision de que puede mostrarse SIN sesion no la toca.\n\nEl mapa es de la mesa: el coordinador lo ve y el lider no. Lo que el lider necesita es otra cosa y esta en la HU 2.1.5.",
+              "depende_de": "HU 2.1.4 (el contenedor)"
             },
             {
               "id": "HU 2.1.3",
-              "titulo": "Que el mapa público no toque la base",
-              "como": "responsable de plataforma",
-              "quiero": "servir el mapa como archivo regenerado periódicamente",
-              "para": "eliminar la superficie anónima contra la base de datos",
+              "titulo": "Mostrar el avance en una reunión, sin desplegar nada",
+              "como": "coordinador",
+              "quiero": "abrir el tablero estático en un portátil y mostrar el mapa en una reunión",
+              "para": "no depender de que haya internet ni de publicar nada en abierto",
               "criterios": [
-                "Regeneración programada, sin acceso anónimo a la base",
-                "Se revoca el permiso del rol anónimo cuando el archivo esté en uso",
-                "Coordenada degradada y sin identidad, verificado en la generación"
+                "`tablero/index.html` se abre desde el disco y funciona sin servidor",
+                "Los datos los genera `tablero/generar-datos.mjs`, que lee la vista pública como el rol anónimo",
+                "El archivo del repositorio lleva datos inventados y lo dice adentro",
+                "NO se despliega en ninguna parte: publicarlo exige la decisión HU 2.1.1"
               ],
               "etiquetas": [
-                "Infra",
+                "sin código"
+              ],
+              "origen": "decisión del 16 de agosto de 2026",
+              "asignado": "yonathangutierrez",
+              "nota": "CAMBIA DE INTENCION. Decia «que el mapa publico no toque la base» y describia un archivo regenerado y servido al mundo. Se replantea: eso exigiria la decision HU 2.1.1, y el valor que el tablero da hoy no lo necesita.\n\nLo que hace falta ya esta hecho: el generador lee `v_mapa_publico` poniendose en el rol `anon`, de modo que es imposible que el archivo lleve mas de lo que un visitante podria ver. Y avisa cuando un lugar tiene menos de tres registros, que es la senal de la HU 2.1.1.\n\nLa base no es alcanzable desde una maquina; para generar contra produccion se abre el tunel con `entorno/aws/tunel-a-la-base.sh --abrir`."
+            },
+            {
+              "id": "HU 2.1.4",
+              "titulo": "Dashboard administrativo, donde se cuelga todo lo demás",
+              "como": "coordinador o custodio",
+              "quiero": "un lugar en la aplicación donde estén las vistas de gestión",
+              "para": "trabajar el conjunto sin salirme de la herramienta con la que se captura",
+              "criterios": [
+                "Es un módulo de la PWA existente, con su ruta y su navegación: no una aplicación aparte",
+                "LA PUERTA ES `verTodosLosCasos`, que hoy es la mesa: coordinación, custodia y validación",
+                "El líder y el digitador NO lo ven ni alcanzan la ruta: solo ven lo suyo, y para eso está la HU 2.1.5",
+                "Ocultar el enlace no es la protección: la API vuelve a decidir en cada petición con el rol leído de la base",
+                "Nace con una sola vista dentro —cifras y mapa— y con sitio para las que vengan"
+              ],
+              "etiquetas": [
+                "FrontEnd",
                 "BackEnd"
               ],
-              "origen": "ADR 002",
-              "asignado": "yonathangutierrez"
+              "origen": "decisión del 16 de agosto de 2026",
+              "nota": "HECHA. Modulo `/tablero` dentro de la PWA, con carga diferida y enlace en la cabecera solo para quien tiene el permiso. La puerta es `permisoGuard('verTodosLosCasos')`, la misma frontera que `es_mesa()` en la base; no se invento una lista de roles nueva.\n\nDe paso se cerro un hueco que aparecio probando esto: las guardas devolvian `true` cuando la direccion de la API venia vacia, asi que en desarrollo cualquiera abria cualquier pantalla sin identificarse. Se quito la excepcion y se comprobo que las seis rutas terminan en /acceso. Capturar sin senal sigue funcionando: la guarda exige haber entrado en el dispositivo, no un token vigente.\n\nRama feature/hu-2.1.4-dashboard, version 0.6.0.\n\n---\n\nES EL CONTENEDOR, no una pantalla suelta. Se pide asi a proposito: las vistas de gestion que vienen —seguimiento de remisiones, mora por entidad, duplicados— no deben nacer cada una con su propia ruta, su propia guarda y su propia forma de preguntar quien es quien.\n\nLA PUERTA YA ESTA ESCRITA y no se inventa una nueva: `permisosDe(rol)` en el dominio compartido dice `verTodosLosCasos` para la mesa, y es la misma frontera que usa `es_mesa()` en las politicas de la base. Tres capas diciendo lo mismo, sin una cuarta definicion que se separe.\n\nEl mapa entra aqui: el coordinador lo ve, el lider no."
+            },
+            {
+              "id": "HU 2.1.5",
+              "titulo": "Que el líder vea lo suyo, no solo lo que tiene el celular",
+              "como": "líder territorial",
+              "quiero": "ver los casos que ya entregué, aunque no estén en este teléfono",
+              "para": "saber qué llevo hecho y qué me falta sin depender de un aparato",
+              "criterios": [
+                "La lista distingue lo que está en este celular de lo que ya está en el servidor",
+                "Un líder ve únicamente los casos que él reportó: lo garantiza la política por fila, no la pantalla",
+                "Funciona con el celular cambiado o la aplicación reinstalada",
+                "Sin conexión sigue mostrando lo del celular, que es lo que no se puede perder",
+                "Se ve cuántas fotografías faltan por subir de cada caso"
+              ],
+              "etiquetas": [
+                "FrontEnd",
+                "BackEnd"
+              ],
+              "origen": "prueba en terreno de Miguel, 16 de agosto de 2026",
+              "nota": "HOY LA PANTALLA SE LLAMA «Casos en este celular» Y ES LITERAL: lo que se ve sale de IndexedDB. Un lider que cambie de telefono, reinstale la aplicacion o preste el suyo pierde de vista su propio trabajo — aunque el servidor lo tenga entero. En campo eso se lee como «la aplicacion me borro los casos», que es lo unico que hace que un voluntario deje de usar la herramienta.\n\nNO ES EL DASHBOARD. El lider no entra ahi —no ve el mapa ni el conjunto— y esta historia es su equivalente: lo suyo, completo, venga del celular o del servidor. La politica por fila ya garantiza que sea solo lo suyo.\n\nLa API ya sabe responder con las politicas puestas; falta la ruta de consulta y que la lista junte las dos fuentes sin confundirlas."
+            },
+            {
+              "id": "HU 2.1.6",
+              "titulo": "Ver la fotografía del daño desde el caso",
+              "como": "integrante de la mesa",
+              "quiero": "abrir las fotografías de una familia desde su caso",
+              "para": "sustentar la remisión ante la entidad con la prueba del daño",
+              "criterios": [
+                "Una ruta de lectura devuelve enlaces firmados de vida corta; la imagen no pasa por la API",
+                "Las políticas de acceso mandan: un líder ve las suyas y la mesa las de su alcance",
+                "El bucket sigue sin lectura anónima, verificado contra la nube real",
+                "El enlace caduca y no sirve reenviado horas después",
+                "Queda registro de quién pidió ver qué fotografía"
+              ],
+              "etiquetas": [
+                "BackEnd"
+              ],
+              "origen": "HU 1.2.5 (hecha): la subida existe y la lectura no",
+              "nota": "Se separa de la HU 2.1.4 porque es trabajo de servidor que necesitan DOS pantallas: el modulo de administracion y la vista del lider. Hacerla una sola vez evita que cada pantalla invente su forma de pedir una imagen.\n\nEs lo que falta para cerrar el ciclo de la evidencia: la fotografia sube, se verifica y hoy no se puede volver a ver."
             }
           ]
         },

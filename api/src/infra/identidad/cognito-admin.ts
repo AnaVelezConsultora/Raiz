@@ -1,5 +1,6 @@
 import {
   AdminCreateUserCommand,
+  AdminDeleteUserCommand,
   AdminGetUserCommand,
   AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
@@ -60,6 +61,12 @@ export class CognitoAdministrador implements AdministradorIdentidadPort {
     ];
     if (telefono) atributos.push({ Name: 'phone_number', Value: telefono });
 
+    // Se recuerda si la cuenta la creo ESTA llamada, para poder deshacerla si el
+    // segundo paso falla. Sin esto, un fallo al fijar la clave deja en el proveedor
+    // una cuenta que existe, no puede entrar y no tiene perfil — que es exactamente
+    // lo que paso con la clave que no cumplia la politica.
+    let creadaAqui = false;
+
     try {
       const creado = await this.conectar().send(
         new AdminCreateUserCommand({
@@ -75,6 +82,7 @@ export class CognitoAdministrador implements AdministradorIdentidadPort {
 
       const sub = creado.User?.Attributes?.find((a) => a.Name === 'sub')?.Value;
       if (!sub) throw new ErrorTransporte('Cognito creo el usuario pero no devolvio su identificador.');
+      creadaAqui = true;
 
       // Clave DEFINITIVA y no temporal. Una temporal obliga a cambiarla en el primer
       // ingreso, y ese cambio es un desafio de Cognito que la API todavia no resuelve:
@@ -92,20 +100,69 @@ export class CognitoAdministrador implements AdministradorIdentidadPort {
       return { sub, yaExistia: false };
     } catch (e) {
       if (e instanceof UsernameExistsException) {
-        return this.recuperarExistente(poolId, usuario, clave);
+        // La recuperacion va DENTRO del traductor y no en su lugar. Antes se
+        // devolvia aqui mismo, asi que un fallo suyo —fijar la clave de una cuenta a
+        // medias— salia crudo y llegaba al custodio como «el servidor no pudo
+        // atender la peticion, reintente». Reintentar con la misma clave invalida
+        // falla igual, para siempre.
+        try {
+          return await this.recuperarExistente(poolId, usuario, clave);
+        } catch (fallo) {
+          throw this.traducir(fallo, usuario);
+        }
       }
-      if (e instanceof ErrorTransporte || e instanceof ErrorRechazo) throw e;
 
-      const nombreError = e instanceof Error ? e.name : 'desconocido';
-      const detalle = e instanceof Error ? e.message : '';
+      // Si la cuenta se creo en esta llamada y lo que fallo fue el segundo paso, se
+      // deshace. Un alta a medias es recuperable —el flujo de arriba la repara— pero
+      // dejarla ahi obliga a que alguien repita el alta a ciegas, sin saber que
+      // existe una cuenta suya en el proveedor.
+      if (creadaAqui) await this.deshacer(poolId, usuario);
 
-      // InvalidPasswordException es lo que el custodio puede corregir; el resto no.
-      if (nombreError === 'InvalidPasswordException') {
-        throw new ErrorRechazo(`La clave no cumple la politica del pool. ${detalle}`);
-      }
+      throw this.traducir(e, usuario);
+    }
+  }
 
-      this.log.error(`Cognito rechazo el alta (${nombreError}): ${detalle}`);
-      throw new ErrorTransporte('No se pudo dar de alta al voluntario. Reintente.');
+  /**
+   * Un error de Cognito, dicho de forma que se pueda actuar.
+   *
+   * La distincion que importa es entre lo que el custodio puede corregir —la clave,
+   * el telefono, el correo— y lo que no. Lo primero se rechaza con el detalle a la
+   * vista; lo segundo se registra y se pide reintentar, que ahi si es un consejo
+   * util.
+   */
+  private traducir(e: unknown, usuario: string): Error {
+    if (e instanceof ErrorTransporte || e instanceof ErrorRechazo) return e;
+
+    const nombreError = e instanceof Error ? e.name : 'desconocido';
+    const detalle = e instanceof Error ? e.message : '';
+
+    const corregibles: Record<string, string> = {
+      InvalidPasswordException: 'La clave no cumple la politica del proveedor.',
+      InvalidParameterException: 'Alguno de los datos no tiene el formato que exige el proveedor.',
+      UsernameExistsException: 'Ese correo ya tiene cuenta.'
+    };
+
+    if (corregibles[nombreError]) {
+      this.log.warn(`Alta de ${usuario} rechazada (${nombreError}): ${detalle}`);
+      return new ErrorRechazo(`${corregibles[nombreError]} ${detalle}`.trim());
+    }
+
+    this.log.error(`Cognito rechazo el alta de ${usuario} (${nombreError}): ${detalle}`);
+    return new ErrorTransporte('No se pudo dar de alta al voluntario. Reintente.');
+  }
+
+  /** Retira una cuenta que se acaba de crear y no llego a quedar utilizable. */
+  private async deshacer(poolId: string, usuario: string): Promise<void> {
+    try {
+      await this.conectar().send(
+        new AdminDeleteUserCommand({ UserPoolId: poolId, Username: usuario })
+      );
+      this.log.warn(`Alta de ${usuario} deshecha: la cuenta no llego a quedar utilizable.`);
+    } catch (e) {
+      // Que no se pueda deshacer no cambia lo que hay que decirle al custodio, y el
+      // flujo de recuperacion arregla la cuenta si vuelve a intentarlo. Se anota.
+      const detalle = e instanceof Error ? e.message : 'desconocido';
+      this.log.error(`No se pudo deshacer el alta de ${usuario}: ${detalle}`);
     }
   }
 

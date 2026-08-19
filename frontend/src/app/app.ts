@@ -33,8 +33,14 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
         <!-- Solo el nombre, en la serif del sello. Se intento reducir el arbol del logo
              a un trazo de 26 px y a ese tamano dejaba de leerse como arbol: lo que
              funciona impreso no siempre funciona en la barra de un celular. El sello
-             completo va en la pantalla de entrada, que es donde hay espacio. -->
-        <strong style="font-family:var(--serif);font-size:1.05rem">Raíz · {{ municipio.nombre() }}</strong>
+             completo va en la pantalla de entrada, que es donde hay espacio.
+
+             Y es un ENLACE a la lista, no un rotulo: instalada en el celular la
+             aplicacion no tiene barra de navegador, asi que sin esto quien entra a
+             Voluntarios se queda sin forma de volver. -->
+        <a routerLink="/casos"
+           style="font-family:var(--serif);font-size:1.05rem;font-weight:700;
+                  color:#fff;text-decoration:none">Raíz · {{ municipio.nombre() }}</a>
         <span class="mono" style="font-size:.72rem;opacity:.92">
           {{ sync.enLinea() ? 'EN LINEA' : 'SIN CONEXION' }}
           @if (sync.totalPendientes() > 0) {
@@ -49,6 +55,11 @@ import { SincronizacionService } from './core/services/sincronizacion.service';
           <span style="font-size:.78rem;opacity:.9">
             {{ sesion.nombre() }} · {{ sesion.rol() }}
           </span>
+          @if (sesion.permisos()?.verTodosLosCasos) {
+            <a routerLink="/tablero"
+               style="color:#fff;font-size:.75rem;text-decoration:underline;
+                      text-underline-offset:.2rem">Tablero</a>
+          }
           @if (puedeAdministrar()) {
             <a routerLink="/voluntarios"
                style="color:#fff;font-size:.75rem;text-decoration:underline;
