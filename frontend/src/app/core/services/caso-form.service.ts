@@ -63,6 +63,7 @@ export class CasoFormService {
         numDoc: [caso.hogar.numDoc],
         tel1: [caso.hogar.tel1, Validators.required],
         tel2: [caso.hogar.tel2],
+        fueraDelHogar: [caso.hogar.fueraDelHogar ?? 0],
         personasTotal: [caso.hogar.personasTotal, [Validators.required, Validators.min(1)]],
         afiliacionCual: [caso.hogar.afiliacionCual]
       }),
@@ -76,6 +77,7 @@ export class CasoFormService {
       vulnerabilidad: this.fb.group({
         gestantes: [caso.hogar.vulnerabilidad.gestantes],
         discapacidadN: [caso.hogar.vulnerabilidad.discapacidadN],
+        requiereApoyoEvacuar: [caso.hogar.vulnerabilidad.requiereApoyoEvacuar ?? 0],
         enfCronicaN: [caso.hogar.vulnerabilidad.enfCronicaN],
         fallecidos: [caso.hogar.vulnerabilidad.fallecidos ?? 0],
         heridosLeves: [caso.hogar.vulnerabilidad.heridosLeves ?? 0],
@@ -179,6 +181,7 @@ export class CasoFormService {
         tel1: v.hogar.tel1,
         tel2: v.hogar.tel2,
         personasTotal: Number(v.hogar.personasTotal),
+        fueraDelHogar: Number(v.hogar.fueraDelHogar ?? 0),
         composicion: {
           h0a5: Number(v.composicion.h0a5), m0a5: Number(v.composicion.m0a5),
           h6a11: Number(v.composicion.h6a11), m6a11: Number(v.composicion.m6a11),
@@ -189,6 +192,7 @@ export class CasoFormService {
         vulnerabilidad: {
           ...caso.hogar.vulnerabilidad,
           gestantes: Number(v.vulnerabilidad.gestantes),
+          requiereApoyoEvacuar: Number(v.vulnerabilidad.requiereApoyoEvacuar),
           discapacidadN: Number(v.vulnerabilidad.discapacidadN),
           enfCronicaN: Number(v.vulnerabilidad.enfCronicaN),
           fallecidos: Number(v.vulnerabilidad.fallecidos),
@@ -309,6 +313,7 @@ interface ValoresComposicion {
 /** Conteos de vulnerabilidad tal como los devuelve el FormGroup. */
 interface ValoresVulnerabilidad {
   gestantes: Numerico;
+  requiereApoyoEvacuar: Numerico;
   discapacidadN: Numerico;
   enfCronicaN: Numerico;
   fallecidos: Numerico;
@@ -348,6 +353,7 @@ interface ValoresFormulario {
     tel1: string;
     tel2: string | null;
     personasTotal: number | string;
+    fueraDelHogar: number | string;
     afiliacionCual: string | null;
   };
   composicion: ValoresComposicion;

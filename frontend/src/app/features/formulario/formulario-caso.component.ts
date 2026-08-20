@@ -159,7 +159,7 @@ export class FormularioCasoComponent implements OnInit {
 
   readonly titulos = [
     'Quién reporta y dónde',
-    'Quiénes viven ahí',
+    'Personas y hogar',
     'La vivienda y el daño',
     'Fotos, prioridad y necesidad'
   ];

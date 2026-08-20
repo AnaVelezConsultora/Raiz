@@ -139,6 +139,15 @@ export interface ComposicionHogar {
 
 /** Condiciones que elevan la vulnerabilidad del hogar. */
 export interface Vulnerabilidad {
+  /**
+   * Personas que no pueden salir solas.
+   *
+   * Distinto de `discapacidadN` y por eso va aparte: incluye al adulto mayor
+   * dependiente, a la persona lesionada esta semana y a quien tiene movilidad reducida
+   * sin diagnostico. Es el numero que un organismo de socorro necesita ANTES de una
+   * replica, y es operativo: no pide diagnostico de nadie.
+   */
+  requiereApoyoEvacuar: number;
   gestantes: number;
   lactantes: number;
   discapacidadN: number;
@@ -178,6 +187,14 @@ export interface Hogar {
   tel1Whatsapp: boolean | null;
   tel2: string | null;
   personasTotal: number;
+  /**
+   * De ese total, cuantas estan FUERA por causa del sismo.
+   *
+   * «Seis, de las cuales cuatro permanecen y dos estan evacuadas» cambia el calculo de
+   * casi todo lo que se entrega: raciones, camas, agua. Y cuenta algo que nadie mas
+   * esta contando: cuanta gente se fue del territorio.
+   */
+  fueraDelHogar: number;
   composicion: ComposicionHogar;
   vulnerabilidad: Vulnerabilidad;
   /** Incluye la opcion 'no_afiliada'. Las familias sin organizacion tambien se registran. */

@@ -169,7 +169,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         fallecidos, heridos_leves, heridos_graves, necesidades_otra,
         autoriza_datos_sensibles, autoriza_remision_entidades,
         version_autorizacion, autorizado_en,
-        origen_dato, nivel_verificacion, evento_id
+        origen_dato, nivel_verificacion, evento_id,
+        fuera_del_hogar, requiere_apoyo_evacuar
       ) values (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::zona_t, $11, $12, $13, $14,
         $15, $16, $17, $18::gps_fuente_t, $19, $20, $21, $22, $23, $24, $25, $26,
@@ -185,7 +186,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         -- El evento se resuelve por codigo. Si no llega o no existe, queda nulo y la
         -- mesa lo asigna: es preferible un caso sin evento que un caso colgado del
         -- evento equivocado.
-        (select id from eventos where codigo = $68)
+        (select id from eventos where codigo = $68),
+        $69, $70
       )
       on conflict (origen_id) do update set
         fecha_registro = excluded.fecha_registro,
@@ -202,6 +204,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         tipo_doc = excluded.tipo_doc, num_doc = excluded.num_doc,
         tel_1 = excluded.tel_1, tel_2 = excluded.tel_2,
         personas_total = excluded.personas_total,
+        fuera_del_hogar = excluded.fuera_del_hogar,
+        requiere_apoyo_evacuar = excluded.requiere_apoyo_evacuar,
         prioridad = excluded.prioridad,
         necesidades_inmediatas = excluded.necesidades_inmediatas,
         observaciones = excluded.observaciones,
@@ -243,7 +247,11 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       c.autorizaDatosSensibles ?? null, c.autorizaRemisionEntidades ?? null,
       c.versionAutorizacion ?? null, c.autorizadoEn ?? null,
       c.origenDato ?? null, nivelInicialDesde(c.origenDato ?? null),
-      CasoRepositorioPostgres.EVENTO_VIGENTE
+      CasoRepositorioPostgres.EVENTO_VIGENTE,
+      // Quien no esta y quien no puede salir solo. Se anaden al final para no correr
+      // los sesenta y ocho parametros anteriores: renumerarlos a mano es la clase de
+      // cambio que compila y guarda el telefono en la columna del documento.
+      h.fueraDelHogar ?? 0, vul.requiereApoyoEvacuar ?? 0
     ];
 
     try {
