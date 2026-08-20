@@ -8,5 +8,6 @@
 export * from './enums';
 export * from './caso.model';
 export * from './foto.model';
+export * from './punto.model';
 export * from './acceso';
 export * from './consentimiento';

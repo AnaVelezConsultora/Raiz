@@ -1,4 +1,12 @@
-import { CasoParaSincronizar, CasoSincronizado, ResumenTablero, Rol } from '@raiz/dominio';
+import {
+  CasoParaSincronizar,
+  CasoSincronizado,
+  PuntoEnTablero,
+  PuntoRegistrado,
+  PuntoServicio,
+  ResumenTablero,
+  Rol
+} from '@raiz/dominio';
 
 /**
  * Puertos del dominio del servidor.
@@ -40,6 +48,23 @@ export interface CasoRepositorioPort {
    * misma fila y devuelve el mismo codigo.
    */
   registrar(caso: CasoParaSincronizar, identidad: Identidad): Promise<CasoSincronizado>;
+}
+
+/**
+ * Persistencia de puntos de servicio.
+ *
+ * Separado de {@link CasoRepositorioPort} y no una operacion mas dentro de el: son dos
+ * unidades distintas del dominio, con politicas de acceso distintas —un punto lo ve
+ * todo el mundo, un caso no— y no comparten ni una consulta.
+ */
+export type { PuntoRegistrado };
+
+export interface PuntoRepositorioPort {
+  /** Todos los puntos, con las dos cifras de hogares ya resueltas por la vista. */
+  listar(identidad: Identidad): Promise<PuntoEnTablero[]>;
+
+  /** Idempotente por el `id` que genero el dispositivo. */
+  registrar(punto: PuntoServicio, identidad: Identidad): Promise<PuntoRegistrado>;
 }
 
 /** Comprueba que la base responde. Se usa en la ruta de disponibilidad. */
@@ -354,6 +379,7 @@ export class ErrorTransporte extends Error {
 
 /** Simbolos de inyeccion. El unico lugar que los asocia a una clase es composicion.module.ts. */
 export const CASO_REPOSITORIO = Symbol('CASO_REPOSITORIO');
+export const PUNTO_REPOSITORIO = Symbol('PUNTO_REPOSITORIO');
 export const FOTO_REPOSITORIO = Symbol('FOTO_REPOSITORIO');
 export const ALMACENAMIENTO = Symbol('ALMACENAMIENTO');
 export const VERIFICADOR_TOKEN = Symbol('VERIFICADOR_TOKEN');
