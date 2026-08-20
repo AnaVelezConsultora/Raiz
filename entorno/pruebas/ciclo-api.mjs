@@ -136,12 +136,14 @@ const CASO = {
     tel1Whatsapp: true,
     tel2: null,
     personasTotal: 5,
+    fueraDelHogar: 2,
     composicion: {
       h0a5: 0, m0a5: 1, h6a11: 0, m6a11: 0, h12a17: 0,
       m12a17: 0, h18a59: 2, m18a59: 2, h60mas: 0, m60mas: 0
     },
     vulnerabilidad: {
       gestantes: 0, lactantes: 0, discapacidadN: 0, discapacidadTipo: [],
+      requiereApoyoEvacuar: 0,
       enfCronicaN: 0, requiereMedicamento: null, medicamentoCual: null,
       etnia: null, victimaConflicto: null,
       // Fallecidos y heridos: el bloque que pidio el terreno el 16 de agosto.
@@ -310,6 +312,10 @@ const sinSensibles = await enviar({
     vulnerabilidad: {
       ...CASO.hogar.vulnerabilidad,
       gestantes: 2,
+      // Tambien es sensible: quien no puede salir solo es casi siempre una persona
+      // mayor dependiente, lesionada o con movilidad reducida. Sin la segunda
+      // autorizacion debe quedar en cero como los demas.
+      requiereApoyoEvacuar: 3,
       discapacidadN: 1,
       enfCronicaN: 3,
       fallecidos: 1,

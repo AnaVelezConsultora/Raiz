@@ -41,7 +41,14 @@ import { PastillasComponent } from '../../shared/pastillas.component';
     <div class="pila" [formGroup]="form()">
       @if (consentimiento()) {
         <section class="pila-sm" formGroupName="hogar">
-          <h3>Persona responsable del hogar</h3>
+          <!-- «Responsable del hogar» se confunde con representante legal y con
+               responsable de menores, que son figuras juridicas con obligaciones. Lo
+               que esta pantalla necesita es mucho menos: alguien a quien volver a
+               llamar. -->
+          <h3>Persona de contacto del hogar</h3>
+          <p class="pista" style="margin:0">
+            Quien pueda confirmar lo registrado y servir de contacto para el seguimiento.
+          </p>
           <div class="fila">
             <div class="campo" style="flex:1">
               <label for="nom">Nombres</label>
@@ -64,7 +71,13 @@ import { PastillasComponent } from '../../shared/pastillas.component';
           <div class="campo">
             <label for="ndoc">Número de documento</label>
             <input id="ndoc" type="text" inputmode="numeric" formControlName="numDoc" />
-            <span class="pista">Es la clave para evitar registros duplicados.</span>
+            <!-- El documento NO es obligatorio y el texto no debe sugerir que lo sea.
+                 En una emergencia mucha gente no lo tiene a la mano: quedo debajo de lo
+                 que se cayo, o se perdio saliendo. Un registro sin documento vale. -->
+            <span class="pista">
+              Sirve para evitar duplicados y para reconocer el registro después. Si no lo
+              tiene a la mano, siga sin él.
+            </span>
           </div>
         </section>
       } @else {
@@ -84,13 +97,17 @@ import { PastillasComponent } from '../../shared/pastillas.component';
           }
         </div>
         <div class="campo">
-          <label for="tel2">Celular alterno o de un vecino</label>
+          <label for="tel2">Contacto alternativo para emergencias</label>
           <input id="tel2" type="tel" inputmode="tel" formControlName="tel2" />
+          <span class="pista">
+            Un familiar, un vecino u otra persona que ayude a ubicarlos si este celular
+            no contesta o se queda sin señal.
+          </span>
         </div>
       </section>
 
       <section class="pila-sm">
-        <h3>Cuántas personas habitan la vivienda, por edad y sexo</h3>
+        <h3>Composición del hogar</h3>
 
         <!-- El total va arriba de la rejilla: es lo primero que la familia dice, y
              así el voluntario ve cómo se llena mientras reparte por edades. -->
@@ -105,6 +122,22 @@ import { PastillasComponent } from '../../shared/pastillas.component';
           } @else if (sumaEdades() > 0) {
             <span class="pista">Repartidas abajo: {{ sumaEdades() }}.</span>
           }
+        </div>
+
+        <!-- QUIEN NO ESTA. Un hogar de seis se registra hoy como seis, esten o no.
+             «Seis, de las cuales cuatro permanecen y dos estan evacuadas» cambia el
+             calculo de raciones, camas y agua — y cuenta algo que nadie mas esta
+             contando: cuanta gente se fue del territorio.
+
+             Va DEBAJO del total y no en otra seccion, porque es una precision de ese
+             numero y no una pregunta nueva. -->
+        <div class="campo" formGroupName="hogar">
+          <label for="fuera">De esas, ¿cuántas están fuera por causa del sismo?</label>
+          <input id="fuera" type="text" inputmode="numeric" formControlName="fueraDelHogar" />
+          <span class="pista">
+            Evacuadas, donde un familiar en otro pueblo, hospitalizadas. Cero si están
+            todas. No cambia el total de arriba.
+          </span>
         </div>
 
         @if (descuadre()) {
@@ -131,16 +164,29 @@ import { PastillasComponent } from '../../shared/pastillas.component';
       </section>
 
       <section class="pila-sm" formGroupName="vulnerabilidad">
-        <h3>Condiciones especiales</h3>
-        <p class="pista">Dejar en cero si no aplica.</p>
+        <!-- SE CUENTA LA NECESIDAD, NO EL DIAGNOSTICO. Antes decia «enfermedad
+             crónica o huérfana», que le pide a un líder comunal clasificar una
+             condición médica. Para decidir en una emergencia basta con saber cuántas
+             personas requieren medicación permanente; qué enfermedad es lo determina
+             después una entidad de salud. Preguntarlo aquí aumenta la exposición de
+             datos sensibles sin mejorar una sola decisión de terreno. -->
+        <h3>Condiciones que requieren atención prioritaria</h3>
+        <p class="pista">
+          Solo lo necesario para identificar quién necesita atención especial. No anote
+          diagnósticos ni detalles médicos. Dejar en cero si no aplica.
+        </p>
         <div class="rejilla-condiciones">
-          <span class="rango">Gestantes</span>
-          <app-contador formControlName="gestantes" etiqueta="Gestantes" />
-          <span class="rango">Con discapacidad</span>
-          <app-contador formControlName="discapacidadN" etiqueta="Personas con discapacidad" />
-          <span class="rango">Enfermedad crónica o huérfana</span>
+          <span class="rango">Personas gestantes</span>
+          <app-contador formControlName="gestantes" etiqueta="Personas gestantes" />
+          <span class="rango">Con discapacidad, o que requieren apoyo para moverse o comunicarse</span>
+          <app-contador formControlName="discapacidadN"
+                        etiqueta="Personas con discapacidad o que requieren apoyo" />
+          <span class="rango">Requieren medicamentos o atención médica permanente</span>
           <app-contador formControlName="enfCronicaN"
-                        etiqueta="Personas con enfermedad crónica o huérfana" />
+                        etiqueta="Personas que requieren medicamentos o atencion permanente" />
+          <span class="rango">No pueden evacuar solas</span>
+          <app-contador formControlName="requiereApoyoEvacuar"
+                        etiqueta="Personas que no pueden evacuar solas" />
         </div>
       </section>
 

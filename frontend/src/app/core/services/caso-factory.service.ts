@@ -120,6 +120,7 @@ export class CasoFactoryService {
         tel1Whatsapp: null,
         tel2: null,
         personasTotal: 0,
+        fueraDelHogar: 0,
         composicion: this.composicionVacia(),
         vulnerabilidad: this.vulnerabilidadVacia(),
         afiliacion: [],
@@ -229,6 +230,7 @@ export class CasoFactoryService {
   private vulnerabilidadVacia(): Vulnerabilidad {
     return {
       gestantes: 0,
+      requiereApoyoEvacuar: 0,
       lactantes: 0,
       discapacidadN: 0,
       discapacidadTipo: [],

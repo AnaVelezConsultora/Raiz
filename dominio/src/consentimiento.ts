@@ -67,6 +67,11 @@ export const CAMPOS_SENSIBLES = [
   'gestantes',
   'lactantes',
   'discapacidadN',
+  // Revela una condicion protegida aunque no pida diagnostico: quien no puede salir
+  // solo es, casi siempre, una persona mayor dependiente, lesionada o con movilidad
+  // reducida. Se protege igual que la discapacidad. Ver la nota de abajo: hay una
+  // tension real entre esto y que un organismo de socorro sepa a quien sacar primero.
+  'requiereApoyoEvacuar',
   'discapacidadTipo',
   'enfCronicaN',
   'fallecidos',
@@ -85,6 +90,7 @@ const VACIO_SENSIBLE: Vulnerabilidad = {
   gestantes: 0,
   lactantes: 0,
   discapacidadN: 0,
+  requiereApoyoEvacuar: 0,
   discapacidadTipo: [],
   enfCronicaN: 0,
   fallecidos: 0,
