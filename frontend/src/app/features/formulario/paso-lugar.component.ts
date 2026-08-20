@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Zona } from '../../core/domain/enums';
 import { OPCIONES } from '../../core/services/caso-form.service';
@@ -171,12 +171,35 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
 
       <section class="pila-sm" formGroupName="ubicacion">
         <h3>Dónde queda</h3>
+        <!-- LA ZONA YA SE ELIGIO, EN LA PANTALLA ANTERIOR.
+             Volver a mostrarla como lista desplegable con las dos opciones invita a
+             cambiarla sin querer —el enlace institucional entro por «rural» y aqui
+             seguia viendo «urbana» a un dedo de distancia— y, peor, no se nota: cambiar
+             la zona cambia el anexo entero del formulario, asi que un roce deja media
+             ficha con las preguntas equivocadas.
+
+             Se muestra como decidida, con la salida explicita para corregir el error de
+             haber entrado por el boton que no era. Es la diferencia entre poder cambiar
+             algo y tropezarse con ello. -->
         <div class="campo">
-          <label for="zona">Zona</label>
-          <select id="zona" formControlName="zona">
-            <option [value]="zonaRural">Rural: vereda, corregimiento o finca</option>
-            <option [value]="zonaUrbana">Urbana: barrio o casco urbano</option>
-          </select>
+          <label>Zona</label>
+          @if (cambiandoZona()) {
+            <select id="zona" formControlName="zona" (change)="cambiandoZona.set(false)">
+              <option [value]="zonaRural">Rural: vereda, corregimiento o finca</option>
+              <option [value]="zonaUrbana">Urbana: barrio o casco urbano</option>
+            </select>
+            <span class="pista">
+              Cambiarla cambia las preguntas del resto de esta pantalla.
+            </span>
+          } @else {
+            <div class="fila" style="justify-content:space-between;align-items:center;gap:.5rem">
+              <strong>{{ esRural() ? 'Rural: vereda, corregimiento o finca' : 'Urbana: barrio o casco urbano' }}</strong>
+              <button type="button" class="pastilla" (click)="cambiandoZona.set(true)">
+                Cambiar
+              </button>
+            </div>
+            <span class="pista">Se eligió al empezar el registro.</span>
+          }
         </div>
 
         <div class="fila">
@@ -308,6 +331,11 @@ export class PasoLugarComponent {
         return 'De esto depende con qué nivel de verificación queda el caso.';
     }
   }
+  /**
+   * Si la zona se esta editando. Nace cerrada a proposito: la eleccion ya se hizo.
+   */
+  readonly cambiandoZona = signal(false);
+
   readonly zonaRural = Zona.Rural;
   readonly zonaUrbana = Zona.Urbana;
 

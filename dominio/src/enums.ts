@@ -89,8 +89,40 @@ export enum FuenteDato {
   WhatsApp = 'whatsapp',
   Llamada = 'llamada',
   Lider = 'lider',
-  OtraEntidad = 'otra_entidad'
+  OtraEntidad = 'otra_entidad',
+  // Metodos de captura que el enlace institucional pidio distinguir, porque el
+  // sistema nacional de gestion del riesgo los trata distinto. Se AGREGAN a los
+  // cinco anteriores en vez de reemplazarlos: hay casos ya registrados con ellos y
+  // reescribir el pasado para que encaje en una lista nueva es perder el pasado.
+  Videollamada = 'videollamada',
+  JuntaAccionComunal = 'jac',
+  AutoridadLocal = 'autoridad_local',
+  OrganismoSocorro = 'organismo_socorro',
+  ProfesionalTecnico = 'profesional_tecnico',
+  FuenteDocumental = 'fuente_documental',
+  Otra = 'otra'
 }
+
+/**
+ * Como se llama cada metodo de captura en pantalla.
+ *
+ * En palabras de todos los dias y no en las del formulario oficial: quien llena esto
+ * es un lider comunal de pie en un patio, no un funcionario.
+ */
+export const NOMBRE_FUENTE_DATO: Readonly<Record<FuenteDato, string>> = {
+  [FuenteDato.Presencial]: 'Visita presencial',
+  [FuenteDato.Llamada]: 'Llamada',
+  [FuenteDato.Videollamada]: 'Videollamada',
+  [FuenteDato.WhatsApp]: 'WhatsApp',
+  [FuenteDato.Lider]: 'Reporte de la comunidad',
+  [FuenteDato.JuntaAccionComunal]: 'Junta de Accion Comunal',
+  [FuenteDato.AutoridadLocal]: 'Autoridad local',
+  [FuenteDato.OrganismoSocorro]: 'Organismo de socorro',
+  [FuenteDato.ProfesionalTecnico]: 'Profesional tecnico',
+  [FuenteDato.OtraEntidad]: 'Otra entidad',
+  [FuenteDato.FuenteDocumental]: 'Fuente documental',
+  [FuenteDato.Otra]: 'Otra'
+};
 
 /**
  * QUIEN OBSERVO el hecho. No es lo mismo que el canal por el que llego.

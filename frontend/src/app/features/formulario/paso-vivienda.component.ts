@@ -115,12 +115,60 @@ const NIVELES_INHABITABLES: readonly string[] = [
               sostener un técnico.
             </span>
           </div>
+          <!-- QUE HACER, NO SOLO QUE PASO. Antes decia «avisarle al coordinador», que
+               deja la cadena a medias: el coordinador tampoco puede entrar a esa casa.
+               Quien tiene que ir es el equipo tecnico de gestion del riesgo del
+               municipio, y decirlo con ese nombre es lo que convierte el aviso en una
+               instruccion ejecutable. Lo pidio el enlace institucional: si hay riesgo
+               de entrar, se reporta de inmediato para que lleguen expertos y
+               autoridades, sin esperar al censo. -->
           <p class="aviso peligro">
-            <strong>Alerta comunitaria: requiere verificación técnica.</strong>
-            El caso queda en prioridad P0 y hay que avisarle al coordinador hoy mismo,
-            sin esperar a sincronizar. No es un dictamen estructural: es lo que usted vio
-            y por eso alguien tiene que ir a mirarlo.
+            <strong>No entre. Repórtelo hoy mismo, sin esperar a sincronizar.</strong>
+            Avise al Consejo Municipal de Gestión del Riesgo o al organismo de socorro
+            más cercano para que vayan los técnicos. El caso queda en prioridad P0. No es
+            un dictamen estructural: es lo que usted vio, y por eso tiene que ir alguien
+            que sí pueda dictaminarlo.
           </p>
+        }
+
+        <!-- CONSTANCIA DE VISITA OFICIAL.
+             Responde tres preguntas de un solo campo, y la tercera es la mas util:
+             no mandar dos veces al mismo tecnico, no perder el concepto que ya dio, y
+             saber DONDE NO HA IDO NADIE. «Estas 60 casas no han tenido una sola visita
+             oficial» es una frase que mueve una agenda.
+
+             No sube el nivel de verificacion por si sola: que la familia diga que vino
+             un ingeniero es, todavia, algo que dijo la familia. -->
+        <div class="campo">
+          <label for="visita">¿Ya vino alguna entidad a ver esta casa?</label>
+          <select id="visita" [value]="visitaComoTexto()" (change)="responderVisita($event)">
+            <option value="">No se preguntó</option>
+            <option value="no">No ha venido nadie</option>
+            <option value="si">Sí, ya vino una entidad</option>
+          </select>
+        </div>
+
+        @if (tuvoVisita()) {
+          <div class="fila" style="gap:.6rem;flex-wrap:wrap">
+            <div class="campo" style="flex:2;min-width:10rem">
+              <label for="ventidad">Cuál entidad</label>
+              <input id="ventidad" type="text" formControlName="visitaOficialEntidad"
+                     placeholder="Bomberos, Defensa Civil, la Alcaldía..." />
+            </div>
+            <div class="campo" style="flex:1;min-width:8rem">
+              <label for="vfecha">Cuándo</label>
+              <input id="vfecha" type="date" formControlName="visitaOficialFecha" />
+            </div>
+          </div>
+          <div class="campo">
+            <label for="vconcepto">Qué dijeron</label>
+            <textarea id="vconcepto" rows="2" formControlName="visitaOficialConcepto"
+                      placeholder="Dijeron que no se podía habitar y que volvían con un ingeniero"></textarea>
+            <span class="pista">
+              Es la evidencia más fuerte que puede traer este caso. Si le dejaron un
+              papel o un número de acta, escríbalo.
+            </span>
+          </div>
         }
 
         <div class="campo">
@@ -316,6 +364,46 @@ export class PasoViviendaComponent {
 
   riesgo(): boolean {
     return this.form().get('vivienda.riesgoColapso')?.value === true;
+  }
+
+  /** True solo si respondieron que si. Sin responder NO es un no. */
+  tuvoVisita(): boolean {
+    return this.form().get('vivienda.visitaOficial')?.value === true;
+  }
+
+  /**
+   * El tri-estado como texto, porque un `select` no distingue nulo de false.
+   *
+   * Un checkbox habria sido mas corto y habria borrado justamente la distincion que
+   * importa: «no ha venido nadie» y «no se pregunto» son respuestas distintas, y solo
+   * la primera permite decirle a una entidad donde no ha ido ningun tecnico.
+   */
+  /**
+   * Traduce la respuesta de tres estados y limpia el detalle si dejo de ser «si».
+   *
+   * Limpiar importa: si alguien marca que vino la Defensa Civil, escribe el concepto y
+   * despues corrige a «no ha venido nadie», dejar el texto ahi produciria una casa sin
+   * visita que aun asi trae el concepto de una entidad.
+   */
+  responderVisita(evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    const grupo = this.form().get('vivienda');
+    if (!grupo) return;
+
+    grupo.get('visitaOficial')?.setValue(valor === 'si' ? true : valor === 'no' ? false : null);
+
+    if (valor !== 'si') {
+      grupo.get('visitaOficialEntidad')?.setValue(null);
+      grupo.get('visitaOficialFecha')?.setValue(null);
+      grupo.get('visitaOficialConcepto')?.setValue(null);
+    }
+  }
+
+  visitaComoTexto(): string {
+    const valor = this.form().get('vivienda.visitaOficial')?.value;
+    if (valor === true) return 'si';
+    if (valor === false) return 'no';
+    return '';
   }
 
   /**

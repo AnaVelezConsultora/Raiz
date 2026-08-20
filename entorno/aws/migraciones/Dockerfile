@@ -54,6 +54,9 @@ COPY entorno/postgres/68-origen-y-verificacion.sql ./010-origen-y-verificacion.s
 # puntos del evento que aquella crea: aplicada al reves, la referencia no existe.
 COPY entorno/postgres/69-puntos-de-servicio.sql ./011-puntos-de-servicio.sql
 
+# Constancia de visitas oficiales a la edificacion.
+COPY entorno/postgres/71-visita-oficial.sql ./012-visita-oficial.sql
+
 # Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con
 # esas palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
 # `on conflict do nothing`— y no un cambio de estructura que ocurre una vez.

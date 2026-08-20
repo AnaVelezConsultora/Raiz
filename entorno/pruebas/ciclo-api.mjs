@@ -163,7 +163,14 @@ const CASO = {
     riesgoColapsoDesc: 'La estructura vecina amenaza caer',
     dondeDuerme: 'familiar_vecino',
     requiereVivienda: ['remocion', 'eval_estructural'],
-    serviciosAfectados: ['agua']
+    serviciosAfectados: ['agua'],
+    // Constancia de visita oficial. Viaja con datos a proposito, por la misma razon
+    // que el anexo rural: es la evidencia mas fuerte que puede traer un caso y, si el
+    // servidor volviera a recibirla sin guardarla, esta prueba lo dice.
+    visitaOficial: true,
+    visitaOficialEntidad: 'Defensa Civil (prueba)',
+    visitaOficialFecha: '2026-08-18',
+    visitaOficialConcepto: 'Dijeron que no se podia habitar'
   },
   // El anexo rural viaja con datos a proposito. Se descubrio el 16 de agosto que la
   // API lo recibia y no lo guardaba en ninguna parte: en un municipio que vive del

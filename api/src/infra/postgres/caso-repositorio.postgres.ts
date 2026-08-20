@@ -270,10 +270,12 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         tipo_vivienda, material_paredes, material_techo,
         afectacion, habitable, riesgo_colapso, riesgo_colapso_desc,
         donde_duerme, requiere_vivienda, servicios_afectados,
-        estrato, tipo_unidad, perdio_medio_vida, medio_vida_desc, requiere_urbano
+        estrato, tipo_unidad, perdio_medio_vida, medio_vida_desc, requiere_urbano,
+        visita_oficial, visita_oficial_entidad, visita_oficial_fecha, visita_oficial_concepto
       ) values (
         $1, true, $2::tenencia_t, $3, $4, $5, $6, $7,
-        $8::afectacion_t, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+        $8::afectacion_t, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
+        $20, $21, $22::date, $23
       )`;
 
     const urb = caso.anexoUrbano;
@@ -289,7 +291,11 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         v.afectacion, v.habitable, v.riesgoColapso, v.riesgoColapsoDesc,
         v.dondeDuerme, v.requiereVivienda, v.serviciosAfectados,
         urb?.estrato ?? null, urb?.tipoUnidad ?? null,
-        urb?.perdioMedioVida ?? null, urb?.medioVidaDesc ?? null, urb?.requiereUrbano ?? []
+        urb?.perdioMedioVida ?? null, urb?.medioVidaDesc ?? null, urb?.requiereUrbano ?? [],
+        // Nulo se conserva como nulo: es «no se pregunto», y aplastarlo a false diria
+        // que no ha venido nadie, que es una afirmacion distinta y probablemente falsa.
+        v.visitaOficial ?? null, v.visitaOficialEntidad ?? null,
+        v.visitaOficialFecha ?? null, v.visitaOficialConcepto ?? null
       ]);
     } catch (e) {
       throw this.traducir(e, caso.origenId);

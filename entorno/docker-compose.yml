@@ -70,6 +70,7 @@ services:
       - ./postgres/68-origen-y-verificacion.sql:/docker-entrypoint-initdb.d/68-origen-y-verificacion.sql:ro
       - ./postgres/69-puntos-de-servicio.sql:/docker-entrypoint-initdb.d/69-puntos-de-servicio.sql:ro
       - ./postgres/70-semillas-catalogos.sql:/docker-entrypoint-initdb.d/70-semillas-catalogos.sql:ro
+      - ./postgres/71-visita-oficial.sql:/docker-entrypoint-initdb.d/71-visita-oficial.sql:ro
       - ./pruebas:/pruebas:ro
       - datos-db:/var/lib/postgresql/data
     healthcheck:

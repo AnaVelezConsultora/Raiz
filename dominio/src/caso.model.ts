@@ -201,6 +201,24 @@ export interface Vivienda {
   dondeDuerme: LugarPernocta;
   requiereVivienda: string[];
   serviciosAfectados: string[];
+
+  /**
+   * Si una entidad ya visito esta edificacion.
+   *
+   * Nulo es «no se pregunto», que no es un no. La distincion importa porque la
+   * pregunta invertida —donde NO ha ido nadie— es la mas util de las tres que esto
+   * responde, y confundir «no ha venido nadie» con «no preguntamos» la arruina.
+   *
+   * NO SUBE EL NIVEL DE VERIFICACION POR SI SOLA. Que la familia diga «aqui vino un
+   * ingeniero» es, todavia, algo que dijo la familia. La constancia queda; la mesa
+   * decide si con eso sube.
+   */
+  visitaOficial: boolean | null;
+  /** Que entidad vino: alcaldia, bomberos, defensa civil, CMGRD. */
+  visitaOficialEntidad: string | null;
+  visitaOficialFecha: string | null;
+  /** Que dijeron. Es la evidencia mas fuerte que puede traer un caso. */
+  visitaOficialConcepto: string | null;
 }
 
 /** Bloque 5. Anexo urbano. */
