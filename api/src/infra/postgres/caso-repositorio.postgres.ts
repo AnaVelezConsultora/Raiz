@@ -32,6 +32,8 @@ interface FilaTablero {
   habitable: boolean | null;
   lat: string | number | null;
   lon: string | number | null;
+  origen_dato: string | null;
+  nivel_verificacion: string;
   n_fotos: string | number | null;
   remisiones_sin_respuesta: string | number | null;
   fecha_registro: unknown;
@@ -91,7 +93,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       const { rows } = await cliente.query<FilaTablero>(
         `select id, codigo, zona, municipio, lugar, prioridad, personas_total,
                 menores, adultos_mayores, estado_verificacion, afectacion, habitable,
-                lat, lon, n_fotos, remisiones_sin_respuesta, fecha_registro
+                lat, lon, origen_dato, nivel_verificacion,
+                n_fotos, remisiones_sin_respuesta, fecha_registro
            from v_familias_tablero
           order by fecha_registro desc nulls last, codigo desc`
       );
@@ -112,6 +115,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         // PostgreSQL entrega `numeric` como texto para no perder precision.
         lat: f.lat === null ? null : Number(f.lat),
         lon: f.lon === null ? null : Number(f.lon),
+        origenDato: (f.origen_dato as never) ?? null,
+        nivelVerificacion: f.nivel_verificacion as never,
         nFotos: Number(f.n_fotos ?? 0),
         remisionesSinRespuesta: Number(f.remisiones_sin_respuesta ?? 0),
         fechaRegistro: f.fecha_registro === null ? null : String(f.fecha_registro).slice(0, 10)

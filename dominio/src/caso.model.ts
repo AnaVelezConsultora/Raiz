@@ -1,6 +1,7 @@
 import {
   FuenteCoordenada,
   FuenteDato,
+  NivelVerificacion,
   OrigenDato,
   LugarPernocta,
   NivelAfectacion,
@@ -330,6 +331,10 @@ export interface ResumenTablero {
   habitable: boolean | null;
   lat: number | null;
   lon: number | null;
+  /** De donde salio el dato. No cambia. */
+  origenDato: OrigenDato | null;
+  /** Hasta donde esta comprobado. Sube con el tiempo. */
+  nivelVerificacion: NivelVerificacion;
   nFotos: number;
   remisionesSinRespuesta: number;
   fechaRegistro: string | null;

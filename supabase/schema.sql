@@ -455,7 +455,11 @@ select
      and r.fecha_respuesta is null)                              as remisiones_sin_respuesta,
   (select count(*) from ayudas      a where a.familia_id = f.id
      and a.estado = 'entregada')                                 as ayudas_entregadas,
-  f.fecha_registro
+  f.fecha_registro,
+  -- Los dos ejes, al final y en este orden: la migracion 68 reemplaza esta vista y
+  -- create-or-replace exige que las columnas que ya existian conserven su posicion.
+  f.origen_dato,
+  f.nivel_verificacion
 from familias f
 left join viviendas v on v.familia_id = f.id and v.es_principal
 where f.estado_verificacion <> 'duplicado';

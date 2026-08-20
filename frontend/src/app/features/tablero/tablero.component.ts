@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ResumenTablero } from '../../core/domain/caso.model';
-import { Prioridad, Zona } from '../../core/domain/enums';
+import { NivelVerificacion, Prioridad, Zona } from '../../core/domain/enums';
 import { TABLERO, TableroPort } from '../../core/domain/ports';
 import { SesionService } from '../../core/services/sesion.service';
 
@@ -87,6 +87,52 @@ const COLOR: Record<string, string> = {
         <div class="cifra"><strong>{{ cifras().sinCoordenada }}</strong><span>sin ubicar</span></div>
       </section>
 
+      <!-- CUÁNTO DE ESTO ESTÁ COMPROBADO.
+           Es la franja que convierte un listado en una fuente. Un tablero que
+           presenta junto lo observado y lo referido, sin distinguirlos, pierde en un
+           minuto la confiabilidad que costó meses construir — y es lo primero que
+           una entidad pregunta cuando ve una cifra que no levantó ella.
+           Ver docs/ESTANDAR-PROBATORIO.md, recomendación G9. -->
+      <section class="pila-sm" style="margin-top:.4rem">
+        <div class="fila" style="justify-content:space-between;gap:.5rem">
+          <h3 style="font-size:.95rem">De esas {{ cifras().familias }}, cuántas están comprobadas</h3>
+          <span class="mono tenue" style="font-size:.7rem">
+            {{ verificacion().comprobadas }} de {{ cifras().familias }}
+          </span>
+        </div>
+
+        <!-- Una barra y no una torta: lo que hay que leer de un vistazo es la
+             proporción, no seis números. -->
+        <div class="barra-verificacion" role="img"
+             [attr.aria-label]="'Verificación: ' + verificacion().resumen">
+          @for (n of verificacion().tramos; track n.nivel) {
+            @if (n.total > 0) {
+              <span [style.flex]="n.total" [class]="'tramo ' + n.clase"
+                    [title]="n.etiqueta + ': ' + n.total"></span>
+            }
+          }
+        </div>
+
+        <div class="fila" style="gap:.5rem;flex-wrap:wrap">
+          @for (n of verificacion().tramos; track n.nivel) {
+            @if (n.total > 0) {
+              <span class="leyenda">
+                <span [class]="'punto ' + n.clase"></span>
+                {{ n.total }} {{ n.etiqueta }}
+              </span>
+            }
+          }
+        </div>
+
+        @if (verificacion().sinOrigen > 0) {
+          <span class="pista">
+            {{ verificacion().sinOrigen }} registro(s) de antes del 19 de agosto, cuando
+            todavía no se preguntaba de dónde salía el dato. Cuentan como autodeclarados
+            hasta que alguien los revise.
+          </span>
+        }
+      </section>
+
       <section class="fila" style="gap:.4rem;flex-wrap:wrap">
         <button type="button" class="pastilla" [class.activa]="zona() === null"
                 (click)="zona.set(null)">Todas</button>
@@ -119,6 +165,32 @@ const COLOR: Record<string, string> = {
   `,
   styles: [
     `
+      /* La barra de verificacion. Los seis tramos van del papel al verde del sello:
+         mas oscuro es mas comprobado, que es la lectura que la gente hace sola sin
+         que nadie le explique la leyenda. */
+      .barra-verificacion {
+        display: flex;
+        height: 12px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--surface-2);
+      }
+      .tramo { display: block; min-width: 3px; }
+      .leyenda {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+      }
+      .punto { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+      .n0, .tramo.n0 { background: #d8cfb8; }
+      .n1, .tramo.n1 { background: #bda98a; }
+      .n2, .tramo.n2 { background: #7f9a80; }
+      .n3, .tramo.n3 { background: #5c7f61; }
+      .n4, .tramo.n4 { background: #3f6444; }
+      .n5, .tramo.n5 { background: #2b3a2e; }
+
       .rejilla-cifras {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
@@ -186,6 +258,54 @@ export class TableroComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   readonly sinCoordenadaFiltrados = computed(() => this.cifras().sinCoordenada);
+
+  /**
+   * Los seis niveles, de menos a mas comprobado, con su etiqueta en castellano.
+   *
+   * Las etiquetas no dicen «R2»: dicen lo que significa. El codigo sirve para hablar
+   * con un funcionario que ya conoce la escala; la palabra sirve para todos los demas,
+   * que son casi todos.
+   */
+  private static readonly NIVELES: readonly { nivel: NivelVerificacion; etiqueta: string; clase: string }[] = [
+    { nivel: NivelVerificacion.Autodeclarado, etiqueta: 'autodeclaradas', clase: 'n0' },
+    { nivel: NivelVerificacion.ReportadoTercero, etiqueta: 'por terceros', clase: 'n1' },
+    { nivel: NivelVerificacion.VerificadoPresencial, etiqueta: 'vistas en terreno', clase: 'n2' },
+    { nivel: NivelVerificacion.VerificadoDocumental, etiqueta: 'con documento', clase: 'n3' },
+    { nivel: NivelVerificacion.VerificadoTecnico, etiqueta: 'con visita técnica', clase: 'n4' },
+    { nivel: NivelVerificacion.ValidadoInstitucional, etiqueta: 'validadas por una entidad', clase: 'n5' }
+  ];
+
+  /**
+   * Cuanto de lo que se esta mostrando esta comprobado, y hasta donde.
+   *
+   * `comprobadas` cuenta de R2 para arriba: alguien fue y lo vio. Lo declarado y lo
+   * referido no entran, y esa es justamente la distincion que hace defendible una
+   * cifra ante una entidad.
+   */
+  readonly verificacion = computed(() => {
+    const filas = this.filtrados();
+
+    const tramos = TableroComponent.NIVELES.map((n) => ({
+      ...n,
+      total: filas.filter((c) => c.nivelVerificacion === n.nivel).length
+    }));
+
+    const comprobadas = filas.filter(
+      (c) =>
+        c.nivelVerificacion !== NivelVerificacion.Autodeclarado &&
+        c.nivelVerificacion !== NivelVerificacion.ReportadoTercero
+    ).length;
+
+    return {
+      tramos,
+      comprobadas,
+      sinOrigen: filas.filter((c) => c.origenDato === null).length,
+      resumen: tramos
+        .filter((n) => n.total > 0)
+        .map((n) => `${n.total} ${n.etiqueta}`)
+        .join(', ')
+    };
+  });
 
   /** Instancia de Leaflet y su capa de puntos. Fuera de las señales: no es estado. */
   private mapa: import('leaflet').Map | null = null;

@@ -136,3 +136,36 @@ on conflict (codigo) do nothing;
 update familias
    set evento_id = (select id from eventos where codigo = 'SISMO-2026-08-10')
  where evento_id is null;
+
+-- -----------------------------------------------------------------------------
+-- La vista del tablero muestra los dos ejes
+-- -----------------------------------------------------------------------------
+-- Sin esto, la pantalla que la mesa le enseña a una entidad seguiria presentando
+-- juntos lo observado y lo referido, que es exactamente lo que el estandar
+-- probatorio advierte que hace perder en un minuto la confiabilidad que costo meses
+-- construir.
+--
+-- `create or replace` sobre una vista exige conservar el orden y el tipo de las
+-- columnas que ya existian; las nuevas van al final.
+create or replace view v_familias_tablero with (security_invoker = true) as
+select
+  f.id, f.codigo, f.zona, f.municipio,
+  coalesce(f.vereda, f.barrio)         as lugar,
+  f.jefe_nombres || ' ' || f.jefe_apellidos as responsable,
+  f.tel_1, f.personas_total, f.menores, f.adultos_mayores,
+  f.discapacidad_n, f.prioridad, f.estado_verificacion,
+  v.tenencia, v.afectacion, v.habitable, v.riesgo_colapso,
+  f.lat, f.lon,
+  (select count(*) from fotos       x where x.familia_id = f.id) as n_fotos,
+  (select count(*) from remisiones  r where r.familia_id = f.id) as n_remisiones,
+  (select count(*) from remisiones  r where r.familia_id = f.id
+     and r.estado in ('enviado','radicado','en_tramite')
+     and r.fecha_respuesta is null)                              as remisiones_sin_respuesta,
+  (select count(*) from ayudas      a where a.familia_id = f.id
+     and a.estado = 'entregada')                                 as ayudas_entregadas,
+  f.fecha_registro,
+  f.origen_dato,
+  f.nivel_verificacion
+from familias f
+left join viviendas v on v.familia_id = f.id and v.es_principal
+where f.estado_verificacion <> 'duplicado';
