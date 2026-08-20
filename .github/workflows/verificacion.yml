@@ -135,8 +135,16 @@ jobs:
         run: $PSQL -f entorno/postgres/67-autorizaciones.sql
       - name: Origen, verificacion y evento
         run: $PSQL -f entorno/postgres/68-origen-y-verificacion.sql
+      # La infraestructura afectada cuelga sus puntos del evento que crea la 68,
+      # asi que va despues y no antes: al reves, la referencia no existe.
+      - name: Infraestructura afectada
+        run: $PSQL -f entorno/postgres/69-puntos-de-servicio.sql
       - name: Catalogos
         run: $PSQL -f entorno/postgres/70-semillas-catalogos.sql
+      - name: Constancia de visita oficial
+        run: $PSQL -f entorno/postgres/71-visita-oficial.sql
+      - name: Quien no esta y quien no puede salir solo
+        run: $PSQL -f entorno/postgres/72-hogar-y-atencion-prioritaria.sql
 
       # Sin Cognito: las filas de auth.users se insertan directo y el disparador
       # crea los perfiles igual que lo hace la API en produccion. (Decia "el

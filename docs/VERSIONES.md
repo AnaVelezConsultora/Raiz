@@ -13,6 +13,56 @@ servidor y el contrato que comparten llevan siempre el mismo número.
 
 ---
 
+## 0.7.0 — 20 de agosto de 2026
+
+**La herramienta deja de pedir permiso en bloque, y empieza a decir cuánto de lo que
+muestra está comprobado.** Es la versión que más cambia lo que se le puede enseñar a
+una entidad sin tener que explicar nada aparte.
+
+- **Los datos de salud ya no viajan sin autorización específica.** Hasta ahora una sola
+  casilla protegía cuatro campos —nombres, apellidos y documento— y todo lo demás se
+  guardaba siempre: gestantes, discapacidad, enfermedad crónica, fallecidos y heridos.
+  Eso son datos sensibles y la ley pide autorizarlos aparte. Ahora se piden tres
+  autorizaciones separadas, y sin la de datos sensibles esos campos no se conservan.
+- **Queda prueba de que la autorización se pidió.** Se guarda qué texto exacto se le
+  leyó a la familia y cuándo respondió, que es lo que la ley permite consultar después.
+  Una familia puede quedar caracterizada sin entregar lo que no quiso entregar.
+- **Sin autorización, la coordenada deja de señalar una casa.** En una vereda, un punto
+  exacto más siete personas más vivienda destruida señala un solo hogar aunque no lleve
+  nombre. Se redondea a poco más de un kilómetro: sigue sirviendo para saber en qué
+  vereda está la afectación, y deja de servir para llegar a la puerta.
+- **El tablero dice cuánto de lo que muestra está comprobado.** Dos columnas nuevas y
+  distintas: de dónde salió el dato —observado, dicho por la familia, referido por un
+  tercero, listado de una entidad— y hasta dónde está verificado. El origen no cambia
+  nunca; la verificación sube con el tiempo. Presentar junto lo observado y lo referido
+  es lo que hace perder en un minuto la confianza que costó meses.
+- **Lo que se dañó no es solo la casa.** Se registra la infraestructura afectada
+  —el acueducto veredal, la vía, la escuela, el puente— como puntos propios y no
+  colgados de una familia. Una vereda con las casas en pie y sin agua sigue siendo una
+  emergencia.
+- **Si ya vino una entidad, queda constancia.** Qué entidad, qué día y qué dijeron. Sirve
+  para no mandar dos veces un técnico a la misma casa, para no perder el concepto del
+  que sí fue, y sobre todo para contestar la pregunta invertida: dónde no ha ido nadie.
+  No sube el nivel de verificación por sí sola, y eso es deliberado.
+- **Se cuenta quién no está y quién no puede salir solo.** Un hogar de seis se registraba
+  como seis, estuvieran o no. Distinguir «seis, de las cuales dos están evacuadas» cambia
+  cuántas raciones y cuántas camas se piden. Y las personas que no pueden evacuar solas
+  son el número que un organismo de socorro necesita antes de una réplica.
+- **Se dejó de preguntar qué enfermedad tiene la persona.** Para la emergencia basta con
+  saber cuántas requieren medicación permanente; el diagnóstico lo determina después la
+  entidad sanitaria. Preguntarlo aumentaba la exposición sin mejorar una sola decisión de
+  terreno.
+- **La primera pantalla es la primera capa jurídica**: finalidad, derechos y quién
+  responde por los datos, antes de escribir nada.
+- Los instrumentos jurídicos están en PDF, para quien no usa GitHub.
+
+**Lo que hay que saber al actualizar:** un celular que se quede en la 0.6.2 y sincronice
+contra esta versión no manda los datos sensibles, porque esa autorización no existía
+cuando se capturó el caso. Conviene que los líderes abran la aplicación con señal para
+que se actualice.
+
+---
+
 ## 0.6.2 — 16 de agosto de 2026
 
 **El mapa ya dibujaba los puntos, pero el fondo seguía en blanco.** Los círculos de las
