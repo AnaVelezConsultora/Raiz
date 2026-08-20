@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Zona } from '../../core/domain/enums';
+import { environment } from '../../../environments/environment';
 import { OPCIONES } from '../../core/services/caso-form.service';
 import { GeolocalizacionService } from '../../core/services/geolocalizacion.service';
 
@@ -73,19 +74,59 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
             Lea esto a la familia antes de continuar
           </summary>
           <div style="margin-top:.6rem;font-size:.94rem">
+            <!-- QUE ES RAIZ Y QUE NO ES, antes de pedir nada. La persona tiene que
+                 saber que esta haciendo antes de autorizarlo, y decirlo aqui evita la
+                 expectativa de que quedar en esta lista da un reconocimiento oficial
+                 —que no lo da y no depende de nosotros. -->
             <p style="margin:0 0 .6rem">
-              Estamos levantando una caracterización de familias afectadas por el sismo,
-              para presentarla ante las autoridades del sistema de gestión del riesgo y
-              ante organismos de cooperación, con el fin de gestionar ayuda.
+              <strong>Raíz es una iniciativa comunitaria</strong> de caracterización y
+              documentación temprana de afectaciones. Estamos documentando lo que le pasó
+              a las personas, las familias y el territorio con el sismo, para entregarlo a
+              las autoridades competentes y a organismos de cooperación.
             </p>
             <p style="margin:0 0 .6rem">
-              Esta caracterización <strong>no reemplaza</strong> el censo oficial, ni las
-              evaluaciones técnicas, ni ningún trámite que le corresponda a una entidad.
+              Esta caracterización <strong>no sustituye</strong> los censos, registros,
+              evaluaciones técnicas ni certificaciones oficiales de las autoridades. Quedar
+              aquí no lo declara damnificado: eso lo decide una entidad.
             </p>
+            <!-- FINALIDAD, en los terminos que exige la Ley 1581: expresa y concreta,
+                 no «solo para eso». -->
             <p style="margin:0 0 .6rem">
-              Sus datos se usarán solo para eso, se tratarán de forma reservada, y usted
-              puede pedir en cualquier momento que se eliminen.
+              Su información se usará para caracterizar afectaciones y necesidades,
+              orientar la atención humanitaria, apoyar la gestión del riesgo y entregar
+              información a las autoridades y organismos que intervengan en la respuesta y
+              la recuperación.
             </p>
+            <!-- LOS DERECHOS, COMPLETOS Y SIN PROMETER DE MAS. Antes decia «puede pedir
+                 que los eliminemos», que suena mejor y es falso: la supresion tiene
+                 condiciones y excepciones legales, y prometer un borrado incondicional
+                 es una promesa que no se puede cumplir. -->
+            <p style="margin:0 0 .6rem">
+              Usted puede conocer, actualizar y rectificar su información, revocar esta
+              autorización o solicitar que se suprima, conforme a las condiciones que
+              establece la ley colombiana.
+              @if (hayResponsable()) {
+                Para eso escriba a <strong>{{ responsable.canalDerechos }}</strong>.
+              }
+            </p>
+
+            @if (hayResponsable()) {
+              <p style="margin:0 0 .6rem">
+                <strong>Responsable de la información:</strong> {{ responsable.nombre }}
+                @if (responsable.contacto) {
+                  · {{ responsable.contacto }}
+                }
+              </p>
+            } @else {
+              <!-- Incomodo a proposito. Un aviso incomodo se resuelve en un dia; un
+                   nombre inventado se descubre el dia que alguien reclama. -->
+              <p class="aviso peligro" style="margin:0 0 .6rem">
+                <strong>Falta definir quién responde por estos datos.</strong>
+                La ley exige decirle a la familia quién los recoge y a dónde escribir
+                para ejercer sus derechos. Avísele a la mesa antes de seguir
+                registrando con identidad.
+              </p>
+            }
             <p style="margin:0">
               Voy a hacerle tres preguntas por separado, y puede responder que no a
               cualquiera de ellas sin quedar por fuera del registro.
@@ -101,30 +142,42 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
 
              Cada una con tres estados. Sin marcar no es un no: es que nadie preguntó. -->
         <div class="campo">
+          <!-- QUIEN AUTORIZA ES LA PERSONA, NO «LA FAMILIA». Los datos personales son
+               de personas naturales determinadas, y una familia no es titular de nada.
+               La pregunta se le hace a quien esta ahi respondiendo, y por eso va en
+               primera persona: «autorizo», no «la familia autoriza».
+
+               Falta todavia distinguir a los titulares dentro del hogar —ninos, ninas y
+               adolescentes, personas heridas, personas con discapacidad—, que es un
+               cambio del modelo de datos y no de esta pantalla. Anotado en la deuda. -->
           <label>
-            1 · ¿Autoriza que registremos sus datos personales?
+            1 · ¿Autoriza usted el tratamiento de sus datos personales para lo que le acabo de leer?
             <span class="obligatorio">obligatorio</span>
           </label>
           <span class="pista">Nombre, documento y teléfono. Sin esto el caso se guarda sin identidad.</span>
           <div class="pastillas">
             <button type="button" class="pastilla" [class.activa]="consentimiento === true"
-                    (click)="fijarConsentimiento(true)">Sí, autoriza</button>
+                    (click)="fijarConsentimiento(true)">Sí, autorizo</button>
             <button type="button" class="pastilla" [class.activa]="consentimiento === false"
-                    (click)="fijarConsentimiento(false)">No autoriza</button>
+                    (click)="fijarConsentimiento(false)">No autorizo</button>
           </div>
         </div>
 
         <div class="campo">
-          <label>2 · ¿Autoriza que registremos datos de salud del hogar?</label>
+          <label>2 · ¿Autoriza que registremos datos de salud de las personas del hogar?</label>
+          <!-- El Decreto 1377 obliga a decir DOS cosas al pedir datos sensibles: cuales
+               lo son, y que nadie esta obligado a entregarlos. Va aqui, en el momento de
+               preguntarlo, y no en el texto largo que casi nadie termina de leer. -->
           <span class="pista">
             Gestantes, discapacidad, enfermedad crónica, personas heridas o fallecidas.
-            Sirven para priorizar la atención.
+            Son datos sensibles y <strong>nadie está obligado a entregarlos</strong>:
+            responder que no aquí no la deja por fuera del registro.
           </span>
           <div class="pastillas">
             <button type="button" class="pastilla" [class.activa]="sensibles === true"
-                    (click)="fijarSensibles(true)">Sí, autoriza</button>
+                    (click)="fijarSensibles(true)">Sí, autorizo</button>
             <button type="button" class="pastilla" [class.activa]="sensibles === false"
-                    (click)="fijarSensibles(false)">No autoriza</button>
+                    (click)="fijarSensibles(false)">No autorizo</button>
           </div>
         </div>
 
@@ -136,9 +189,9 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
           </span>
           <div class="pastillas">
             <button type="button" class="pastilla" [class.activa]="remision === true"
-                    (click)="fijarRemision(true)">Sí, autoriza</button>
+                    (click)="fijarRemision(true)">Sí, autorizo</button>
             <button type="button" class="pastilla" [class.activa]="remision === false"
-                    (click)="fijarRemision(false)">No autoriza</button>
+                    (click)="fijarRemision(false)">No autorizo</button>
           </div>
         </div>
 
@@ -150,8 +203,10 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
         } @else {
           @if (consentimiento === false) {
             <p class="aviso peligro">
-              Sin autorización NO se registran nombre, documento, teléfono ni fotos de la
-              familia. El caso se guarda con ubicación, número de personas y tipo de daño.
+              Sin autorización no se registra nada que identifique a la familia: ni
+              nombre, ni documento, ni teléfono, ni fotos. El caso se guarda con el
+              número de personas, el tipo de daño y <strong>la vereda, sin el punto
+              exacto</strong>, para que cuente en el total sin señalar una casa.
             </p>
           }
           @if (sensibles !== true) {
@@ -171,12 +226,35 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
 
       <section class="pila-sm" formGroupName="ubicacion">
         <h3>Dónde queda</h3>
+        <!-- LA ZONA YA SE ELIGIO, EN LA PANTALLA ANTERIOR.
+             Volver a mostrarla como lista desplegable con las dos opciones invita a
+             cambiarla sin querer —el enlace institucional entro por «rural» y aqui
+             seguia viendo «urbana» a un dedo de distancia— y, peor, no se nota: cambiar
+             la zona cambia el anexo entero del formulario, asi que un roce deja media
+             ficha con las preguntas equivocadas.
+
+             Se muestra como decidida, con la salida explicita para corregir el error de
+             haber entrado por el boton que no era. Es la diferencia entre poder cambiar
+             algo y tropezarse con ello. -->
         <div class="campo">
-          <label for="zona">Zona</label>
-          <select id="zona" formControlName="zona">
-            <option [value]="zonaRural">Rural: vereda, corregimiento o finca</option>
-            <option [value]="zonaUrbana">Urbana: barrio o casco urbano</option>
-          </select>
+          <label>Zona</label>
+          @if (cambiandoZona()) {
+            <select id="zona" formControlName="zona" (change)="cambiandoZona.set(false)">
+              <option [value]="zonaRural">Rural: vereda, corregimiento o finca</option>
+              <option [value]="zonaUrbana">Urbana: barrio o casco urbano</option>
+            </select>
+            <span class="pista">
+              Cambiarla cambia las preguntas del resto de esta pantalla.
+            </span>
+          } @else {
+            <div class="fila" style="justify-content:space-between;align-items:center;gap:.5rem">
+              <strong>{{ esRural() ? 'Rural: vereda, corregimiento o finca' : 'Urbana: barrio o casco urbano' }}</strong>
+              <button type="button" class="pastilla" (click)="cambiandoZona.set(true)">
+                Cambiar
+              </button>
+            </div>
+            <span class="pista">Se eligió al empezar el registro.</span>
+          }
         </div>
 
         <div class="fila">
@@ -308,6 +386,19 @@ export class PasoLugarComponent {
         return 'De esto depende con qué nivel de verificación queda el caso.';
     }
   }
+  /**
+   * Si la zona se esta editando. Nace cerrada a proposito: la eleccion ya se hizo.
+   */
+  readonly cambiandoZona = signal(false);
+
+  /** Quien responde por los datos. Decision juridica, no configuracion. */
+  readonly responsable = environment.responsableTratamiento;
+
+  /** False mientras nadie haya aceptado responder. Ver ResponsableTratamiento. */
+  hayResponsable(): boolean {
+    return this.responsable.nombre.trim().length > 0;
+  }
+
   readonly zonaRural = Zona.Rural;
   readonly zonaUrbana = Zona.Urbana;
 

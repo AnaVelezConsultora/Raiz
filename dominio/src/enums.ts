@@ -89,8 +89,40 @@ export enum FuenteDato {
   WhatsApp = 'whatsapp',
   Llamada = 'llamada',
   Lider = 'lider',
-  OtraEntidad = 'otra_entidad'
+  OtraEntidad = 'otra_entidad',
+  // Metodos de captura que el enlace institucional pidio distinguir, porque el
+  // sistema nacional de gestion del riesgo los trata distinto. Se AGREGAN a los
+  // cinco anteriores en vez de reemplazarlos: hay casos ya registrados con ellos y
+  // reescribir el pasado para que encaje en una lista nueva es perder el pasado.
+  Videollamada = 'videollamada',
+  JuntaAccionComunal = 'jac',
+  AutoridadLocal = 'autoridad_local',
+  OrganismoSocorro = 'organismo_socorro',
+  ProfesionalTecnico = 'profesional_tecnico',
+  FuenteDocumental = 'fuente_documental',
+  Otra = 'otra'
 }
+
+/**
+ * Como se llama cada metodo de captura en pantalla.
+ *
+ * En palabras de todos los dias y no en las del formulario oficial: quien llena esto
+ * es un lider comunal de pie en un patio, no un funcionario.
+ */
+export const NOMBRE_FUENTE_DATO: Readonly<Record<FuenteDato, string>> = {
+  [FuenteDato.Presencial]: 'Visita presencial',
+  [FuenteDato.Llamada]: 'Llamada',
+  [FuenteDato.Videollamada]: 'Videollamada',
+  [FuenteDato.WhatsApp]: 'WhatsApp',
+  [FuenteDato.Lider]: 'Reporte de la comunidad',
+  [FuenteDato.JuntaAccionComunal]: 'Junta de Accion Comunal',
+  [FuenteDato.AutoridadLocal]: 'Autoridad local',
+  [FuenteDato.OrganismoSocorro]: 'Organismo de socorro',
+  [FuenteDato.ProfesionalTecnico]: 'Profesional tecnico',
+  [FuenteDato.OtraEntidad]: 'Otra entidad',
+  [FuenteDato.FuenteDocumental]: 'Fuente documental',
+  [FuenteDato.Otra]: 'Otra'
+};
 
 /**
  * QUIEN OBSERVO el hecho. No es lo mismo que el canal por el que llego.
@@ -255,3 +287,59 @@ export enum TipoFoto {
   Dano = 'dano',
   Cultivo = 'cultivo'
 }
+
+/**
+ * Que clase de infraestructura es.
+ *
+ * El orden no es alfabetico: es el que usa la mesa cuando prioriza. El acueducto va
+ * primero porque es el que deja sin servicio a mas hogares de un solo golpe, y la via
+ * va alto porque una via cerrada aisla veredas enteras y bloquea la ayuda de todas las
+ * demas.
+ */
+export enum TipoPunto {
+  Acueducto = 'acueducto',
+  Via = 'via',
+  Energia = 'energia',
+  Puente = 'puente',
+  Alcantarillado = 'alcantarillado',
+  PuestoSalud = 'puesto_salud',
+  Escuela = 'escuela',
+  /** Caseta o salon comunal. Suele ser el albergue de la vereda. */
+  CentroComunitario = 'centro_comunitario',
+  Telecomunicaciones = 'telecomunicaciones',
+  Otro = 'otro'
+}
+
+/** Como esta prestando el servicio hoy. Cambia con el tiempo: es lo que se repara. */
+export enum EstadoServicio {
+  /** Se dano algo pero sigue sirviendo. */
+  Operativo = 'operativo',
+  /** Funciona a ratos o a media capacidad. */
+  Intermitente = 'intermitente',
+  /** No presta servicio, pero se puede reparar. */
+  FueraServicio = 'fuera_servicio',
+  /** Hay que volverlo a construir. */
+  Destruido = 'destruido'
+}
+
+/** Nombre legible del tipo de punto, para pantalla y para oficio. */
+export const NOMBRE_TIPO_PUNTO: Readonly<Record<TipoPunto, string>> = {
+  [TipoPunto.Acueducto]: 'Acueducto',
+  [TipoPunto.Via]: 'Vía',
+  [TipoPunto.Energia]: 'Energía',
+  [TipoPunto.Puente]: 'Puente',
+  [TipoPunto.Alcantarillado]: 'Alcantarillado',
+  [TipoPunto.PuestoSalud]: 'Puesto de salud',
+  [TipoPunto.Escuela]: 'Escuela',
+  [TipoPunto.CentroComunitario]: 'Centro comunitario',
+  [TipoPunto.Telecomunicaciones]: 'Telecomunicaciones',
+  [TipoPunto.Otro]: 'Otro'
+};
+
+/** Nombre legible del estado del servicio. */
+export const NOMBRE_ESTADO_SERVICIO: Readonly<Record<EstadoServicio, string>> = {
+  [EstadoServicio.Operativo]: 'Funcionando',
+  [EstadoServicio.Intermitente]: 'A medias',
+  [EstadoServicio.FueraServicio]: 'Sin servicio',
+  [EstadoServicio.Destruido]: 'Destruido'
+};

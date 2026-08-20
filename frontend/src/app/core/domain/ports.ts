@@ -1,4 +1,5 @@
 import { InjectionToken } from '@angular/core';
+import type { PuntoEnTablero, PuntoRegistrado, PuntoServicio } from '@raiz/dominio';
 import { Caso, FiltroCasos, FotoLocal, ResumenCaso, ResumenTablero } from './caso.model';
 
 /**
@@ -128,6 +129,27 @@ export interface TableroPort {
    * misma llamada le devuelve todo a la mesa y lo suyo a un lider.
    */
   listarCasos(): Promise<ResumenTablero[]>;
+
+  /**
+   * Los puntos de servicio, con las dos cifras de hogares ya resueltas por el servidor.
+   *
+   * Se cuelga de este puerto y no de uno nuevo porque es la misma naturaleza de
+   * llamada: preguntar por lo que hay, en el pueblo y con senal. La captura de casos
+   * necesita cola y reintentos; esto no.
+   */
+  listarPuntos(): Promise<PuntoEnTablero[]>;
+
+  /**
+   * Da de alta un punto de servicio, o actualiza el que ya tuviera ese identificador.
+   *
+   * SIN SENAL NO SE REGISTRA UN PUNTO, y conviene decirlo en vez de disimularlo. Es la
+   * unica escritura de la aplicacion que no pasa por la cola, y la razon es de alcance:
+   * la cola existe para el trabajo de vereda —el censo casa por casa— y construir una
+   * segunda para esto costaria mas de lo que hoy resuelve. El dia que un lider necesite
+   * registrar el acueducto roto estando sin senal, esta decision se revisa; mientras
+   * tanto la pantalla avisa en vez de fingir.
+   */
+  registrarPunto(punto: PuntoServicio): Promise<PuntoRegistrado>;
 }
 
 export const CASO_STORAGE = new InjectionToken<CasoStoragePort>('CASO_STORAGE');

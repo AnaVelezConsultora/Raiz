@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AdministrarPerfilesService } from './aplicacion/administrar-perfiles.service';
 import { ConsultarCasosService } from './aplicacion/consultar-casos.service';
 import { RegistrarCasoService } from './aplicacion/registrar-caso.service';
+import { RegistrarPuntoService } from './aplicacion/registrar-punto.service';
 import { RegistrarVoluntarioService } from './aplicacion/registrar-voluntario.service';
 import { SesionService } from './aplicacion/sesion.service';
 import { SubidaFotoService } from './aplicacion/subida-foto.service';
@@ -13,11 +14,13 @@ import {
   FOTO_REPOSITORIO,
   PERFIL_REPOSITORIO,
   PROVEEDOR_IDENTIDAD,
+  PUNTO_REPOSITORIO,
   SALUD,
   VERIFICADOR_TOKEN
 } from './dominio/puertos';
 import { CasosController } from './entrada/casos.controller';
 import { FotosController } from './entrada/fotos.controller';
+import { PuntosController } from './entrada/puntos.controller';
 import { PerfilesController } from './entrada/perfiles.controller';
 import { SaludController } from './entrada/salud.controller';
 import { SesionController } from './entrada/sesion.controller';
@@ -30,6 +33,7 @@ import { VerificadorToken } from './infra/identidad/verificador-token';
 import { CasoRepositorioPostgres } from './infra/postgres/caso-repositorio.postgres';
 import { FotoRepositorioPostgres } from './infra/postgres/foto-repositorio.postgres';
 import { PerfilRepositorioPostgres } from './infra/postgres/perfil-repositorio.postgres';
+import { PuntoRepositorioPostgres } from './infra/postgres/punto-repositorio.postgres';
 import { PostgresPool } from './infra/postgres/pool';
 import { SaludPostgres } from './infra/postgres/salud.postgres';
 
@@ -45,6 +49,7 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
     CasosController,
     FotosController,
     PerfilesController,
+    PuntosController,
     SaludController,
     SesionController,
     VoluntariosController
@@ -53,11 +58,13 @@ import { SaludPostgres } from './infra/postgres/salud.postgres';
     PostgresPool,
     RegistrarCasoService,
     ConsultarCasosService,
+    RegistrarPuntoService,
     SesionService,
     RegistrarVoluntarioService,
     AdministrarPerfilesService,
     SubidaFotoService,
     { provide: CASO_REPOSITORIO, useClass: CasoRepositorioPostgres },
+    { provide: PUNTO_REPOSITORIO, useClass: PuntoRepositorioPostgres },
     { provide: FOTO_REPOSITORIO, useClass: FotoRepositorioPostgres },
     { provide: ALMACENAMIENTO, useClass: AlmacenamientoS3 },
     { provide: VERIFICADOR_TOKEN, useClass: VerificadorToken },

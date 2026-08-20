@@ -82,7 +82,9 @@ echo "==> migraciones"
 # carga de una vez sobre una base vacia— y aqui van en el orden en que llegaron a
 # una base que ya existia. El contenido es el mismo archivo, sin copia.
 for archivo in 001-shim-auth.sql 002-roles.sql 003-schema.sql 004-grants.sql 005-acceso-api.sql \
-               006-fotos-subida.sql 007-perfiles-alta.sql 008-campos-de-terreno.sql 009-autorizaciones.sql 010-origen-y-verificacion.sql; do
+               006-fotos-subida.sql 007-perfiles-alta.sql 008-campos-de-terreno.sql \
+               009-autorizaciones.sql 010-origen-y-verificacion.sql \
+               011-puntos-de-servicio.sql 012-visita-oficial.sql; do
   YA="$(psql_ --tuples-only --no-align \
     -c "select 1 from public.migraciones_aplicadas where archivo = '$archivo';")"
 

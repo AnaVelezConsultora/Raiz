@@ -64,5 +64,15 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/tablero/tablero.component').then((m) => m.TableroComponent)
   },
+  {
+    path: 'puntos',
+    title: 'Infraestructura · Raíz',
+    // Basta con tener sesion: un acueducto roto no es dato personal, y el lider de la
+    // vereda es justamente quien sabe cual esta roto. La politica de la base dice lo
+    // mismo, que es donde de verdad se decide.
+    canActivate: [sesionGuard],
+    loadComponent: () =>
+      import('./features/puntos/puntos.component').then((m) => m.PuntosComponent)
+  },
   { path: '**', redirectTo: 'casos' }
 ];

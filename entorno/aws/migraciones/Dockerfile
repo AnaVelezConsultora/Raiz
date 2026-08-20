@@ -50,6 +50,13 @@ COPY entorno/postgres/66-campos-de-terreno.sql ./008-campos-de-terreno.sql
 COPY entorno/postgres/67-autorizaciones.sql ./009-autorizaciones.sql
 COPY entorno/postgres/68-origen-y-verificacion.sql ./010-origen-y-verificacion.sql
 
+# La infraestructura afectada. Va DESPUES de la 010 y no antes, porque cuelga sus
+# puntos del evento que aquella crea: aplicada al reves, la referencia no existe.
+COPY entorno/postgres/69-puntos-de-servicio.sql ./011-puntos-de-servicio.sql
+
+# Constancia de visitas oficiales a la edificacion.
+COPY entorno/postgres/71-visita-oficial.sql ./012-visita-oficial.sql
+
 # Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con
 # esas palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
 # `on conflict do nothing`— y no un cambio de estructura que ocurre una vez.

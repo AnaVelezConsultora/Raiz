@@ -225,3 +225,86 @@ export function identidadResidual(
     return valor !== null && valor !== undefined && valor !== '';
   });
 }
+
+// =============================================================================
+// QUITAR EL NOMBRE NO VUELVE ANONIMO A NADIE
+// =============================================================================
+//
+// Es la observacion mas fina que ha recibido este proyecto y es correcta: la Ley 1581
+// llama dato personal a cualquier informacion que pueda ASOCIARSE a una persona
+// determinable, y en una vereda
+//
+//     coordenada exacta + siete personas + vivienda destruida
+//
+// senala una sola casa. Quitar el nombre y creer que con eso el registro quedo anonimo
+// es el error clasico de anonimizacion, y es peor que no anonimizar, porque produce la
+// confianza de haberlo hecho.
+//
+// QUE SE HACE. Cuando la persona no autoriza el tratamiento de sus datos, la
+// coordenada NO se guarda como se tomo: se redondea a dos decimales, algo mas de un
+// kilometro. Eso conserva lo unico que el registro necesita sin identidad —saber que
+// la afectacion esta en esta vereda y no en la de al lado, para contarla y ubicarla en
+// un mapa de veredas— y deja de senalar una casa.
+//
+// Tambien se retira el punto de referencia. «La casa azul frente a la escuela» no
+// tiene nombre y aun asi identifica mejor que una cedula.
+//
+// LO QUE ESTO NO ES. No convierte el registro en anonimo en sentido estricto: un
+// hogar de doce personas en una vereda de treinta casas sigue siendo singular. Es
+// reduccion de identificabilidad, no anonimizacion, y conviene llamarlo por su nombre
+// para que nadie prometa lo segundo. La separacion real entre una base identificable y
+// una estadistica es un trabajo mayor y esta anotado como tal.
+
+/** Cuanto se degrada la coordenada. Dos decimales es algo mas de un kilometro. */
+const DECIMALES_SIN_AUTORIZACION = 2;
+
+/** La parte de la ubicacion que puede senalar una casa. */
+export interface UbicacionDegradable {
+  lat: number | null;
+  lon: number | null;
+  precisionM: number | null;
+  direccionRef: string | null;
+}
+
+export interface ResultadoUbicacion<T extends UbicacionDegradable> {
+  ubicacion: T;
+  /** True si hubo que degradar algo. Sirve para dejarlo anotado en el registro. */
+  degradada: boolean;
+}
+
+/**
+ * Deja la ubicacion en lo que puede viajar segun lo que la persona autorizo.
+ *
+ * Con autorizacion no toca nada: la coordenada exacta es justamente lo que permite que
+ * un organismo de socorro llegue a la casa.
+ */
+export function aplicarConsentimientoUbicacion<T extends UbicacionDegradable>(
+  ubicacion: T,
+  control: Pick<Control, 'consentimiento'>
+): ResultadoUbicacion<T> {
+  if (identidadPuedeViajar(control)) {
+    return { ubicacion, degradada: false };
+  }
+
+  const teniaPunto = ubicacion.lat !== null || ubicacion.lon !== null;
+  const teniaReferencia = Boolean(ubicacion.direccionRef);
+
+  return {
+    ubicacion: {
+      ...ubicacion,
+      lat: redondear(ubicacion.lat),
+      lon: redondear(ubicacion.lon),
+      // La precision medida dejaria de ser cierta —y una precision de doce metros
+      // sobre un punto redondeado a un kilometro invita a confiar en el punto.
+      precisionM: null,
+      direccionRef: null
+    },
+    degradada: teniaPunto || teniaReferencia
+  };
+}
+
+function redondear(valor: number | null): number | null {
+  if (valor === null) return null;
+  const factor = 10 ** DECIMALES_SIN_AUTORIZACION;
+  return Math.round(valor * factor) / factor;
+}

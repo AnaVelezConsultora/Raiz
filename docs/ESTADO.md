@@ -144,6 +144,37 @@ verificar el esquema sin depender de ningún proveedor, y comprobar que las pol�
 acceso hacen lo que dicen. Efecto colateral valioso: **el esquema corre sobre PostgreSQL
 puro**, así que el proyecto no está atado a ningún servicio en particular.
 
+**Cuánto de lo que se muestra está comprobado.** Cada caso guarda DOS COSAS distintas y
+no una: de dónde salió el dato —lo vio quien registra, lo dijo la familia, lo contó un
+tercero, vino del listado de otra entidad— y hasta dónde está verificado. El origen no
+cambia nunca; la verificación sube cuando alguien va y lo mira. El tablero muestra la
+proporción en una franja, con las palabras de todos los días: «3 vistas en terreno, 1 con
+visita técnica, 1 por terceros». El nivel lo deriva el servidor del origen declarado, así
+que un cliente modificado no puede declararse validado por una entidad.
+
+Es la recomendación G9 del estándar probatorio, y es lo que separa un listado de una
+fuente: un tablero que presenta junto lo observado y lo referido pierde en un minuto la
+confiabilidad que costó meses construir.
+
+**Infraestructura afectada.** La otra unidad de Raíz. El censo ordena por familia, y ahí
+cada familia compite con las demás por la misma ayuda; esto ordena por acueducto, vía,
+puente o escuela, y ahí una sola reparación resuelve doscientos casos a la vez. Es la
+unidad en la que piensa el CMGRD y la única en la que una obra se prioriza.
+
+De cada punto se muestran DOS cifras, separadas y rotuladas, nunca fundidas:
+
+- **hogares según quien lo reportó** — lo declara el líder, se consigue hoy por teléfono.
+- **ya registrados en Raíz** — sale de cruzar las veredas que el punto sirve con el
+  censo. Empieza bajo y crece.
+
+Promediarlas o quedarse con la más alta destruiría las dos. Mostradas juntas, una entidad
+entiende de inmediato qué le están enseñando: la primera es el tamaño del problema, la
+segunda cuánto de ese tamaño Raíz puede sostener con registros — y esa transparencia es
+justamente lo que hace creíble la cifra grande.
+
+Esta pantalla necesita conexión y lo dice en vez de disimularlo: se llena una vez por
+punto, casi siempre desde el pueblo. El censo casa por casa sí funciona sin señal.
+
 **Rama principal protegida.** Todo cambio entra por propuesta con una aprobación.
 Verificado: un envío directo a `main` es rechazado por el servidor.
 

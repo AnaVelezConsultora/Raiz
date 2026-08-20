@@ -62,7 +62,12 @@ const COLOR: Record<string, string> = {
   template: `
     <div class="contenedor pila" style="padding:1rem 1rem 3rem">
       <header class="pila-sm">
-        <a routerLink="/casos" class="pastilla" style="align-self:flex-start">← Casos</a>
+        <div class="fila" style="gap:.4rem">
+          <a routerLink="/casos" class="pastilla">← Casos</a>
+          <!-- La otra unidad: el censo ordena por familia, esto por infraestructura, y
+               es en la segunda donde una obra se prioriza. -->
+          <a routerLink="/puntos" class="pastilla">Infraestructura</a>
+        </div>
         <h1>Tablero</h1>
         <p class="tenue">
           {{ sesion.nombre() }} · {{ sesion.rol() }} ·

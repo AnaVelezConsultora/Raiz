@@ -4,6 +4,7 @@ import { Caso } from '../domain/caso.model';
 import {
   FuenteCoordenada,
   FuenteDato,
+  NOMBRE_FUENTE_DATO,
   Necesidad,
   OrigenDato,
   LugarPernocta,
@@ -91,7 +92,13 @@ export class CasoFormService {
         habitable: [caso.vivienda?.habitable ?? null],
         riesgoColapso: [caso.vivienda?.riesgoColapso ?? false],
         riesgoColapsoDesc: [caso.vivienda?.riesgoColapsoDesc],
-        dondeDuerme: [caso.vivienda?.dondeDuerme ?? null]
+        dondeDuerme: [caso.vivienda?.dondeDuerme ?? null],
+        // Nulo y no false: nulo es «no se pregunto», y decir que no ha venido nadie
+        // cuando nadie pregunto es afirmar algo distinto y probablemente falso.
+        visitaOficial: [caso.vivienda?.visitaOficial ?? null],
+        visitaOficialEntidad: [caso.vivienda?.visitaOficialEntidad ?? null],
+        visitaOficialFecha: [caso.vivienda?.visitaOficialFecha ?? null],
+        visitaOficialConcepto: [caso.vivienda?.visitaOficialConcepto ?? null]
       }),
       rural: this.fb.group({
         areaHa: [caso.anexoRural?.areaHa],
@@ -205,7 +212,11 @@ export class CasoFormService {
         riesgoColapsoDesc: v.vivienda.riesgoColapsoDesc,
         dondeDuerme: v.vivienda.dondeDuerme,
         requiereVivienda: seleccion.requiereVivienda,
-        serviciosAfectados: seleccion.serviciosAfectados
+        serviciosAfectados: seleccion.serviciosAfectados,
+        visitaOficial: v.vivienda.visitaOficial,
+        visitaOficialEntidad: v.vivienda.visitaOficialEntidad,
+        visitaOficialFecha: v.vivienda.visitaOficialFecha,
+        visitaOficialConcepto: v.vivienda.visitaOficialConcepto
       },
       anexoRural: esRural
         ? {
@@ -348,6 +359,10 @@ interface ValoresFormulario {
     habitable: boolean;
     riesgoColapso: boolean;
     riesgoColapsoDesc: string | null;
+    visitaOficial: boolean | null;
+    visitaOficialEntidad: string | null;
+    visitaOficialFecha: string | null;
+    visitaOficialConcepto: string | null;
     dondeDuerme: LugarPernocta;
   };
   rural: {
@@ -381,11 +396,28 @@ export const OPCIONES = {
     { v: OrigenDato.Tercero, t: 'Me lo contó un vecino o un líder' },
     { v: OrigenDato.ListadoEntidad, t: 'Viene de un listado de otra entidad' }
   ],
+  // METODO DE CAPTURA. La lista la pidio el enlace institucional, porque el sistema
+  // nacional de gestion del riesgo trata distinto un reporte comunitario y el concepto
+  // de un profesional tecnico. El orden va de lo mas frecuente en terreno a lo mas
+  // raro: quien llena esto de pie no debe recorrer once opciones para marcar la que
+  // usa el noventa por ciento de las veces.
+  //
+  // Esto es POR DONDE LLEGO el dato. Quien lo observo se pregunta aparte, y de ahi
+  // sale el nivel de verificacion. Presencial + «lo dijo la familia» es una
+  // combinacion legitima y frecuente.
   fuenteDato: [
-    { v: FuenteDato.Presencial, t: 'Visita presencial' },
-    { v: FuenteDato.WhatsApp, t: 'Reporte por WhatsApp' },
-    { v: FuenteDato.Llamada, t: 'Llamada telefonica' },
-    { v: FuenteDato.Lider, t: 'Reporte de lider' }
+    { v: FuenteDato.Presencial, t: NOMBRE_FUENTE_DATO[FuenteDato.Presencial] },
+    { v: FuenteDato.Llamada, t: NOMBRE_FUENTE_DATO[FuenteDato.Llamada] },
+    { v: FuenteDato.WhatsApp, t: NOMBRE_FUENTE_DATO[FuenteDato.WhatsApp] },
+    { v: FuenteDato.Videollamada, t: NOMBRE_FUENTE_DATO[FuenteDato.Videollamada] },
+    { v: FuenteDato.Lider, t: NOMBRE_FUENTE_DATO[FuenteDato.Lider] },
+    { v: FuenteDato.JuntaAccionComunal, t: NOMBRE_FUENTE_DATO[FuenteDato.JuntaAccionComunal] },
+    { v: FuenteDato.AutoridadLocal, t: NOMBRE_FUENTE_DATO[FuenteDato.AutoridadLocal] },
+    { v: FuenteDato.OrganismoSocorro, t: NOMBRE_FUENTE_DATO[FuenteDato.OrganismoSocorro] },
+    { v: FuenteDato.ProfesionalTecnico, t: NOMBRE_FUENTE_DATO[FuenteDato.ProfesionalTecnico] },
+    { v: FuenteDato.OtraEntidad, t: NOMBRE_FUENTE_DATO[FuenteDato.OtraEntidad] },
+    { v: FuenteDato.FuenteDocumental, t: NOMBRE_FUENTE_DATO[FuenteDato.FuenteDocumental] },
+    { v: FuenteDato.Otra, t: NOMBRE_FUENTE_DATO[FuenteDato.Otra] }
   ],
   tenencia: [
     { v: Tenencia.Propietario, t: 'Propietario' },

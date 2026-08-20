@@ -38,6 +38,13 @@ export const environment: Environment = {
   // El puerto es el del entorno local, y la API ya trae localhost:4200 entre sus
   // origenes permitidos.
   apiUrl: 'http://localhost:3021',
+  responsableTratamiento: {
+    // PENDIENTE DE DEFINIR. Ver ResponsableTratamiento en environment.model.ts: no se
+    // llena con un nombre inventado, se llena cuando alguien acepte responder.
+    nombre: '',
+    contacto: '',
+    canalDerechos: ''
+  },
   municipioPorDefecto: 'Sevilla',
   departamentoPorDefecto: 'Valle del Cauca'
 };
