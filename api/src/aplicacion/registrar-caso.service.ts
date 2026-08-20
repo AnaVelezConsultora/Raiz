@@ -4,6 +4,7 @@ import {
   CasoSincronizado,
   aplicarAutorizacionSensibles,
   aplicarConsentimiento,
+  aplicarConsentimientoUbicacion,
   identidadResidual,
   sensiblesResiduales
 } from '@raiz/dominio';
@@ -41,7 +42,8 @@ export class RegistrarCasoService {
 
   async ejecutar(caso: CasoParaSincronizar, identidad: Identidad): Promise<CasoSincronizado> {
     const sinIdentidad = this.retirarIdentidadSinAutorizacion(caso);
-    const limpio = this.retirarSensiblesSinAutorizacion(sinIdentidad);
+    const sinPunto = this.degradarUbicacionSinAutorizacion(sinIdentidad);
+    const limpio = this.retirarSensiblesSinAutorizacion(sinPunto);
 
     this.verificarQueNoQuedeIdentidad(limpio);
     this.verificarQueNoQuedenSensibles(limpio);
@@ -69,6 +71,31 @@ export class RegistrarCasoService {
     }
 
     return { ...caso, hogar };
+  }
+
+  /**
+   * Sin autorizacion, la coordenada deja de senalar una casa.
+   *
+   * En una vereda, coordenada exacta mas siete personas mas vivienda destruida senala
+   * un solo hogar, tenga nombre o no. Quitar el nombre y creer que con eso quedo
+   * anonimo es el error clasico, y es peor que no hacerlo porque produce la confianza
+   * de haberlo hecho.
+   *
+   * Se redondea a poco mas de un kilometro y se retira el punto de referencia. Queda
+   * lo unico que el registro necesita sin identidad: que la afectacion esta en esta
+   * vereda y no en la de al lado.
+   */
+  private degradarUbicacionSinAutorizacion(caso: CasoParaSincronizar): CasoParaSincronizar {
+    const { ubicacion, degradada } = aplicarConsentimientoUbicacion(caso.ubicacion, caso.control);
+
+    if (degradada) {
+      this.log.warn(
+        `Caso ${caso.origenId}: sin autorizacion de identidad, la coordenada se ` +
+          `redondeo y se retiro el punto de referencia.`
+      );
+    }
+
+    return { ...caso, ubicacion };
   }
 
   /**

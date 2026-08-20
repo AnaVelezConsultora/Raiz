@@ -120,7 +120,7 @@ await page.fill('#ref', '300 m arriba de la escuela');
 // Las tres autorizaciones del paso 1. Son tres preguntas separadas desde el 19 de
 // agosto: la ley trata los datos sensibles aparte y nadie esta obligado a darlos.
 // La prueba las responde todas que si, que es el camino que hay que poder recorrer.
-const autorizar = page.getByRole('button', { name: 'Sí, autoriza' });
+const autorizar = page.getByRole('button', { name: 'Sí, autorizo' });
 for (let i = 0; i < 3; i++) await autorizar.nth(i).click();
 
 // GPS

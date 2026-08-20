@@ -34,6 +34,13 @@ export const environment: Environment = {
   // Municipio y departamento son CAMPOS, no constantes (frente F8). Esto es el valor
   // por defecto del formulario, lo unico atado hoy a Sevilla, y se cambia sin tocar
   // codigo el dia que entre otro municipio.
+  responsableTratamiento: {
+    // PENDIENTE DE DEFINIR. Ver ResponsableTratamiento en environment.model.ts: no se
+    // llena con un nombre inventado, se llena cuando alguien acepte responder.
+    nombre: '',
+    contacto: '',
+    canalDerechos: ''
+  },
   municipioPorDefecto: 'Sevilla',
   departamentoPorDefecto: 'Valle del Cauca'
 };

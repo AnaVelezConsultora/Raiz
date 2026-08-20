@@ -257,6 +257,37 @@ const sinConsentimiento = await enviar({
 });
 comprobar(sinConsentimiento.estado === 200, `caso sin consentimiento se acepta (${sinConsentimiento.estado})`);
 
+// --- y el punto deja de senalar una casa -------------------------------------
+//
+// Quitar el nombre no vuelve anonimo a nadie: en una vereda, coordenada exacta mas
+// siete personas mas vivienda destruida senala un solo hogar. Sin autorizacion, la
+// coordenada se redondea a poco mas de un kilometro y el punto de referencia se
+// retira. Esta prueba existe porque el error contrario —creer que basta con quitar el
+// nombre— es invisible: el registro se ve anonimo y no lo es.
+const listado = await (
+  await fetch(`${API}/casos`, { headers: { Authorization: `Bearer ${token}` } })
+).json();
+const guardado = listado.find((c) => c.codigo === sinConsentimiento.cuerpo.codigo);
+
+const latEsperada = Math.round(CASO.ubicacion.lat * 100) / 100;
+comprobar(
+  guardado?.lat === latEsperada,
+  `sin autorizacion la coordenada se redondea (${CASO.ubicacion.lat} -> ${guardado?.lat})`
+);
+comprobar(
+  guardado?.lat !== CASO.ubicacion.lat,
+  'el punto exacto NO quedo guardado'
+);
+
+// Y con autorizacion la coordenada exacta SI se conserva: es lo que permite que un
+// organismo de socorro llegue a la casa. Degradar siempre seria proteger de mas y
+// hacer inutil el mapa justo cuando hay que llegar a alguien.
+const conAutorizacion = listado.find((c) => c.codigo === uno.cuerpo.codigo);
+comprobar(
+  conAutorizacion?.lat === CASO.ubicacion.lat,
+  `con autorizacion se conserva el punto exacto (${conAutorizacion?.lat})`
+);
+
 // --- sin autorizacion de datos sensibles, la salud tampoco viaja -------------
 //
 // Se manda un caso CON autorizacion de datos personales pero SIN la de sensibles,
