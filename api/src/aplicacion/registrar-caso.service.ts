@@ -2,8 +2,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   CasoParaSincronizar,
   CasoSincronizado,
+  aplicarAutorizacionSensibles,
   aplicarConsentimiento,
-  identidadResidual
+  identidadResidual,
+  sensiblesResiduales
 } from '@raiz/dominio';
 import {
   CASO_REPOSITORIO,
@@ -38,8 +40,11 @@ export class RegistrarCasoService {
   constructor(@Inject(CASO_REPOSITORIO) private readonly repositorio: CasoRepositorioPort) {}
 
   async ejecutar(caso: CasoParaSincronizar, identidad: Identidad): Promise<CasoSincronizado> {
-    const limpio = this.retirarIdentidadSinAutorizacion(caso);
+    const sinIdentidad = this.retirarIdentidadSinAutorizacion(caso);
+    const limpio = this.retirarSensiblesSinAutorizacion(sinIdentidad);
+
     this.verificarQueNoQuedeIdentidad(limpio);
+    this.verificarQueNoQuedenSensibles(limpio);
 
     return this.repositorio.registrar(limpio, identidad);
   }
@@ -67,6 +72,34 @@ export class RegistrarCasoService {
   }
 
   /**
+   * Lo mismo que la anterior, para los datos sensibles: salud, discapacidad,
+   * gestacion y origen etnico.
+   *
+   * Se agrego el 19 de agosto de 2026 porque no existia. La regla del proyecto
+   * protegia cuatro campos de identidad y todo lo demas viajaba siempre, incluidos
+   * gestantes, discapacidad, enfermedad cronica y —desde el 16 de agosto— fallecidos
+   * y heridos.
+   *
+   * La familia sigue contada, con su ubicacion, su numero de personas y su dano. Lo
+   * que se retira es el detalle que la ley protege.
+   */
+  private retirarSensiblesSinAutorizacion(caso: CasoParaSincronizar): CasoParaSincronizar {
+    const { vulnerabilidad, camposRetirados } = aplicarAutorizacionSensibles(
+      caso.hogar.vulnerabilidad,
+      caso.control
+    );
+
+    if (camposRetirados.length > 0) {
+      this.log.warn(
+        `Caso ${caso.origenId}: llegaron datos sensibles sin autorizacion y se ` +
+          `retiraron (${camposRetirados.join(', ')}). Revisar la version del cliente.`
+      );
+    }
+
+    return { ...caso, hogar: { ...caso.hogar, vulnerabilidad } };
+  }
+
+  /**
    * Ultima verificacion antes de escribir.
    *
    * Si esto encuentra algo, hay una ruta que se salto la regla. Aqui si se rechaza:
@@ -83,6 +116,21 @@ export class RegistrarCasoService {
     throw new ErrorRechazo(
       'El caso conserva datos de identidad sin autorizacion de la familia.',
       residual.map((campo) => `${campo} debe ir vacio sin consentimiento`)
+    );
+  }
+
+  /** Igual que la anterior, para los sensibles. Tampoco se escribe si queda algo. */
+  private verificarQueNoQuedenSensibles(caso: CasoParaSincronizar): void {
+    const residual = sensiblesResiduales(caso.hogar.vulnerabilidad, caso.control);
+    if (residual.length === 0) return;
+
+    this.log.error(
+      `Caso ${caso.origenId}: datos sensibles residuales tras aplicar la regla ` +
+        `(${residual.join(', ')}).`
+    );
+    throw new ErrorRechazo(
+      'El caso conserva datos sensibles sin autorizacion especifica de la familia.',
+      residual.map((campo) => `${campo} debe ir vacio sin autorizacion de datos sensibles`)
     );
   }
 }

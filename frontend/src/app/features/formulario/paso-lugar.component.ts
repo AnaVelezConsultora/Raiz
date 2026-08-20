@@ -43,24 +43,69 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
           </select>
         </div>
 
-        <div class="aviso">
-          <strong>Lea esto a la familia antes de continuar</strong>
-          <p style="margin:.4rem 0 0">
-            Estamos levantando un censo de familias afectadas por el sismo para presentarlo
-            ante las entidades y ante organismos de cooperación, con el fin de gestionar
-            ayuda. Sus datos solo se usarán para eso y puede pedir que los eliminemos.
-            ¿Nos autoriza a registrar sus datos?
-          </p>
-        </div>
+        <!-- QUIEN OBSERVO, que no es lo mismo que por qué canal llegó. Presencial y
+             «lo dijo la familia» es una combinación legítima: el voluntario estuvo
+             ahí, pero lo de las grietas del muro trasero se lo contaron.
 
-        <!-- Dos botones y no una casilla. Una casilla sin marcar no distingue "la
-             familia dijo que no" de "nadie le preguntó", y de esa diferencia depende si
-             el nombre de una persona puede guardarse. Sin responder no se continúa. -->
+             De aquí sale el nivel de verificación con el que nace el caso, y por eso
+             no se pregunta ese nivel: sería pedir lo mismo dos veces con palabras de
+             abogado. -->
         <div class="campo">
-          <label>
-            ¿La familia autoriza el tratamiento de sus datos?
+          <label for="origen">
+            ¿Cómo sabe usted esto?
             <span class="obligatorio">obligatorio</span>
           </label>
+          <select id="origen" formControlName="origenDato">
+            <option [value]="null">Seleccione</option>
+            @for (o of origenes; track o.v) {
+              <option [value]="o.v">{{ o.t }}</option>
+            }
+          </select>
+          <span class="pista">{{ explicacionOrigen() }}</span>
+        </div>
+
+        <!-- El texto completo, no un resumen. Se despliega para leerlo en voz alta y
+             se contrae para no empujar las tres preguntas fuera de la pantalla. La
+             versión queda guardada con el caso: la ley exige poder decir después qué
+             texto exacto se le leyó a esa familia ese día. -->
+        <details class="aviso" [open]="consentimiento === null">
+          <summary style="cursor:pointer;font-weight:600">
+            Lea esto a la familia antes de continuar
+          </summary>
+          <div style="margin-top:.6rem;font-size:.94rem">
+            <p style="margin:0 0 .6rem">
+              Estamos levantando una caracterización de familias afectadas por el sismo,
+              para presentarla ante las autoridades del sistema de gestión del riesgo y
+              ante organismos de cooperación, con el fin de gestionar ayuda.
+            </p>
+            <p style="margin:0 0 .6rem">
+              Esta caracterización <strong>no reemplaza</strong> el censo oficial, ni las
+              evaluaciones técnicas, ni ningún trámite que le corresponda a una entidad.
+            </p>
+            <p style="margin:0 0 .6rem">
+              Sus datos se usarán solo para eso, se tratarán de forma reservada, y usted
+              puede pedir en cualquier momento que se eliminen.
+            </p>
+            <p style="margin:0">
+              Voy a hacerle tres preguntas por separado, y puede responder que no a
+              cualquiera de ellas sin quedar por fuera del registro.
+            </p>
+          </div>
+        </details>
+
+        <!-- Tres preguntas y no una. La Ley 1581 trata los datos sensibles aparte y
+             establece que nadie está obligado a autorizarlos: si la única forma de
+             quedar caracterizado fuera aceptar en bloque, la autorización sería
+             discutible por no ser libre. Y en terreno hay familias que quieren quedar
+             contadas y no quieren que su salud salga hacia una entidad.
+
+             Cada una con tres estados. Sin marcar no es un no: es que nadie preguntó. -->
+        <div class="campo">
+          <label>
+            1 · ¿Autoriza que registremos sus datos personales?
+            <span class="obligatorio">obligatorio</span>
+          </label>
+          <span class="pista">Nombre, documento y teléfono. Sin esto el caso se guarda sin identidad.</span>
           <div class="pastillas">
             <button type="button" class="pastilla" [class.activa]="consentimiento === true"
                     (click)="fijarConsentimiento(true)">Sí, autoriza</button>
@@ -69,16 +114,58 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
           </div>
         </div>
 
+        <div class="campo">
+          <label>2 · ¿Autoriza que registremos datos de salud del hogar?</label>
+          <span class="pista">
+            Gestantes, discapacidad, enfermedad crónica, personas heridas o fallecidas.
+            Sirven para priorizar la atención.
+          </span>
+          <div class="pastillas">
+            <button type="button" class="pastilla" [class.activa]="sensibles === true"
+                    (click)="fijarSensibles(true)">Sí, autoriza</button>
+            <button type="button" class="pastilla" [class.activa]="sensibles === false"
+                    (click)="fijarSensibles(false)">No autoriza</button>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>3 · ¿Autoriza que su caso se remita con su nombre a las entidades?</label>
+          <span class="pista">
+            Alcaldía, gestión del riesgo, salud. Si dice que no, la familia igual cuenta
+            en el total, pero su nombre no sale en el listado.
+          </span>
+          <div class="pastillas">
+            <button type="button" class="pastilla" [class.activa]="remision === true"
+                    (click)="fijarRemision(true)">Sí, autoriza</button>
+            <button type="button" class="pastilla" [class.activa]="remision === false"
+                    (click)="fijarRemision(false)">No autoriza</button>
+          </div>
+        </div>
+
         @if (consentimiento === null) {
           <p class="aviso">
-            Sin esta respuesta no se puede continuar. Es lo que decide si el nombre y el
-            documento de la familia pueden guardarse.
+            La primera pregunta hay que hacerla para continuar. Las otras dos se pueden
+            dejar sin responder si la familia no quiere contestarlas.
           </p>
-        } @else if (consentimiento === false) {
-          <p class="aviso peligro">
-            Sin autorización NO se registran nombre, documento ni fotos. El caso se
-            guarda con ubicación, número de personas y tipo de daño.
-          </p>
+        } @else {
+          @if (consentimiento === false) {
+            <p class="aviso peligro">
+              Sin autorización NO se registran nombre, documento, teléfono ni fotos de la
+              familia. El caso se guarda con ubicación, número de personas y tipo de daño.
+            </p>
+          }
+          @if (sensibles !== true) {
+            <p class="aviso peligro">
+              Sin la segunda, no se registran datos de salud: ni gestantes, ni
+              discapacidad, ni heridos ni fallecidos. Si los llena, no se guardan.
+            </p>
+          }
+          @if (remision !== true) {
+            <p class="aviso">
+              Sin la tercera, la familia cuenta en el consolidado pero no aparece por su
+              nombre en un oficio a una entidad.
+            </p>
+          }
         }
       </section>
 
@@ -198,6 +285,29 @@ export class PasoLugarComponent {
   readonly precision = input.required<number | null>();
 
   readonly fuentes = OPCIONES.fuenteDato;
+  readonly origenes = OPCIONES.origenDato;
+
+  /**
+   * Lo que significa cada opcion, en una linea y sin jerga.
+   *
+   * Se muestra debajo del campo en vez de en una ayuda aparte: un voluntario de pie
+   * bajo el sol no abre una ayuda, y esta eleccion decide con que nivel de
+   * verificacion nace el caso.
+   */
+  explicacionOrigen(): string {
+    switch (this.form().get('control.origenDato')?.value) {
+      case 'observado':
+        return 'Usted estuvo ahí y lo vio. El caso queda como verificado en terreno.';
+      case 'familia':
+        return 'Se lo contó la propia familia. El caso queda como declarado por ella.';
+      case 'tercero':
+        return 'Se lo contó un vecino o un líder. Queda como reportado por un tercero.';
+      case 'listado_entidad':
+        return 'Viene de un listado de otra organización o entidad.';
+      default:
+        return 'De esto depende con qué nivel de verificación queda el caso.';
+    }
+  }
   readonly zonaRural = Zona.Rural;
   readonly zonaUrbana = Zona.Urbana;
 
@@ -216,11 +326,62 @@ export class PasoLugarComponent {
   }
 
   fijarConsentimiento(autoriza: boolean): void {
-    const control = this.form().get('control.consentimiento');
+    this.responder('consentimiento', autoriza);
+  }
+
+  /** Datos de salud del hogar. Ley 1581: se autorizan aparte y nadie esta obligado. */
+  get sensibles(): boolean | null {
+    return this.leer('autorizaDatosSensibles');
+  }
+  fijarSensibles(autoriza: boolean): void {
+    this.responder('autorizaDatosSensibles', autoriza);
+  }
+
+  /** Remision nominal a entidades. Sin ella la familia cuenta, pero sin nombre. */
+  get remision(): boolean | null {
+    return this.leer('autorizaRemisionEntidades');
+  }
+  fijarRemision(autoriza: boolean): void {
+    this.responder('autorizaRemisionEntidades', autoriza);
+  }
+
+  private leer(campo: string): boolean | null {
+    const valor = this.form().get(`control.${campo}`)?.value;
+    return valor === true || valor === false ? valor : null;
+  }
+
+  /**
+   * Guarda la respuesta y, con ella, la prueba de que se pidio.
+   *
+   * La Ley 1581 exige poder consultar la autorizacion despues y conservar prueba de
+   * haber informado. Por eso, al responder la primera pregunta, se estampa QUE VERSION
+   * del texto se leyo y CUANDO respondio la familia. Sin eso, «autorizo: si» no se
+   * puede sostener ante nadie.
+   *
+   * La hora se estampa una sola vez, en la primera respuesta: es el momento en que se
+   * le leyo el texto a la familia, no el de cada toque de boton.
+   */
+  private responder(campo: string, autoriza: boolean): void {
+    const control = this.form().get(`control.${campo}`);
     if (!control) return;
+
     control.setValue(autoriza);
     control.markAsDirty();
+
+    const version = this.form().get('control.versionAutorizacion');
+    const cuando = this.form().get('control.autorizadoEn');
+
+    if (version && !version.value) version.setValue(PasoLugarComponent.VERSION_AUTORIZACION);
+    if (cuando && !cuando.value) cuando.setValue(new Date().toISOString());
   }
+
+  /**
+   * Version del texto que esta pantalla muestra.
+   *
+   * Vive en docs/cumplimiento/autorizacion.md. Cuando ese texto cambie, sube la
+   * version aqui y los casos viejos siguen apuntando a la que les corresponde.
+   */
+  private static readonly VERSION_AUTORIZACION = '1.0.0-borrador';
 
   /** El contenedor escucha este evento, captura la coordenada y la persiste. */
   readonly capturarGps = output<void>();

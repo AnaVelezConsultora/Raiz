@@ -87,7 +87,14 @@ export class CasoFactoryService {
         registradorOrg: perfil?.organizacion ?? null,
         registradorTel: perfil?.telefono ?? null,
         fuenteDato: FuenteDato.Presencial,
+        origenDato: null,
         consentimiento: null,
+        // Las tres nacen sin responder. Nulo no es un no: es que nadie pregunto
+        // todavia, y de esa diferencia depende que se guarda.
+        autorizaDatosSensibles: null,
+        autorizaRemisionEntidades: null,
+        versionAutorizacion: null,
+        autorizadoEn: null,
         fechaRegistro: ahora.slice(0, 10)
       },
       ubicacion: {

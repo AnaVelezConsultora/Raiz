@@ -95,20 +95,31 @@ const NIVELES_INHABITABLES: readonly string[] = [
           </p>
         }
 
+        <!-- ALERTA COMUNITARIA, NO DICTAMEN. Antes decia «hay riesgo inminente de
+             colapso», que es una afirmacion tecnica, y quien llena esta ficha es un
+             lider comunal y no un ingeniero. Firmar un diagnostico estructural que no
+             se puede sostener expone a quien registra y le quita fuerza al registro
+             entero. Lo que la comunidad si puede afirmar es lo que ve. -->
         <label class="pastilla" [class.activa]="riesgo()">
           <input type="checkbox" formControlName="riesgoColapso" />
-          Hay riesgo inminente de colapso
+          A simple vista, esta casa amenaza con caerse
         </label>
 
         @if (riesgo()) {
           <div class="campo">
-            <label for="rdesc">Describa el riesgo</label>
+            <label for="rdesc">¿Qué se ve? ¿Sobre quién caería?</label>
             <textarea id="rdesc" formControlName="riesgoColapsoDesc"
-                      placeholder="Que estructura amenaza caer y sobre quien"></textarea>
+                      placeholder="Grietas grandes en el muro del frente, se inclinó hacia la casa vecina..."></textarea>
+            <span class="pista">
+              Describa lo que observa, no lo que concluye. Eso es lo que después puede
+              sostener un técnico.
+            </span>
           </div>
           <p class="aviso peligro">
-            Riesgo de colapso: el caso queda en prioridad P0. Avise al coordinador hoy
-            mismo, sin esperar a sincronizar.
+            <strong>Alerta comunitaria: requiere verificación técnica.</strong>
+            El caso queda en prioridad P0 y hay que avisarle al coordinador hoy mismo,
+            sin esperar a sincronizar. No es un dictamen estructural: es lo que usted vio
+            y por eso alguien tiene que ir a mirarlo.
           </p>
         }
 

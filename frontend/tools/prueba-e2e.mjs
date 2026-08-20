@@ -117,7 +117,11 @@ await page.fill('#vereda', 'Vereda Ficticia Uno');
 await page.fill('#ref', '300 m arriba de la escuela');
 // La autorizacion dejo de ser una casilla y son dos botones: sin responder no se
 // continua, que es justo lo que esta prueba debe recorrer como lo hace el voluntario.
-await page.getByRole('button', { name: 'Sí, autoriza' }).click();
+// Las tres autorizaciones del paso 1. Son tres preguntas separadas desde el 19 de
+// agosto: la ley trata los datos sensibles aparte y nadie esta obligado a darlos.
+// La prueba las responde todas que si, que es el camino que hay que poder recorrer.
+const autorizar = page.getByRole('button', { name: 'Sí, autoriza' });
+for (let i = 0; i < 3; i++) await autorizar.nth(i).click();
 
 // GPS
 await page.getByRole('button', { name: /Obtener ubicacion/i }).click();
@@ -156,7 +160,7 @@ await page.selectOption('#afec', 'severo');
 // Se busca por su etiqueta accesible, que es contrato de la interfaz y no detalle interno.
 await page.getByRole('textbox', { name: 'Familias en la misma estructura' }).fill('2');
 await page.getByText('No se puede vivir ahí', { exact: true }).click();
-await page.getByText('Hay riesgo inminente de colapso').click();
+await page.getByText('A simple vista, esta casa amenaza con caerse').click();
 await page.getByText('Remoción de escombros', { exact: true }).click();
 await page.getByText('Cafe', { exact: true }).click();
 const avisoRiesgo = await page.locator('.aviso.peligro').first().textContent();

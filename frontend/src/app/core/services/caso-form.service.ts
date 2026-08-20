@@ -5,6 +5,7 @@ import {
   FuenteCoordenada,
   FuenteDato,
   Necesidad,
+  OrigenDato,
   LugarPernocta,
   NivelAfectacion,
   Prioridad,
@@ -37,7 +38,12 @@ export class CasoFormService {
         registradorOrg: [caso.control.registradorOrg],
         registradorTel: [caso.control.registradorTel],
         fuenteDato: [caso.control.fuenteDato, Validators.required],
-        consentimiento: [caso.control.consentimiento]
+        origenDato: [caso.control.origenDato ?? null],
+        consentimiento: [caso.control.consentimiento],
+        autorizaDatosSensibles: [caso.control.autorizaDatosSensibles ?? null],
+        autorizaRemisionEntidades: [caso.control.autorizaRemisionEntidades ?? null],
+        versionAutorizacion: [caso.control.versionAutorizacion ?? null],
+        autorizadoEn: [caso.control.autorizadoEn ?? null]
       }),
       ubicacion: this.fb.group({
         departamento: [caso.ubicacion.departamento, Validators.required],
@@ -136,7 +142,14 @@ export class CasoFormService {
         registradorOrg: v.control.registradorOrg,
         registradorTel: v.control.registradorTel,
         fuenteDato: v.control.fuenteDato,
-        consentimiento: v.control.consentimiento
+        origenDato: v.control.origenDato,
+        consentimiento: v.control.consentimiento,
+        // Las dos autorizaciones nuevas y la prueba de que se pidieron. Las escribe
+        // la pantalla de consentimiento del paso 1, en el mismo grupo de control.
+        autorizaDatosSensibles: v.control.autorizaDatosSensibles,
+        autorizaRemisionEntidades: v.control.autorizaRemisionEntidades,
+        versionAutorizacion: v.control.versionAutorizacion,
+        autorizadoEn: v.control.autorizadoEn
       },
       ubicacion: {
         ...caso.ubicacion,
@@ -299,7 +312,12 @@ interface ValoresFormulario {
     registradorOrg: string | null;
     registradorTel: string | null;
     fuenteDato: FuenteDato;
-    consentimiento: boolean;
+    origenDato: OrigenDato | null;
+    consentimiento: boolean | null;
+    autorizaDatosSensibles: boolean | null;
+    autorizaRemisionEntidades: boolean | null;
+    versionAutorizacion: string | null;
+    autorizadoEn: string | null;
   };
   ubicacion: {
     departamento: string;
@@ -356,6 +374,13 @@ interface ValoresFormulario {
 
 /** Catalogo de opciones para las pastillas. Centralizado para no duplicar literales. */
 export const OPCIONES = {
+  /** Quien observo. Las etiquetas hablan como habla un lider, no como la ley. */
+  origenDato: [
+    { v: OrigenDato.Observado, t: 'Yo lo vi, estuve ahí' },
+    { v: OrigenDato.Familia, t: 'Me lo contó la familia' },
+    { v: OrigenDato.Tercero, t: 'Me lo contó un vecino o un líder' },
+    { v: OrigenDato.ListadoEntidad, t: 'Viene de un listado de otra entidad' }
+  ],
   fuenteDato: [
     { v: FuenteDato.Presencial, t: 'Visita presencial' },
     { v: FuenteDato.WhatsApp, t: 'Reporte por WhatsApp' },

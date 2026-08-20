@@ -93,6 +93,72 @@ export enum FuenteDato {
 }
 
 /**
+ * QUIEN OBSERVO el hecho. No es lo mismo que el canal por el que llego.
+ *
+ * Presencial y «lo dijo la familia» es una combinacion legitima y frecuente: el
+ * voluntario estuvo ahi, pero lo que anoto sobre las grietas del muro trasero se lo
+ * contaron. Confundir canal con observador es lo que hace que un tablero presente
+ * junto lo visto y lo referido, y ahi se pierde en un minuto la confiabilidad que
+ * costo meses construir.
+ *
+ * NO CAMBIA NUNCA: es una propiedad del momento en que se levanto el dato.
+ */
+export enum OrigenDato {
+  /** Lo vio quien registra, estando ahi. */
+  Observado = 'observado',
+  /** Lo dijo la familia sobre si misma. */
+  Familia = 'familia',
+  /** Lo conto un vecino, un lider, alguien mas. */
+  Tercero = 'tercero',
+  /** Vino del listado de otra entidad u organizacion. */
+  ListadoEntidad = 'listado_entidad'
+}
+
+/**
+ * HASTA DONDE esta comprobado el caso. Sube con el tiempo, y esa es su gracia.
+ *
+ * Es el otro eje: un caso reportado por un tercero —origen que no cambia— puede
+ * subir de R1 a R4 el dia que un ingeniero lo revise.
+ *
+ * R5 no lo damos nosotros: lo da una entidad al incorporarlo a sus registros.
+ */
+export enum NivelVerificacion {
+  Autodeclarado = 'r0_autodeclarado',
+  ReportadoTercero = 'r1_reportado_tercero',
+  VerificadoPresencial = 'r2_verificado_presencial',
+  VerificadoDocumental = 'r3_verificado_documental',
+  VerificadoTecnico = 'r4_verificado_tecnico',
+  ValidadoInstitucional = 'r5_validado_institucional'
+}
+
+/**
+ * Nivel con el que NACE un caso segun quien observo.
+ *
+ * Se deriva y no se pregunta: el voluntario ya contesto quien observo, y pedirle
+ * ademas que se autoevalue el nivel de verificacion seria pedirle dos veces lo mismo
+ * con palabras de abogado.
+ *
+ * Lo que sigue arriba —documental, tecnico, institucional— no lo puede declarar quien
+ * captura. Eso lo sube la mesa cuando hay un documento, un profesional o una entidad
+ * detras, y por eso no aparece en el formulario.
+ */
+export function nivelInicialDesde(origen: OrigenDato | null): NivelVerificacion {
+  switch (origen) {
+    case OrigenDato.Observado:
+      return NivelVerificacion.VerificadoPresencial;
+    case OrigenDato.Tercero:
+      return NivelVerificacion.ReportadoTercero;
+    case OrigenDato.ListadoEntidad:
+      return NivelVerificacion.VerificadoDocumental;
+    // La familia hablando de si misma, y tambien el caso sin responder: ante la duda,
+    // el nivel mas bajo. Sobrestimar la verificacion es lo unico que no se puede
+    // corregir despues, porque nadie vuelve a revisar lo que ya figura como verificado.
+    default:
+      return NivelVerificacion.Autodeclarado;
+  }
+}
+
+/**
  * Relacion del hogar con la vivienda.
  * Los arrendatarios se registran: aplican a subsidio de arriendo aunque no sean duenos.
  */

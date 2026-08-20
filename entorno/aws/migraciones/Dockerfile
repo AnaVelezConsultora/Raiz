@@ -44,6 +44,12 @@ COPY entorno/postgres/56-perfiles-alta.sql    ./007-perfiles-alta.sql
 # llamarse distinto— pero la secuencia dejaria de leerse como una sola historia.
 COPY entorno/postgres/66-campos-de-terreno.sql ./008-campos-de-terreno.sql
 
+# Las tres autorizaciones y la auditoria que faltaba en viviendas, produccion y
+# ayudas. Misma regla de numeracion: la clave del registro es el nombre, asi que
+# aqui va la siguiente libre y no la que traia en su rama.
+COPY entorno/postgres/67-autorizaciones.sql ./009-autorizaciones.sql
+COPY entorno/postgres/68-origen-y-verificacion.sql ./010-origen-y-verificacion.sql
+
 # Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con
 # esas palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
 # `on conflict do nothing`— y no un cambio de estructura que ocurre una vez.
