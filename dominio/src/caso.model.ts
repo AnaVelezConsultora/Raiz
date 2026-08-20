@@ -1,6 +1,7 @@
 import {
   FuenteCoordenada,
   FuenteDato,
+  OrigenDato,
   LugarPernocta,
   NivelAfectacion,
   Prioridad,
@@ -36,6 +37,15 @@ export interface Control {
   registradorOrg: string | null;
   registradorTel: string | null;
   fuenteDato: FuenteDato;
+
+  /**
+   * Quien observo el hecho. Distinto del canal por el que llego.
+   *
+   * De aqui sale el nivel de verificacion con el que nace el caso, con
+   * {@link nivelInicialDesde}. Lo que sigue arriba —documental, tecnico,
+   * institucional— lo sube la mesa, no quien captura.
+   */
+  origenDato: OrigenDato | null;
   /**
    * Autorizacion para tratar los DATOS PERSONALES de la familia.
    *

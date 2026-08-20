@@ -67,6 +67,7 @@ services:
       - ./postgres/65-acceso-api.sql:/docker-entrypoint-initdb.d/65-acceso-api.sql:ro
       - ./postgres/66-campos-de-terreno.sql:/docker-entrypoint-initdb.d/66-campos-de-terreno.sql:ro
       - ./postgres/67-autorizaciones.sql:/docker-entrypoint-initdb.d/67-autorizaciones.sql:ro
+      - ./postgres/68-origen-y-verificacion.sql:/docker-entrypoint-initdb.d/68-origen-y-verificacion.sql:ro
       - ./postgres/70-semillas-catalogos.sql:/docker-entrypoint-initdb.d/70-semillas-catalogos.sql:ro
       - ./pruebas:/pruebas:ro
       - datos-db:/var/lib/postgresql/data

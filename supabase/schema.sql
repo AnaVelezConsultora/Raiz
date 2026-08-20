@@ -44,6 +44,14 @@ create type estado_ayuda_t      as enum ('identificada', 'gestionada', 'programa
 -- mismo contrato de siempre: un solo vocabulario para Kobo, la PWA, la API y la base.
 create type gps_fuente_t as enum ('sitio', 'compartida', 'aprox', 'no_disp');
 
+-- De donde salio el dato y hasta donde esta comprobado. DOS EJES, no uno: el origen
+-- no cambia nunca y la verificacion sube con el tiempo. Ver 68-origen-y-verificacion.
+create type origen_dato_t as enum ('observado', 'familia', 'tercero', 'listado_entidad');
+
+create type nivel_verificacion_t as enum (
+  'r0_autodeclarado', 'r1_reportado_tercero', 'r2_verificado_presencial',
+  'r3_verificado_documental', 'r4_verificado_tecnico', 'r5_validado_institucional');
+
 create type necesidad_t  as enum ('alimentos', 'agua_potable', 'aseo', 'cocina', 'dormir',
                                   'carpa', 'ropa', 'medicamentos', 'panales', 'psicosocial',
                                   'transporte', 'documentos');
@@ -114,6 +122,12 @@ create table familias (
   -- acto seguido dejaba de verlo.
   registrador_perfil_id  uuid references perfiles(id) default auth.uid(),
   fuente_dato            text not null,        -- presencial, whatsapp, llamada, lider, otra_entidad
+  -- El canal por el que llego (arriba) NO es lo mismo que quien observo (abajo):
+  -- presencial + lo dijo la familia es una combinacion legitima y frecuente.
+  origen_dato            origen_dato_t,
+  nivel_verificacion     nivel_verificacion_t not null default 'r0_autodeclarado',
+  nivel_verificado_por   uuid references perfiles(id),
+  nivel_verificado_en    timestamptz,
   consentimiento         boolean not null default false,
   -- Ley 1581: los datos sensibles se autorizan aparte y nadie esta obligado a
   -- darlos. Nulo es "no se pregunto", que no es lo mismo que un no.

@@ -107,6 +107,9 @@ const CASO = {
     registradorOrg: 'Mesa de sistematizacion',
     registradorTel: null,
     fuenteDato: 'presencial',
+    // Quien observo. De aqui deriva el servidor el nivel de verificacion, y el
+    // cliente NO lo manda: un cliente modificado no puede declararse verificado.
+    origenDato: 'observado',
     consentimiento: true,
     fechaRegistro: '2026-08-14'
   },

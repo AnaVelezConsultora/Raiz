@@ -43,6 +43,27 @@ import { GeolocalizacionService } from '../../core/services/geolocalizacion.serv
           </select>
         </div>
 
+        <!-- QUIEN OBSERVO, que no es lo mismo que por qué canal llegó. Presencial y
+             «lo dijo la familia» es una combinación legítima: el voluntario estuvo
+             ahí, pero lo de las grietas del muro trasero se lo contaron.
+
+             De aquí sale el nivel de verificación con el que nace el caso, y por eso
+             no se pregunta ese nivel: sería pedir lo mismo dos veces con palabras de
+             abogado. -->
+        <div class="campo">
+          <label for="origen">
+            ¿Cómo sabe usted esto?
+            <span class="obligatorio">obligatorio</span>
+          </label>
+          <select id="origen" formControlName="origenDato">
+            <option [value]="null">Seleccione</option>
+            @for (o of origenes; track o.v) {
+              <option [value]="o.v">{{ o.t }}</option>
+            }
+          </select>
+          <span class="pista">{{ explicacionOrigen() }}</span>
+        </div>
+
         <!-- El texto completo, no un resumen. Se despliega para leerlo en voz alta y
              se contrae para no empujar las tres preguntas fuera de la pantalla. La
              versión queda guardada con el caso: la ley exige poder decir después qué
@@ -264,6 +285,29 @@ export class PasoLugarComponent {
   readonly precision = input.required<number | null>();
 
   readonly fuentes = OPCIONES.fuenteDato;
+  readonly origenes = OPCIONES.origenDato;
+
+  /**
+   * Lo que significa cada opcion, en una linea y sin jerga.
+   *
+   * Se muestra debajo del campo en vez de en una ayuda aparte: un voluntario de pie
+   * bajo el sol no abre una ayuda, y esta eleccion decide con que nivel de
+   * verificacion nace el caso.
+   */
+  explicacionOrigen(): string {
+    switch (this.form().get('control.origenDato')?.value) {
+      case 'observado':
+        return 'Usted estuvo ahí y lo vio. El caso queda como verificado en terreno.';
+      case 'familia':
+        return 'Se lo contó la propia familia. El caso queda como declarado por ella.';
+      case 'tercero':
+        return 'Se lo contó un vecino o un líder. Queda como reportado por un tercero.';
+      case 'listado_entidad':
+        return 'Viene de un listado de otra organización o entidad.';
+      default:
+        return 'De esto depende con qué nivel de verificación queda el caso.';
+    }
+  }
   readonly zonaRural = Zona.Rural;
   readonly zonaUrbana = Zona.Urbana;
 

@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PoolClient } from 'pg';
-import { CasoParaSincronizar, CasoSincronizado, Prioridad, ResumenTablero, Zona } from '@raiz/dominio';
+import {
+  CasoParaSincronizar,
+  CasoSincronizado,
+  Prioridad,
+  ResumenTablero,
+  Zona,
+  nivelInicialDesde
+} from '@raiz/dominio';
 import {
   CasoRepositorioPort,
   ErrorRechazo,
@@ -56,6 +63,15 @@ interface FilaRegistro {
 @Injectable()
 export class CasoRepositorioPostgres implements CasoRepositorioPort {
   private readonly log = new Logger(CasoRepositorioPostgres.name);
+
+  /**
+   * Evento al que se cuelgan los casos que llegan hoy.
+   *
+   * Constante y no configuracion mientras haya una sola emergencia activa: una
+   * variable de entorno mal puesta colgaria casos del evento equivocado sin que nadie
+   * lo note. El dia que haya dos a la vez, el cliente lo mandara y esto se cae.
+   */
+  private static readonly EVENTO_VIGENTE = 'SISMO-2026-08-10';
 
   constructor(private readonly pool: PostgresPool) {}
 
@@ -147,7 +163,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         observaciones,
         fallecidos, heridos_leves, heridos_graves, necesidades_otra,
         autoriza_datos_sensibles, autoriza_remision_entidades,
-        version_autorizacion, autorizado_en
+        version_autorizacion, autorizado_en,
+        origen_dato, nivel_verificacion, evento_id
       ) values (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::zona_t, $11, $12, $13, $14,
         $15, $16, $17, $18::gps_fuente_t, $19, $20, $21, $22, $23, $24, $25, $26,
@@ -155,7 +172,15 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
         $48, $49, $50, $51, $52::prioridad_t, $53::necesidad_t[], $54, $55, $56, $57,
         $58, $59, $60, $61,
-        $62, $63, $64, $65
+        $62, $63, $64, $65,
+        -- El nivel de verificacion se deriva del origen y NO se acepta del cliente:
+        -- un cliente modificado no puede declarar que su caso ya fue verificado por
+        -- un ingeniero. Lo que sigue arriba lo sube la mesa, con su nombre.
+        $66::origen_dato_t, $67::nivel_verificacion_t,
+        -- El evento se resuelve por codigo. Si no llega o no existe, queda nulo y la
+        -- mesa lo asigna: es preferible un caso sin evento que un caso colgado del
+        -- evento equivocado.
+        (select id from eventos where codigo = $68)
       )
       on conflict (origen_id) do update set
         fecha_registro = excluded.fecha_registro,
@@ -211,7 +236,9 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       // pregunto» y no puede convertirse en un no por el camino. La regla que decide
       // que se guarda ya se aplico antes, en el servicio.
       c.autorizaDatosSensibles ?? null, c.autorizaRemisionEntidades ?? null,
-      c.versionAutorizacion ?? null, c.autorizadoEn ?? null
+      c.versionAutorizacion ?? null, c.autorizadoEn ?? null,
+      c.origenDato ?? null, nivelInicialDesde(c.origenDato ?? null),
+      CasoRepositorioPostgres.EVENTO_VIGENTE
     ];
 
     try {

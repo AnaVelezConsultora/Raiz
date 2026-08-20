@@ -133,6 +133,8 @@ jobs:
         run: $PSQL -f entorno/postgres/66-campos-de-terreno.sql
       - name: Autorizaciones y auditoria
         run: $PSQL -f entorno/postgres/67-autorizaciones.sql
+      - name: Origen, verificacion y evento
+        run: $PSQL -f entorno/postgres/68-origen-y-verificacion.sql
       - name: Catalogos
         run: $PSQL -f entorno/postgres/70-semillas-catalogos.sql
 
