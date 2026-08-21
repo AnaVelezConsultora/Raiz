@@ -181,7 +181,6 @@ export class PasoCierreComponent {
   readonly form = input.required<FormGroup>();
   readonly casoId = input.required<string>();
   readonly fotos = input.required<FotoLocal[]>();
-  readonly convenioLinea = model.required<string[]>();
   readonly tiposEvidencia = model.required<string[]>();
   readonly necesidades = model.required<string[]>();
 
@@ -191,7 +190,6 @@ export class PasoCierreComponent {
   readonly errorFoto = model<string>('');
 
   readonly prioridades = OPCIONES.prioridad;
-  readonly opcConvenio = OPCIONES.convenioLinea;
   readonly opcTiposEvidencia = TIPOS_EVIDENCIA;
   readonly opcNecesidades = OPCIONES.necesidades;
   readonly tipoFachada = TipoFoto.Fachada;
@@ -216,13 +214,7 @@ export class PasoCierreComponent {
     if (!quiere) this.form().get('triaje.rutaApoyoOrganizacion')?.setValue(null);
   }
 
-  afiliada(): boolean {
-    return this.form().get('convenio.afiliadaFederacion')?.value === true;
-  }
 
-  postula(): boolean {
-    return this.form().get('convenio.aplicaConvenio')?.value === true;
-  }
 
   async alSeleccionar(evento: Event, tipo: TipoFoto): Promise<void> {
     const entrada = evento.target as HTMLInputElement;

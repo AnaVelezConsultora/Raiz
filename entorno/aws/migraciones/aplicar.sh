@@ -77,16 +77,17 @@ echo "    listo"
 # -----------------------------------------------------------------------------
 echo ""
 echo "==> migraciones"
-# El numero es el ORDEN de aplicacion y tambien la clave con la que queda
-# registrado. Los archivos del entorno local llevan otra numeracion —alli todo se
-# carga de una vez sobre una base vacia— y aqui van en el orden en que llegaron a
-# una base que ya existia. El contenido es el mismo archivo, sin copia.
-for archivo in 001-shim-auth.sql 002-roles.sql 003-schema.sql 004-grants.sql 005-acceso-api.sql \
-               006-fotos-subida.sql 007-perfiles-alta.sql 008-campos-de-terreno.sql \
-               009-autorizaciones.sql 010-origen-y-verificacion.sql \
-               011-puntos-de-servicio.sql 012-visita-oficial.sql \
-               013-hogar-y-atencion-prioritaria.sql \
-               014-dano-observado-y-evidencia.sql; do
+# El numero es el ORDEN de aplicacion y tambien la clave con la que queda registrado.
+#
+# SON CINCO Y NO DIECISEIS desde el 20 de agosto. Hasta esa fecha cada cambio de
+# estructura era una enmienda numerada sobre el esquema, y para saber que columnas
+# existian habia que leer un archivo mas catorce parches. Como nada de lo capturado
+# era todavia real, se colapsaron en un solo `schema.sql` que se lee de arriba abajo.
+#
+# El dia que haya datos que no se puedan perder, esto vuelve a crecer: la proxima
+# migracion sera la 006 y ya no se colapsa nunca mas. Ese dia es el limite, y conviene
+# saber que existe.
+for archivo in 001-shim-auth.sql 002-roles.sql 003-schema.sql 004-grants.sql 005-acceso-api.sql; do
   YA="$(psql_ --tuples-only --no-align \
     -c "select 1 from public.migraciones_aplicadas where archivo = '$archivo';")"
 

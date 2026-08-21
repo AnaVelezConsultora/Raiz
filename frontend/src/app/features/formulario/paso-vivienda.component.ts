@@ -143,15 +143,9 @@ const NIVELES_INHABITABLES: readonly string[] = [
         </div>
 
         @if (riesgo()) {
-          <div class="campo">
-            <label for="rdesc">¿Qué se ve? ¿Sobre quién caería?</label>
-            <textarea id="rdesc" formControlName="riesgoColapsoDesc"
-                      placeholder="Grietas grandes en el muro del frente, se inclinó hacia la casa vecina..."></textarea>
-            <span class="pista">
-              Describa lo que observa, no lo que concluye. Eso es lo que después puede
-              sostener un técnico.
-            </span>
-          </div>
+          <!-- Antes habia aqui un segundo campo de texto para describir el riesgo. Se
+               quito porque duplicaba la descripcion del dano de mas arriba, y dos
+               casillas que piden lo mismo se llenan a medias las dos. -->
           <!-- QUE HACER, NO SOLO QUE PASO. Antes decia «avisarle al coordinador», que
                deja la cadena a medias: el coordinador tampoco puede entrar a esa casa.
                Quien tiene que ir es el equipo tecnico de gestion del riesgo del

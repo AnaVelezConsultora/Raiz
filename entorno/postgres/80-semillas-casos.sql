@@ -96,12 +96,14 @@ on conflict (origen_id) do nothing;
 
 -- Vivienda principal de cada caso, para que v_familias_tablero y v_mapa_publico
 -- devuelvan las columnas del join en lugar de nulos.
-insert into viviendas (familia_id, es_principal, tenencia, afectacion, habitable, riesgo_colapso)
-select f.id, true, 'arrendatario'::tenencia_t, 'severo'::afectacion_t, false, true
+insert into viviendas (familia_id, es_principal, tenencia, afectacion, habitabilidad, riesgo_visible)
+select f.id, true, 'arrendatario'::tenencia_t, 'severo'::afectacion_t,
+       'no_habitable'::habitabilidad_t, 'peligro_evidente'::riesgo_visible_t
 from familias f where f.origen_id = '00000000-0000-4000-8000-000000000001'
 on conflict do nothing;
 
-insert into viviendas (familia_id, es_principal, tenencia, afectacion, habitable, riesgo_colapso)
-select f.id, true, 'propietario'::tenencia_t, 'moderado'::afectacion_t, true, false
+insert into viviendas (familia_id, es_principal, tenencia, afectacion, habitabilidad, riesgo_visible)
+select f.id, true, 'propietario'::tenencia_t, 'moderado'::afectacion_t,
+       'habitable'::habitabilidad_t, 'no_observado'::riesgo_visible_t
 from familias f where f.origen_id = '00000000-0000-4000-8000-000000000002'
 on conflict do nothing;

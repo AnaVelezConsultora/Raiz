@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ResumenTablero } from '../../core/domain/caso.model';
-import { NivelVerificacion, Prioridad, Zona } from '../../core/domain/enums';
+import { Habitabilidad, NivelVerificacion, Prioridad, Zona } from '../../core/domain/enums';
 import { TABLERO, TableroPort } from '../../core/domain/ports';
 import { SesionService } from '../../core/services/sesion.service';
 
@@ -434,7 +434,7 @@ export class TableroComponent implements OnInit, AfterViewInit, OnDestroy {
             `${c.lugar ?? 'Sin ubicar'} · ${c.zona}<br>` +
             `${c.personasTotal} persona(s), ${c.menores} menor(es)<br>` +
             `${c.afectacion ?? 'afectación sin registrar'}` +
-            (c.habitable === false ? ' · no habitable' : '') +
+            (c.habitabilidad === Habitabilidad.NoHabitable ? ' · no habitable' : '') +
             `<br>${c.nFotos} fotografía(s)`
         )
         .addTo(this.capa);

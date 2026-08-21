@@ -85,7 +85,6 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
               [form]="f"
               [casoId]="caso()!.id"
               [fotos]="fotos()"
-              [(convenioLinea)]="seleccion.convenioLinea"
               [(tiposEvidencia)]="seleccion.tiposEvidencia"
               [(necesidades)]="seleccion.necesidades"
               (fotoLista)="agregarFoto($event)"
@@ -208,7 +207,6 @@ export class FormularioCasoComponent implements OnInit {
     infraProductiva: signal<string[]>([]),
     requiereAgro: signal<string[]>([]),
     requiereUrbano: signal<string[]>([]),
-    convenioLinea: signal<string[]>([]),
     necesidades: signal<string[]>([])
   };
 
@@ -602,7 +600,6 @@ export class FormularioCasoComponent implements OnInit {
       infraProductiva: this.seleccion.infraProductiva(),
       requiereAgro: this.seleccion.requiereAgro(),
       requiereUrbano: this.seleccion.requiereUrbano(),
-      convenioLinea: this.seleccion.convenioLinea(),
       necesidades: this.seleccion.necesidades()
     };
   }
@@ -615,7 +612,6 @@ export class FormularioCasoComponent implements OnInit {
     this.seleccion.infraProductiva.set(caso.anexoRural?.infraProductiva ?? []);
     this.seleccion.requiereAgro.set(caso.anexoRural?.requiereAgro ?? []);
     this.seleccion.requiereUrbano.set(caso.anexoUrbano?.requiereUrbano ?? []);
-    this.seleccion.convenioLinea.set(caso.anexoConvenio?.convenioLinea ?? []);
     this.seleccion.necesidades.set(caso.triaje?.necesidadesInmediatas ?? []);
   }
 

@@ -29,7 +29,7 @@ interface FilaTablero {
   adultos_mayores: number | null;
   estado_verificacion: string;
   afectacion: string | null;
-  habitable: boolean | null;
+  habitabilidad: string | null;
   lat: string | number | null;
   lon: string | number | null;
   origen_dato: string | null;
@@ -92,7 +92,7 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
     return this.pool.comoUsuario({ sub: identidad.sub }, async (cliente) => {
       const { rows } = await cliente.query<FilaTablero>(
         `select id, codigo, zona, municipio, lugar, prioridad, personas_total,
-                menores, adultos_mayores, estado_verificacion, afectacion, habitable,
+                menores, adultos_mayores, estado_verificacion, afectacion, habitabilidad,
                 lat, lon, origen_dato, nivel_verificacion,
                 n_fotos, remisiones_sin_respuesta, fecha_registro
            from v_familias_tablero
@@ -111,7 +111,7 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         adultosMayores: f.adultos_mayores ?? 0,
         estadoVerificacion: f.estado_verificacion,
         afectacion: f.afectacion,
-        habitable: f.habitable,
+        habitabilidad: f.habitabilidad as never,
         // PostgreSQL entrega `numeric` como texto para no perder precision.
         lat: f.lat === null ? null : Number(f.lat),
         lon: f.lon === null ? null : Number(f.lon),
@@ -144,7 +144,6 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
     const comp = h.composicion;
     const vul = h.vulnerabilidad;
     const t = caso.triaje;
-    const cv = caso.anexoConvenio;
 
     // `xmax = 0` distingue insercion de actualizacion en un upsert: es cero cuando la
     // fila es nueva. Es lo que permite decirle al dispositivo si su reintento creo el
@@ -161,9 +160,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         h_0_5, m_0_5, h_6_11, m_6_11, h_12_17, m_12_17,
         h_18_59, m_18_59, h_60, m_60,
         gestantes, lactantes, discapacidad_n, discapacidad_tipo, enf_cronica_n,
-        requiere_medicamento, medicamento_cual, etnia, victima_conflicto,
+        requiere_medicamento, etnia, victima_conflicto,
         afiliacion, afiliacion_cual,
-        afiliada_federacion, aplica_convenio, convenio_linea, convenio_obs,
         prioridad, necesidades_inmediatas, ya_recibio_ayuda, ayuda_cual, ayuda_quien,
         observaciones,
         fallecidos, heridos_leves, heridos_graves, necesidades_otra,
@@ -174,24 +172,16 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         tipos_evidencia, prioridad_motivos, prioridad_calculada,
         desea_ruta_apoyo, ruta_apoyo_organizacion
       ) values (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::zona_t, $11, $12, $13, $14,
-        $15, $16, $17, $18::gps_fuente_t, $19, $20, $21, $22, $23, $24, $25, $26,
-        $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
-        $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
-        $48, $49, $50, $51, $52::prioridad_t, $53::necesidad_t[], $54, $55, $56, $57,
-        $58, $59, $60, $61,
-        $62, $63, $64, $65,
-        -- El nivel de verificacion se deriva del origen y NO se acepta del cliente:
-        -- un cliente modificado no puede declarar que su caso ya fue verificado por
-        -- un ingeniero. Lo que sigue arriba lo sube la mesa, con su nombre.
-        $66::origen_dato_t, $67::nivel_verificacion_t,
-        -- El evento se resuelve por codigo. Si no llega o no existe, queda nulo y la
-        -- mesa lo asigna: es preferible un caso sin evento que un caso colgado del
-        -- evento equivocado.
-        (select id from eventos where codigo = $68),
-        $69, $70,
-        $71, $72, $73, $74, $75
-      )
+        $1, $2, $3, $4, $5, $6, $7, $8,
+        $9, $10::zona_t, $11, $12, $13, $14, $15, $16,
+        $17, $18::gps_fuente_t, $19, $20, $21, $22, $23, $24,
+        $25, $26, $27, $28, $29, $30, $31, $32,
+        $33, $34, $35, $36, $37, $38, $39, $40,
+        $41, $42, $43, $44, $45, $46, $47::prioridad_t, $48::necesidad_t[],
+        $49, $50, $51, $52, $53, $54, $55, $56,
+        $57, $58, $59, $60, $61::origen_dato_t, $62::nivel_verificacion_t, (select id from eventos where codigo = $63), $64,
+        $65, $66, $67, $68, $69, $70
+            )
       on conflict (origen_id) do update set
         fecha_registro = excluded.fecha_registro,
         consentimiento = excluded.consentimiento,
@@ -238,10 +228,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       comp.h0a5, comp.m0a5, comp.h6a11, comp.m6a11, comp.h12a17, comp.m12a17,
       comp.h18a59, comp.m18a59, comp.h60mas, comp.m60mas,
       vul.gestantes, vul.lactantes, vul.discapacidadN, vul.discapacidadTipo, vul.enfCronicaN,
-      vul.requiereMedicamento, vul.medicamentoCual, vul.etnia, vul.victimaConflicto,
+      vul.requiereMedicamento, vul.etnia, vul.victimaConflicto,
       h.afiliacion, h.afiliacionCual,
-      cv?.afiliadaFederacion ?? null, cv?.aplicaConvenio ?? false,
-      cv?.convenioLinea ?? [], cv?.convenioObs ?? null,
       t?.prioridad ?? 'p3', t?.necesidadesInmediatas ?? [],
       t?.yaRecibioAyuda ?? null, t?.ayudaCual ?? null, t?.ayudaQuien ?? null,
       t?.observaciones ?? null,
@@ -289,16 +277,16 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       insert into viviendas (
         familia_id, es_principal, tenencia, arrendador_contacto, hogares_en_estructura,
         tipo_vivienda, material_paredes, material_techo,
-        afectacion, habitable, riesgo_colapso, riesgo_colapso_desc,
+        afectacion,
         donde_duerme, requiere_vivienda, servicios_afectados,
         estrato, tipo_unidad, perdio_medio_vida, medio_vida_desc, requiere_urbano,
         visita_oficial, visita_oficial_entidad, visita_oficial_fecha, visita_oficial_concepto,
         habitabilidad, riesgo_visible, danos_visibles, dano_descripcion, documentos_tenencia
       ) values (
         $1, true, $2::tenencia_t, $3, $4, $5, $6, $7,
-        $8::afectacion_t, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-        $20, $21, $22::date, $23,
-        $24::habitabilidad_t, $25::riesgo_visible_t, $26, $27, $28
+        $8::afectacion_t, $9, $10, $11, $12, $13, $14, $15,
+        $16, $17, $18, $19::date, $20, $21::habitabilidad_t, $22::riesgo_visible_t, $23,
+        $24, $25
       )`;
 
     const urb = caso.anexoUrbano;
@@ -311,7 +299,7 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       await cliente.query(sql, [
         familiaId, v.tenencia, v.arrendadorContacto, v.hogaresEnEstructura,
         v.tipoVivienda, v.materialParedes, v.materialTecho,
-        v.afectacion, v.habitable, v.riesgoColapso, v.riesgoColapsoDesc,
+        v.afectacion,
         v.dondeDuerme, v.requiereVivienda, v.serviciosAfectados,
         urb?.estrato ?? null, urb?.tipoUnidad ?? null,
         urb?.perdioMedioVida ?? null, urb?.medioVidaDesc ?? null, urb?.requiereUrbano ?? [],

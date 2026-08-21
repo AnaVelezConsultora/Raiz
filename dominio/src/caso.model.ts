@@ -166,8 +166,14 @@ export interface Vulnerabilidad {
   fallecidos: number;
   heridosLeves: number;
   heridosGraves: number;
+  /**
+   * Si alguien del hogar requiere medicacion permanente. NO cual.
+   *
+   * Pedirle a un lider comunal que clasifique una condicion medica aumenta la
+   * exposicion de datos sensibles sin mejorar una sola decision de terreno: que
+   * enfermedad es lo determina despues una entidad de salud.
+   */
   requiereMedicamento: boolean | null;
-  medicamentoCual: string | null;
   etnia: string | null;
   victimaConflicto: boolean | null;
 }
@@ -214,9 +220,21 @@ export interface Vivienda {
   materialParedes: string | null;
   materialTecho: string | null;
   afectacion: NivelAfectacion;
-  habitable: boolean;
-  riesgoColapso: boolean;
-  riesgoColapsoDesc: string | null;
+
+  /**
+   * ENTRADA HEREDADA. La aplicacion actual NO los manda y la base NO los guarda.
+   *
+   * Siguen aqui por una sola razon: el paquete instalado en los telefonos de la vereda
+   * es el anterior y va a seguir siendolo hasta que cada voluntario lo abra una vez.
+   * Esos envios traen estos dos campos y ninguno de los tres ejes, y el calculo de
+   * prioridad los traduce para no perder la senal de peligro. Sin esa puerta, los casos
+   * de esa semana entrarian con prioridad baja — y ese fallo no da error: solo deja de
+   * mandar a alguien.
+   *
+   * Se retiran cuando no quede un solo dispositivo con la version vieja.
+   */
+  habitable?: boolean;
+  riesgoColapso?: boolean;
   dondeDuerme: LugarPernocta;
   requiereVivienda: string[];
   serviciosAfectados: string[];
@@ -225,8 +243,6 @@ export interface Vivienda {
    * Si se puede estar ahi. NO es el dano, y por eso es un campo aparte de
    * `afectacion`: una casa moderadamente danada puede ser inhabitable por el terreno.
    *
-   * `habitable` sigue existiendo por los registros anteriores. Cuando los dos esten,
-   * manda este.
    */
   habitabilidad: Habitabilidad | null;
   /** Si entrar es peligroso hoy. Alerta comunitaria, no dictamen tecnico. */
@@ -300,13 +316,6 @@ export interface AnexoRural {
   maquinariaDetalle: string | null;
 }
 
-/** Bloque 6. Anexo convenio de la federacion. */
-export interface AnexoConvenio {
-  afiliadaFederacion: boolean | null;
-  aplicaConvenio: boolean;
-  convenioLinea: string[];
-  convenioObs: string | null;
-}
 
 /** Bloque 7. Triaje y necesidad inmediata. */
 export interface Triaje {
@@ -363,7 +372,6 @@ export interface CasoParaSincronizar {
   vivienda: Vivienda | null;
   anexoRural: AnexoRural | null;
   anexoUrbano: AnexoUrbano | null;
-  anexoConvenio: AnexoConvenio | null;
   triaje: Triaje | null;
 }
 
@@ -404,7 +412,7 @@ export interface ResumenTablero {
   estadoVerificacion: string;
   /** Nivel de afectacion de la vivienda principal, si se registro. */
   afectacion: string | null;
-  habitable: boolean | null;
+  habitabilidad: Habitabilidad | null;
   lat: number | null;
   lon: number | null;
   /** De donde salio el dato. No cambia. */

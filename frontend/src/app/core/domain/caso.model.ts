@@ -1,6 +1,5 @@
 import { EstadoCaso, EstadoSync, Prioridad, TipoFoto, Zona } from './enums';
 import type {
-  AnexoConvenio,
   AnexoRural,
   AnexoUrbano,
   Control,
@@ -98,7 +97,6 @@ export interface Caso {
   vivienda: Vivienda | null;
   anexoRural: AnexoRural | null;
   anexoUrbano: AnexoUrbano | null;
-  anexoConvenio: AnexoConvenio | null;
   triaje: Triaje | null;
   /** Ultimo paso del formulario completado. Permite retomar un registro a medias. */
   pasoCompletado: number;

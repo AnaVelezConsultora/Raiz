@@ -96,9 +96,6 @@ export class CasoFormService {
         // llenaba describia una familia sin problema. En un censo de damnificados, el
         // silencio no puede leerse como que la casa esta bien.
         afectacion: [caso.vivienda?.afectacion ?? null, Validators.required],
-        habitable: [caso.vivienda?.habitable ?? null],
-        riesgoColapso: [caso.vivienda?.riesgoColapso ?? false],
-        riesgoColapsoDesc: [caso.vivienda?.riesgoColapsoDesc],
         dondeDuerme: [caso.vivienda?.dondeDuerme ?? null],
         habitabilidad: [caso.vivienda?.habitabilidad ?? null],
         riesgoVisible: [caso.vivienda?.riesgoVisible ?? null],
@@ -127,10 +124,6 @@ export class CasoFormService {
         estrato: [caso.anexoUrbano?.estrato],
         perdioMedioVida: [caso.anexoUrbano?.perdioMedioVida ?? false],
         medioVidaDesc: [caso.anexoUrbano?.medioVidaDesc]
-      }),
-      convenio: this.fb.group({
-        afiliadaFederacion: [caso.anexoConvenio?.afiliadaFederacion ?? false],
-        aplicaConvenio: [caso.anexoConvenio?.aplicaConvenio ?? false]
       }),
       triaje: this.fb.group({
         prioridad: [caso.triaje?.prioridad ?? Prioridad.P3, Validators.required],
@@ -221,9 +214,6 @@ export class CasoFormService {
         materialParedes: caso.vivienda?.materialParedes ?? null,
         materialTecho: caso.vivienda?.materialTecho ?? null,
         afectacion: v.vivienda.afectacion,
-        habitable: v.vivienda.habitable,
-        riesgoColapso: v.vivienda.riesgoColapso,
-        riesgoColapsoDesc: v.vivienda.riesgoColapsoDesc,
         dondeDuerme: v.vivienda.dondeDuerme,
         requiereVivienda: seleccion.requiereVivienda,
         serviciosAfectados: seleccion.serviciosAfectados,
@@ -270,12 +260,6 @@ export class CasoFormService {
             medioVidaDesc: v.urbano.medioVidaDesc,
             requiereUrbano: seleccion.requiereUrbano
           },
-      anexoConvenio: {
-        afiliadaFederacion: v.convenio.afiliadaFederacion,
-        aplicaConvenio: v.convenio.aplicaConvenio,
-        convenioLinea: seleccion.convenioLinea,
-        convenioObs: caso.anexoConvenio?.convenioObs ?? null
-      },
       triaje: {
         // El riesgo de colapso es riesgo de vida y manda sobre lo que diga la lista de
         // prioridad. Antes el formulario le PEDIA al voluntario que se acordara de
@@ -324,7 +308,6 @@ export interface SeleccionMultiple {
   infraProductiva: string[];
   requiereAgro: string[];
   requiereUrbano: string[];
-  convenioLinea: string[];
   necesidades: string[];
 }
 
@@ -394,7 +377,6 @@ interface ValoresFormulario {
     afectacion: NivelAfectacion;
     habitable: boolean;
     riesgoColapso: boolean;
-    riesgoColapsoDesc: string | null;
     habitabilidad: Habitabilidad | null;
     riesgoVisible: RiesgoVisible | null;
     danoDescripcion: string | null;
@@ -422,7 +404,6 @@ interface ValoresFormulario {
     perdioMedioVida: boolean;
     medioVidaDesc: string | null;
   };
-  convenio: { afiliadaFederacion: boolean; aplicaConvenio: boolean };
   triaje: {
     prioridad: Prioridad;
     deseaRutaApoyo: boolean | null;
