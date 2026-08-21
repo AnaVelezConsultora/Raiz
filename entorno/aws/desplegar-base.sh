@@ -81,6 +81,11 @@ fi
 
 aws_() { aws --region "$REGION" --profile "$PERFIL" "$@"; }
 
+# Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
+# no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
+. "$AQUI/cuenta-correcta.sh"
+exigir_cuenta_de_raiz
+
 # Clave de 32 caracteres del alfabeto que RDS acepta sin quejarse. Se excluyen
 # '/', '@', '"', ' ' y ''' porque RDS los rechaza, y ademas romperian la URL de
 # conexion que se arma mas abajo.

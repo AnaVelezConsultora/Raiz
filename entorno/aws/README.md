@@ -139,10 +139,48 @@ condición escrita que obliga a pagarla. En resumen: la llave de larga vida (D3,
 urgente), el certificado de RDS sin validar (D1), las claves sin rotación
 automática (D2) y estos guiones sin código declarativo detrás (D4).
 
+## Desplegar una versión nueva: no se corre nada
+
+Desde el 21 de agosto **no hace falta abrir una terminal para desplegar**. Al
+fusionar a `main`, el flujo `Desplegar` de GitHub Actions queda en espera; alguien
+lo aprueba —desde el teléfono sirve— y él solo construye las imágenes, aplica las
+migraciones, actualiza la API, publica la PWA e invalida la caché, en ese orden y
+comprobando cada paso.
+
+Los guiones de abajo siguen existiendo y siguen siendo la referencia de lo que hace
+el flujo, pero **el camino normal es Actions**. Se usan a mano en dos casos: cuando
+se levanta la infraestructura por primera vez, y cuando algo falló y hay que mirar
+de cerca.
+
+### Antes de correr cualquier guion: el perfil
+
+Los guiones usaban `--profile default` y creaban lo que encontraran en la cuenta a
+la que ese perfil apuntara, sin preguntar cual era. En un portatil donde `default`
+es la cuenta de otro proyecto, correr `desplegar-base.sh` habria creado la
+infraestructura de Raiz dentro de la infraestructura de esa empresa, cobrandoselos
+a ella, sin dar un solo error.
+
+Ahora cada guion comprueba la cuenta antes de tocar nada y se detiene si no es la
+correcta. Pero conviene tener el perfil bien puesto:
+
+```sh
+aws configure --profile raiz     # las llaves de la cuenta de Raiz
+AWS_PROFILE=raiz ./desplegar-identidad-federada.sh
+```
+
+Poner esto en marcha exige dos cosas que solo se hacen una vez:
+
+1. **Revisores en el entorno `produccion`** — Ajustes > Environments > produccion >
+   Required reviewers. Sin ellos el flujo despliega solo, sin puerta humana.
+2. **Volver a correr `desplegar-identidad-federada.sh`** — el rol de despliegue no
+   tenía permiso sobre S3 ni CloudFront, porque hasta ahora el front se publicaba a
+   mano. El guión es idempotente: actualiza la política del rol que ya existe.
+
 ## El front
 
-`desplegar-front.sh` se corre una vez; `publicar-front.sh` en cada entrega. Igual
-que con la API, construir y publicar están separados.
+`desplegar-front.sh` se corre una vez. `publicar-front.sh` es lo que el flujo hace
+por su cuenta en cada entrega; se corre a mano solo para publicar sin desplegar la
+API, y avisa si las versiones no coinciden.
 
 **El bucket no es público** — lleva los cuatro bloqueos y solo lo lee CloudFront,
 identificándose con un control de acceso de origen. No es por rendimiento: sobre un

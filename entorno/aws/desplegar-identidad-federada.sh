@@ -66,6 +66,11 @@ trap 'rm -rf "$TMP"' EXIT
 
 aws_() { aws --region "$REGION" --profile "$PERFIL" "$@"; }
 
+# Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
+# no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
+. "$AQUI/cuenta-correcta.sh"
+exigir_cuenta_de_raiz
+
 echo "==> cuenta"
 CUENTA="$(aws_ sts get-caller-identity --query 'Account' --output text)"
 echo "    cuenta: $CUENTA   region: $REGION"
@@ -205,6 +210,31 @@ cat >"$TMP/permisos.json" <<JSON
       "Resource": "arn:aws:logs:$REGION:$CUENTA:log-group:/raiz/*"
     },
     {
+      "Sid": "PublicarLaPwa",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::raiz-front-$CUENTA",
+        "arn:aws:s3:::raiz-front-$CUENTA/*"
+      ]
+    },
+    {
+      "Sid": "InvalidarLaCache",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateInvalidation",
+        "cloudfront:GetInvalidation",
+        "cloudfront:ListDistributions"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "SaberDondeCorrer",
       "Effect": "Allow",
       "Action": [
@@ -219,6 +249,12 @@ cat >"$TMP/permisos.json" <<JSON
 }
 JSON
 
+# El acceso a S3 va acotado AL BUCKET DE LA PWA y a nada mas. `ListDistributions`
+# no acepta recurso —la API de CloudFront no lo permite— pero solo lee: lo que
+# escribe, `CreateInvalidation`, si podria acotarse el dia que se fije el
+# identificador de la distribucion en vez de descubrirlo. Se descubre a proposito,
+# para que el flujo no dependa de un archivo generado en una maquina.
+#
 # PassRole va acotado a los DOS roles de la tarea y ademas condicionado al
 # servicio. Sin la condicion, quien controle el pipeline podria entregarle
 # cualquiera de esos roles a otro servicio y usarlo para otra cosa. Es el escalon
