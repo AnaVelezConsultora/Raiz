@@ -159,8 +159,12 @@ await page.selectOption('#afec', 'severo');
 // Sin id: el contador es un componente y el id vivia en el input que reemplazo.
 // Se busca por su etiqueta accesible, que es contrato de la interfaz y no detalle interno.
 await page.getByRole('textbox', { name: 'Familias en la misma estructura' }).fill('2');
-await page.getByText('No se puede vivir ahí', { exact: true }).click();
-await page.getByText('A simple vista, esta casa amenaza con caerse').click();
+// Los dos ejes se responden por separado desde el 20 de agosto: si se puede estar ahi
+// y si entrar es peligroso son dos cosas distintas, y antes iban en un solo si/no.
+await page.selectOption('#habit', 'no_habitable');
+await page.selectOption('#riesgoV', 'peligro_evidente');
+await page.getByText('Grietas en muros', { exact: true }).click();
+await page.fill('#danodesc', 'Grietas diagonales en el muro del frente y se cayo parte del techo.');
 await page.getByText('Remoción de escombros', { exact: true }).click();
 await page.getByText('Cafe', { exact: true }).click();
 const avisoRiesgo = await page.locator('.aviso.peligro').first().textContent();

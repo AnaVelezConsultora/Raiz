@@ -170,7 +170,9 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         autoriza_datos_sensibles, autoriza_remision_entidades,
         version_autorizacion, autorizado_en,
         origen_dato, nivel_verificacion, evento_id,
-        fuera_del_hogar, requiere_apoyo_evacuar
+        fuera_del_hogar, requiere_apoyo_evacuar,
+        tipos_evidencia, prioridad_motivos, prioridad_calculada,
+        desea_ruta_apoyo, ruta_apoyo_organizacion
       ) values (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::zona_t, $11, $12, $13, $14,
         $15, $16, $17, $18::gps_fuente_t, $19, $20, $21, $22, $23, $24, $25, $26,
@@ -187,7 +189,8 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         -- mesa lo asigna: es preferible un caso sin evento que un caso colgado del
         -- evento equivocado.
         (select id from eventos where codigo = $68),
-        $69, $70
+        $69, $70,
+        $71, $72, $73, $74, $75
       )
       on conflict (origen_id) do update set
         fecha_registro = excluded.fecha_registro,
@@ -206,6 +209,11 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         personas_total = excluded.personas_total,
         fuera_del_hogar = excluded.fuera_del_hogar,
         requiere_apoyo_evacuar = excluded.requiere_apoyo_evacuar,
+        tipos_evidencia = excluded.tipos_evidencia,
+        prioridad_motivos = excluded.prioridad_motivos,
+        prioridad_calculada = excluded.prioridad_calculada,
+        desea_ruta_apoyo = excluded.desea_ruta_apoyo,
+        ruta_apoyo_organizacion = excluded.ruta_apoyo_organizacion,
         prioridad = excluded.prioridad,
         necesidades_inmediatas = excluded.necesidades_inmediatas,
         observaciones = excluded.observaciones,
@@ -251,7 +259,12 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
       // Quien no esta y quien no puede salir solo. Se anaden al final para no correr
       // los sesenta y ocho parametros anteriores: renumerarlos a mano es la clase de
       // cambio que compila y guarda el telefono en la columna del documento.
-      h.fueraDelHogar ?? 0, vul.requiereApoyoEvacuar ?? 0
+      h.fueraDelHogar ?? 0, vul.requiereApoyoEvacuar ?? 0,
+      // Con que se sostiene el caso, y por que quedo en esa prioridad. Los motivos los
+      // escribe el servidor, nunca el cliente: son la justificacion de una decision que
+      // tambien toma el servidor.
+      t?.tiposEvidencia ?? [], t?.prioridadMotivos ?? [], t?.prioridadCalculada ?? true,
+      t?.deseaRutaApoyo ?? null, t?.rutaApoyoOrganizacion ?? null
     ];
 
     try {
@@ -279,11 +292,13 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         afectacion, habitable, riesgo_colapso, riesgo_colapso_desc,
         donde_duerme, requiere_vivienda, servicios_afectados,
         estrato, tipo_unidad, perdio_medio_vida, medio_vida_desc, requiere_urbano,
-        visita_oficial, visita_oficial_entidad, visita_oficial_fecha, visita_oficial_concepto
+        visita_oficial, visita_oficial_entidad, visita_oficial_fecha, visita_oficial_concepto,
+        habitabilidad, riesgo_visible, danos_visibles, dano_descripcion, documentos_tenencia
       ) values (
         $1, true, $2::tenencia_t, $3, $4, $5, $6, $7,
         $8::afectacion_t, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-        $20, $21, $22::date, $23
+        $20, $21, $22::date, $23,
+        $24::habitabilidad_t, $25::riesgo_visible_t, $26, $27, $28
       )`;
 
     const urb = caso.anexoUrbano;
@@ -303,7 +318,11 @@ export class CasoRepositorioPostgres implements CasoRepositorioPort {
         // Nulo se conserva como nulo: es «no se pregunto», y aplastarlo a false diria
         // que no ha venido nadie, que es una afirmacion distinta y probablemente falsa.
         v.visitaOficial ?? null, v.visitaOficialEntidad ?? null,
-        v.visitaOficialFecha ?? null, v.visitaOficialConcepto ?? null
+        v.visitaOficialFecha ?? null, v.visitaOficialConcepto ?? null,
+        // Los tres ejes del dano. Nulo en los dos primeros es «no se pudo determinar
+        // todavia», que no es lo mismo que «no hay riesgo».
+        v.habitabilidad ?? null, v.riesgoVisible ?? null,
+        v.danosVisibles ?? [], v.danoDescripcion ?? null, v.documentosTenencia ?? []
       ]);
     } catch (e) {
       throw this.traducir(e, caso.origenId);

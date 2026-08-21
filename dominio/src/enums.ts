@@ -36,7 +36,21 @@ export enum Necesidad {
   Panales = 'panales',
   Psicosocial = 'psicosocial',
   Transporte = 'transporte',
-  Documentos = 'documentos'
+  Documentos = 'documentos',
+  // Agregadas el 20 de agosto por el enlace institucional. Se separan de las que ya
+  // habia en vez de refundirlas: «medicamentos» y «atencion medica urgente» son dos
+  // rutas distintas —una farmacia y una ambulancia— y mezclarlas pierde la urgencia.
+  AlojamientoTemporal = 'alojamiento_temporal',
+  AtencionMedica = 'atencion_medica',
+  ApoyoDependencia = 'apoyo_dependencia',
+  AlimentacionEspecial = 'alimentacion_especial',
+  /**
+   * Personas solas, familias expuestas, riesgo de violencia.
+   *
+   * Se marca la necesidad y NO se piden detalles: lo que sigue es una ruta
+   * especializada, no un campo de texto en una ficha que llena un vecino.
+   */
+  Proteccion = 'proteccion'
 }
 
 /**
@@ -211,9 +225,120 @@ export enum NivelAfectacion {
   Moderado = 'moderado',
   Severo = 'severo',
   Destruida = 'destruida',
-  /** En pie pero con riesgo inminente de colapso. */
-  Riesgo = 'riesgo'
+  /**
+   * EN DESUSO desde el 20 de agosto de 2026.
+   *
+   * Describia el riesgo dentro de la escala del dano, que es justamente la mezcla que
+   * habia que deshacer: el dano es del muro y el riesgo es de entrar hoy. Se conserva
+   * por los registros que lo traen y ya no se ofrece.
+   */
+  Riesgo = 'riesgo',
+  /** Nadie pudo verlo, o no se pudo determinar desde afuera. */
+  NoDeterminado = 'no_determinado'
 }
+
+/**
+ * Si se puede estar ahi. NO es el dano.
+ *
+ * Una casa con dano moderado puede ser inhabitable por el terreno, y una severa puede
+ * estar apuntalada y habitable. Fundirlos pierde la diferencia justo donde decide algo:
+ * si esta familia necesita techo esta noche.
+ */
+export enum Habitabilidad {
+  Habitable = 'habitable',
+  /** Se puede estar, pero no en toda la casa. */
+  ConRestricciones = 'habitable_con_restricciones',
+  NoHabitable = 'no_habitable',
+  /** Ya salieron, la haya decidido quien la haya decidido. */
+  Evacuada = 'evacuada',
+  NoDeterminado = 'no_determinado'
+}
+
+/**
+ * Si entrar es peligroso HOY. Es una alerta comunitaria, no un dictamen.
+ *
+ * El nivel mas alto NO dice «riesgo inminente de colapso», que es una afirmacion
+ * tecnica que un lider comunal no puede firmar y que expone al proyecto entero. Dice
+ * lo que se ve y lo que hay que hacer: hay peligro evidente, no ingresar.
+ */
+export enum RiesgoVisible {
+  NoObservado = 'no_observado',
+  /** Algo se ve, y tiene que ir alguien que sepa. */
+  RequiereEvaluacion = 'requiere_evaluacion',
+  PeligroEvidente = 'peligro_evidente'
+}
+
+export const NOMBRE_HABITABILIDAD: Readonly<Record<Habitabilidad, string>> = {
+  [Habitabilidad.Habitable]: 'Se puede vivir ahí',
+  [Habitabilidad.ConRestricciones]: 'Se puede, pero no en toda la casa',
+  [Habitabilidad.NoHabitable]: 'No se puede vivir ahí',
+  [Habitabilidad.Evacuada]: 'La familia ya salió',
+  [Habitabilidad.NoDeterminado]: 'No se pudo determinar'
+};
+
+export const NOMBRE_RIESGO_VISIBLE: Readonly<Record<RiesgoVisible, string>> = {
+  [RiesgoVisible.NoObservado]: 'No se observa peligro',
+  [RiesgoVisible.RequiereEvaluacion]: 'Se ve algo que debe revisar un técnico',
+  [RiesgoVisible.PeligroEvidente]: 'Hay peligro evidente: no ingresar'
+};
+
+/**
+ * Lo que se ve, en una lista cerrada.
+ *
+ * Con texto libre, «grietas», «rajaduras» y «fisuras» son tres cosas distintas y el
+ * consolidado por vereda deja de ser sumable justo cuando hace falta. Y describir no
+ * es diagnosticar: la lista nombra lo que cualquiera puede ver desde afuera.
+ */
+export const DANOS_VISIBLES: readonly { v: string; t: string }[] = [
+  { v: 'grietas_muros', t: 'Grietas en muros' },
+  { v: 'grietas_estructura', t: 'Grietas en columnas o vigas' },
+  { v: 'muros_inclinados', t: 'Muros desplazados o inclinados' },
+  { v: 'cubierta', t: 'Techo o cubierta afectada' },
+  { v: 'piso', t: 'Piso afectado' },
+  { v: 'aberturas', t: 'Puertas o ventanas deformadas' },
+  { v: 'desprendimientos', t: 'Elementos desprendidos' },
+  { v: 'colapso_parcial', t: 'Colapso parcial' },
+  { v: 'colapso_total', t: 'Colapso total' },
+  { v: 'agua', t: 'Daños en instalaciones de agua' },
+  { v: 'electricas', t: 'Daños eléctricos visibles' },
+  { v: 'otras_estructuras', t: 'Daños en otras estructuras del predio' },
+  { v: 'no_determinado', t: 'No se puede determinar' }
+];
+
+/**
+ * QUE documento tiene la familia, no el documento.
+ *
+ * Caracterizar sin pedir papeles: si despues hay una ruta juridica o de
+ * reconstruccion, ahi se solicita lo que haga falta. Recoger escrituras hoy seria
+ * acumular documentos sensibles que nadie necesita todavia, en telefonos prestados.
+ */
+export const DOCUMENTOS_TENENCIA: readonly { v: string; t: string }[] = [
+  { v: 'escritura', t: 'Escritura' },
+  { v: 'tradicion', t: 'Certificado de tradición' },
+  { v: 'arrendamiento', t: 'Contrato de arrendamiento' },
+  { v: 'compraventa', t: 'Documento de compraventa' },
+  { v: 'posesion', t: 'Documento de posesión' },
+  { v: 'comunitario', t: 'Documento comunitario' },
+  { v: 'ninguno', t: 'No tiene documentos' },
+  { v: 'no_sabe', t: 'No sabe' }
+];
+
+/**
+ * Con que se sostiene el caso.
+ *
+ * Cuando una alcaldia pregunte de donde salio un dato, la respuesta util no es «hay
+ * una foto»: es «visita presencial, mas lo que reporto la familia, mas seis
+ * fotografias». Registrar QUE CLASE de evidencia respalda vale mas que la evidencia
+ * sola, porque es lo que permite decir con que fuerza se sostiene.
+ */
+export const TIPOS_EVIDENCIA: readonly { v: string; t: string }[] = [
+  { v: 'observacion', t: 'Observación presencial' },
+  { v: 'reporte_familia', t: 'Reporte de la familia' },
+  { v: 'fotografia', t: 'Fotografía' },
+  { v: 'video', t: 'Video' },
+  { v: 'documento', t: 'Documento' },
+  { v: 'otra', t: 'Otra' }
+];
 
 /** Donde esta durmiendo la familia al momento del registro. */
 export enum LugarPernocta {
@@ -222,8 +347,23 @@ export enum LugarPernocta {
   Albergue = 'albergue',
   Carpa = 'carpa',
   Arriendo = 'arriendo',
+  /** En un carro, en un bus, en lo que haya. Es intemperie con techo de lata. */
+  Vehiculo = 'vehiculo',
+  /** Un parque, una cancha, la orilla de la via. */
+  EspacioPublico = 'espacio_publico',
   Otro = 'otro'
 }
+
+export const NOMBRE_LUGAR_PERNOCTA: Readonly<Record<LugarPernocta, string>> = {
+  [LugarPernocta.MismaVivienda]: 'En la misma vivienda afectada',
+  [LugarPernocta.FamiliarVecino]: 'Donde un familiar o un vecino',
+  [LugarPernocta.Albergue]: 'En un albergue',
+  [LugarPernocta.Carpa]: 'En carpa o cambuche',
+  [LugarPernocta.Arriendo]: 'En un arriendo',
+  [LugarPernocta.Vehiculo]: 'En un vehículo',
+  [LugarPernocta.EspacioPublico]: 'En un espacio público',
+  [LugarPernocta.Otro]: 'En otro lugar'
+};
 
 /** Origen de la coordenada. Distingue el dato medido del dato aproximado. */
 export enum FuenteCoordenada {

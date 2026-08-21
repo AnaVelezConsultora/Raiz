@@ -60,6 +60,9 @@ COPY entorno/postgres/71-visita-oficial.sql ./012-visita-oficial.sql
 # Los dos contadores de la segunda pantalla: quien no esta y quien no puede salir solo.
 COPY entorno/postgres/72-hogar-y-atencion-prioritaria.sql ./013-hogar-y-atencion-prioritaria.sql
 
+# Los tres ejes del dano, la evidencia y la prioridad con sus motivos.
+COPY entorno/postgres/73-dano-observado-y-evidencia.sql ./014-dano-observado-y-evidencia.sql
+
 # Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con
 # esas palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
 # `on conflict do nothing`— y no un cambio de estructura que ocurre una vez.

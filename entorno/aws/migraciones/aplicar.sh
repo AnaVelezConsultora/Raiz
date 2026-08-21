@@ -85,7 +85,8 @@ for archivo in 001-shim-auth.sql 002-roles.sql 003-schema.sql 004-grants.sql 005
                006-fotos-subida.sql 007-perfiles-alta.sql 008-campos-de-terreno.sql \
                009-autorizaciones.sql 010-origen-y-verificacion.sql \
                011-puntos-de-servicio.sql 012-visita-oficial.sql \
-               013-hogar-y-atencion-prioritaria.sql; do
+               013-hogar-y-atencion-prioritaria.sql \
+               014-dano-observado-y-evidencia.sql; do
   YA="$(psql_ --tuples-only --no-align \
     -c "select 1 from public.migraciones_aplicadas where archivo = '$archivo';")"
 

@@ -72,6 +72,7 @@ services:
       - ./postgres/70-semillas-catalogos.sql:/docker-entrypoint-initdb.d/70-semillas-catalogos.sql:ro
       - ./postgres/71-visita-oficial.sql:/docker-entrypoint-initdb.d/71-visita-oficial.sql:ro
       - ./postgres/72-hogar-y-atencion-prioritaria.sql:/docker-entrypoint-initdb.d/72-hogar-y-atencion-prioritaria.sql:ro
+      - ./postgres/73-dano-observado-y-evidencia.sql:/docker-entrypoint-initdb.d/73-dano-observado-y-evidencia.sql:ro
       - ./pruebas:/pruebas:ro
       - datos-db:/var/lib/postgresql/data
     healthcheck:

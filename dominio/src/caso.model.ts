@@ -1,4 +1,6 @@
 import {
+  Habitabilidad,
+  RiesgoVisible,
   FuenteCoordenada,
   FuenteDato,
   NivelVerificacion,
@@ -220,6 +222,23 @@ export interface Vivienda {
   serviciosAfectados: string[];
 
   /**
+   * Si se puede estar ahi. NO es el dano, y por eso es un campo aparte de
+   * `afectacion`: una casa moderadamente danada puede ser inhabitable por el terreno.
+   *
+   * `habitable` sigue existiendo por los registros anteriores. Cuando los dos esten,
+   * manda este.
+   */
+  habitabilidad: Habitabilidad | null;
+  /** Si entrar es peligroso hoy. Alerta comunitaria, no dictamen tecnico. */
+  riesgoVisible: RiesgoVisible | null;
+  /** Lo que se ve, de la lista cerrada {@link DANOS_VISIBLES}. */
+  danosVisibles: string[];
+  /** Hasta 500 caracteres. Es lo que de verdad le sirve a quien va a evaluar. */
+  danoDescripcion: string | null;
+  /** QUE documento tiene la familia, no el documento. Ver {@link DOCUMENTOS_TENENCIA}. */
+  documentosTenencia: string[];
+
+  /**
    * Si una entidad ya visito esta edificacion.
    *
    * Nulo es «no se pregunto», que no es un no. La distincion importa porque la
@@ -291,7 +310,29 @@ export interface AnexoConvenio {
 
 /** Bloque 7. Triaje y necesidad inmediata. */
 export interface Triaje {
+  /**
+   * La prioridad con la que el caso viaja.
+   *
+   * La CALCULA el servidor a partir de las respuestas —ver `calcularPrioridad`— y
+   * quien registra solo puede ELEVARLA, nunca bajarla. Es preliminar: no es una
+   * evaluacion tecnica ni una decision administrativa de la autoridad competente.
+   */
   prioridad: Prioridad;
+  /** Por que quedo ahi. Es lo que hace que la letra se sostenga sola ante una entidad. */
+  prioridadMotivos: string[];
+  /** False cuando alguien la elevo a mano por una emergencia que ninguna regla previo. */
+  prioridadCalculada: boolean;
+  /** Con que se sostiene el caso. Ver {@link TIPOS_EVIDENCIA}. */
+  tiposEvidencia: string[];
+  /**
+   * Si la familia quiere ser orientada hacia un programa de apoyo.
+   *
+   * Reemplaza la postulacion a un convenio concreto. La pertenencia a organizaciones
+   * sociales es dato sensible, y «el caso se postula al convenio» promete algo que
+   * depende de un tercero: Raiz no puede prometer una ayuda que no entrega.
+   */
+  deseaRutaApoyo: boolean | null;
+  rutaApoyoOrganizacion: string | null;
   necesidadesInmediatas: string[];
   yaRecibioAyuda: boolean | null;
   ayudaCual: string | null;

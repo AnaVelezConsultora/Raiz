@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { NivelAfectacion, Zona } from '../../core/domain/enums';
+import { NivelAfectacion, RiesgoVisible, Zona } from '../../core/domain/enums';
+import { DANOS_VISIBLES, DOCUMENTOS_TENENCIA } from '../../core/domain/enums';
 import { OPCIONES } from '../../core/services/caso-form.service';
 import { ContadorComponent } from '../../shared/contador.component';
 import { PastillasComponent } from '../../shared/pastillas.component';
@@ -60,6 +61,22 @@ const NIVELES_INHABITABLES: readonly string[] = [
           <span class="pista">Si son varias, se llena un formulario por cada familia.</span>
         </div>
 
+        <!-- QUÉ documento tiene, no el documento. Caracterizar sin pedir papeles: si
+             después hay una ruta jurídica o de reconstrucción, ahí se solicita lo que
+             haga falta. Recoger escrituras hoy sería acumular documentos sensibles que
+             nadie necesita todavía, en teléfonos prestados. -->
+        <app-pastillas
+          etiqueta="¿Qué documentos tiene la familia sobre este inmueble?"
+          [opciones]="opcDocumentosTenencia"
+          [(seleccion)]="documentosTenencia" />
+        <span class="pista">
+          No hay que pedírselos ni fotografiarlos. Basta con saber cuáles existen.
+        </span>
+
+        <!-- QUÉ SE OBSERVA. Una lista cerrada convierte una impresión en algo que se
+             puede sumar por vereda y que un ingeniero puede leer antes de subir: con
+             texto libre, «grietas», «rajaduras» y «fisuras» son tres cosas distintas.
+             Y describir no es diagnosticar: nombra lo que cualquiera ve desde afuera. -->
         <div class="campo">
           <label for="afec">Nivel de afectación</label>
           <select id="afec" formControlName="afectacion">
@@ -72,20 +89,35 @@ const NIVELES_INHABITABLES: readonly string[] = [
           </select>
         </div>
 
-        <!-- Pregunta explicita en vez de casilla: una casilla sin marcar no distingue
-             "no es habitable" de "no me preguntaron", y de este dato depende si la
-             familia entra en la lista de quienes necesitan techo esta noche. -->
+        <!-- HABITABILIDAD, QUE NO ES EL DAÑO. Una casa con daño moderado puede ser
+             inhabitable por el terreno, y una severa puede estar apuntalada. El sí/no
+             anterior no distinguía «se puede, pero no en toda la casa» ni «ya
+             salieron», que son los dos casos más frecuentes en terreno. -->
         <div class="campo">
-          <label>¿Se puede vivir ahí hoy?</label>
-          <div class="pastillas">
-            <button type="button" class="pastilla" [class.activa]="habitable() === true"
-                    (click)="fijarHabitable(true)">Sí, es habitable</button>
-            <button type="button" class="pastilla" [class.activa]="habitable() === false"
-                    (click)="fijarHabitable(false)">No se puede vivir ahí</button>
-          </div>
-          @if (habitable() === null) {
-            <span class="pista">Sin responder.</span>
-          }
+          <label for="habit">¿Se puede vivir ahí hoy?</label>
+          <select id="habit" formControlName="habitabilidad">
+            <option [value]="null">Seleccione</option>
+            @for (o of habitabilidades; track o.v) {
+              <option [value]="o.v">{{ o.t }}</option>
+            }
+          </select>
+        </div>
+
+        <app-pastillas
+          etiqueta="¿Qué se observa?"
+          [opciones]="opcDanosVisibles"
+          [(seleccion)]="danosVisibles" />
+
+        <div class="campo">
+          <label for="danodesc">Descríbalo en una o dos frases</label>
+          <textarea id="danodesc" rows="2" formControlName="danoDescripcion" maxlength="500"
+                    placeholder="Grietas diagonales en dos muros del segundo piso y se cayó parte del techo."></textarea>
+          <!-- Es el campo que de verdad le sirve a quien va a evaluar, y por eso pide
+               lo que se VE y no lo que se concluye. -->
+          <span class="pista">
+            Lo que usted ve, no lo que concluye. Es lo que va a leer quien venga a
+            revisar. Máximo 500 caracteres.
+          </span>
         </div>
 
         @if (incoherente()) {
@@ -100,10 +132,15 @@ const NIVELES_INHABITABLES: readonly string[] = [
              lider comunal y no un ingeniero. Firmar un diagnostico estructural que no
              se puede sostener expone a quien registra y le quita fuerza al registro
              entero. Lo que la comunidad si puede afirmar es lo que ve. -->
-        <label class="pastilla" [class.activa]="riesgo()">
-          <input type="checkbox" formControlName="riesgoColapso" />
-          A simple vista, esta casa amenaza con caerse
-        </label>
+        <div class="campo">
+          <label for="riesgoV">¿Se ve algo peligroso para entrar?</label>
+          <select id="riesgoV" formControlName="riesgoVisible">
+            <option [value]="null">Seleccione</option>
+            @for (o of riesgos; track o.v) {
+              <option [value]="o.v">{{ o.t }}</option>
+            }
+          </select>
+        </div>
 
         @if (riesgo()) {
           <div class="campo">
@@ -123,7 +160,13 @@ const NIVELES_INHABITABLES: readonly string[] = [
                de entrar, se reporta de inmediato para que lleguen expertos y
                autoridades, sin esperar al censo. -->
           <p class="aviso peligro">
-            <strong>No entre. Repórtelo hoy mismo, sin esperar a sincronizar.</strong>
+            <strong>
+              @if (peligroEvidente()) {
+                No entre. Repórtelo hoy mismo, sin esperar a sincronizar.
+              } @else {
+                Repórtelo hoy mismo, sin esperar a sincronizar.
+              }
+            </strong>
             Avise al Consejo Municipal de Gestión del Riesgo o al organismo de socorro
             más cercano para que vayan los técnicos. El caso queda en prioridad P0. No es
             un dictamen estructural: es lo que usted vio, y por eso tiene que ir alguien
@@ -321,6 +364,8 @@ export class PasoViviendaComponent {
   readonly heredado = input(false);
 
   readonly requiereVivienda = model.required<string[]>();
+  readonly danosVisibles = model.required<string[]>();
+  readonly documentosTenencia = model.required<string[]>();
   readonly serviciosAfectados = model.required<string[]>();
   readonly cultivos = model.required<string[]>();
   readonly infraProductiva = model.required<string[]>();
@@ -333,6 +378,10 @@ export class PasoViviendaComponent {
   readonly vias = OPCIONES.viaAcceso;
   readonly estratos = OPCIONES.estrato;
   readonly opcRequiereVivienda = OPCIONES.requiereVivienda;
+  readonly opcDanosVisibles = DANOS_VISIBLES;
+  readonly opcDocumentosTenencia = DOCUMENTOS_TENENCIA;
+  readonly habitabilidades = OPCIONES.habitabilidad;
+  readonly riesgos = OPCIONES.riesgoVisible;
   readonly opcServicios = OPCIONES.servicios;
   /** Tres estados: sin responder, si, no. Sin responder no es lo mismo que no tenia. */
   maquinaria(): boolean | null {
@@ -362,8 +411,30 @@ export class PasoViviendaComponent {
     this.form().get('vivienda.habitable')?.setValue(valor);
   }
 
+  /**
+   * True cuando quien registra vio algo peligroso.
+   *
+   * Cubre los DOS niveles altos a proposito. El aviso de «no entre» tiene que salir
+   * tambien cuando solo se pidio evaluacion tecnica: la diferencia entre las dos
+   * respuestas la sabe quien las escribio, no quien esta parado frente a la casa media
+   * hora despues.
+   *
+   * Sigue mirando `riesgoColapso` ademas del eje nuevo, porque un caso empezado con la
+   * version anterior de la aplicacion se abre en esta para completarlo, y ese aviso no
+   * puede desaparecer al reabrirlo.
+   */
   riesgo(): boolean {
-    return this.form().get('vivienda.riesgoColapso')?.value === true;
+    const visible = this.form().get('vivienda.riesgoVisible')?.value;
+    return (
+      visible === RiesgoVisible.PeligroEvidente ||
+      visible === RiesgoVisible.RequiereEvaluacion ||
+      this.form().get('vivienda.riesgoColapso')?.value === true
+    );
+  }
+
+  /** El mas alto de los dos: cambia el tono del aviso, no si aparece. */
+  peligroEvidente(): boolean {
+    return this.form().get('vivienda.riesgoVisible')?.value === RiesgoVisible.PeligroEvidente;
   }
 
   /** True solo si respondieron que si. Sin responder NO es un no. */
