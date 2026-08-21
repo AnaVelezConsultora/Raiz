@@ -34,6 +34,11 @@ mkdir -p "$SALIDA"
 
 aws_() { aws --region "$REGION" --profile "$PERFIL" "$@"; }
 
+# Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
+# no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
+. "$AQUI/cuenta-correcta.sh"
+exigir_cuenta_de_raiz
+
 echo "==> cuenta y region"
 aws_ sts get-caller-identity --query 'Account' --output text | sed 's/^/    cuenta: /'
 echo "    region: $REGION   perfil: $PERFIL"

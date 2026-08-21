@@ -40,6 +40,11 @@ done
 
 aws_() { aws --region "$REGION" --profile "$PERFIL" "$@"; }
 
+# Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
+# no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
+. "$AQUI/cuenta-correcta.sh"
+exigir_cuenta_de_raiz
+
 echo "==> cuenta y region"
 echo "    cuenta: $RAIZ_CUENTA   region: $REGION"
 echo "    base:   $RAIZ_BASE_ANFITRION"

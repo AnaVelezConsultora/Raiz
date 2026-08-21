@@ -152,6 +152,22 @@ el flujo, pero **el camino normal es Actions**. Se usan a mano en dos casos: cua
 se levanta la infraestructura por primera vez, y cuando algo falló y hay que mirar
 de cerca.
 
+### Antes de correr cualquier guion: el perfil
+
+Los guiones usaban `--profile default` y creaban lo que encontraran en la cuenta a
+la que ese perfil apuntara, sin preguntar cual era. En un portatil donde `default`
+es la cuenta de otro proyecto, correr `desplegar-base.sh` habria creado la
+infraestructura de Raiz dentro de la infraestructura de esa empresa, cobrandoselos
+a ella, sin dar un solo error.
+
+Ahora cada guion comprueba la cuenta antes de tocar nada y se detiene si no es la
+correcta. Pero conviene tener el perfil bien puesto:
+
+```sh
+aws configure --profile raiz     # las llaves de la cuenta de Raiz
+AWS_PROFILE=raiz ./desplegar-identidad-federada.sh
+```
+
 Poner esto en marcha exige dos cosas que solo se hacen una vez:
 
 1. **Revisores en el entorno `produccion`** — Ajustes > Environments > produccion >

@@ -79,6 +79,11 @@ trap 'rm -rf "$TMP"' EXIT
 
 aws_() { aws --region "$REGION" --profile "$PERFIL" "$@"; }
 
+# Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
+# no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
+. "$AQUI/cuenta-correcta.sh"
+exigir_cuenta_de_raiz
+
 instancia() {
   aws_ ec2 describe-instances \
     --filters "Name=tag:Name,Values=$NOMBRE" "Name=instance-state-name,Values=pending,running,stopping,stopped" \

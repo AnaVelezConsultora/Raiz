@@ -67,6 +67,11 @@ trap 'rm -rf "$TMP"' EXIT
 
 aws_() { aws --region "$REGION_BUDGETS" --profile "$PERFIL" "$@"; }
 
+# Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
+# no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
+. "$AQUI/cuenta-correcta.sh"
+exigir_cuenta_de_raiz
+
 echo "==> cuenta"
 CUENTA="$(aws_ sts get-caller-identity --query 'Account' --output text)"
 echo "    cuenta: $CUENTA   perfil: $PERFIL"
