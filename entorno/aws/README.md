@@ -139,6 +139,12 @@ condición escrita que obliga a pagarla. En resumen: la llave de larga vida (D3,
 urgente), el certificado de RDS sin validar (D1), las claves sin rotación
 automática (D2) y estos guiones sin código declarativo detrás (D4).
 
+> **Antes del próximo despliegue hay que recrear la base de producción.** La API nueva
+> ya no escribe las columnas que el esquema viejo exige, así que el despliegue
+> terminaría bien y el primer caso con vivienda fallaría en silencio. El procedimiento,
+> con lo que cuesta y cómo comprobarlo, está en
+> [RECREAR-LA-BASE.md](RECREAR-LA-BASE.md). Se hace una vez.
+
 ## Desplegar una versión nueva: no se corre nada
 
 Desde el 21 de agosto **no hace falta abrir una terminal para desplegar**. Al
