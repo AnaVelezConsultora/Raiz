@@ -1,4 +1,6 @@
 import {
+  Habitabilidad,
+  RiesgoVisible,
   FuenteCoordenada,
   FuenteDato,
   NivelVerificacion,
@@ -164,8 +166,14 @@ export interface Vulnerabilidad {
   fallecidos: number;
   heridosLeves: number;
   heridosGraves: number;
+  /**
+   * Si alguien del hogar requiere medicacion permanente. NO cual.
+   *
+   * Pedirle a un lider comunal que clasifique una condicion medica aumenta la
+   * exposicion de datos sensibles sin mejorar una sola decision de terreno: que
+   * enfermedad es lo determina despues una entidad de salud.
+   */
   requiereMedicamento: boolean | null;
-  medicamentoCual: string | null;
   etnia: string | null;
   victimaConflicto: boolean | null;
 }
@@ -212,12 +220,39 @@ export interface Vivienda {
   materialParedes: string | null;
   materialTecho: string | null;
   afectacion: NivelAfectacion;
-  habitable: boolean;
-  riesgoColapso: boolean;
-  riesgoColapsoDesc: string | null;
+
+  /**
+   * ENTRADA HEREDADA. La aplicacion actual NO los manda y la base NO los guarda.
+   *
+   * Siguen aqui por una sola razon: el paquete instalado en los telefonos de la vereda
+   * es el anterior y va a seguir siendolo hasta que cada voluntario lo abra una vez.
+   * Esos envios traen estos dos campos y ninguno de los tres ejes, y el calculo de
+   * prioridad los traduce para no perder la senal de peligro. Sin esa puerta, los casos
+   * de esa semana entrarian con prioridad baja — y ese fallo no da error: solo deja de
+   * mandar a alguien.
+   *
+   * Se retiran cuando no quede un solo dispositivo con la version vieja.
+   */
+  habitable?: boolean;
+  riesgoColapso?: boolean;
   dondeDuerme: LugarPernocta;
   requiereVivienda: string[];
   serviciosAfectados: string[];
+
+  /**
+   * Si se puede estar ahi. NO es el dano, y por eso es un campo aparte de
+   * `afectacion`: una casa moderadamente danada puede ser inhabitable por el terreno.
+   *
+   */
+  habitabilidad: Habitabilidad | null;
+  /** Si entrar es peligroso hoy. Alerta comunitaria, no dictamen tecnico. */
+  riesgoVisible: RiesgoVisible | null;
+  /** Lo que se ve, de la lista cerrada {@link DANOS_VISIBLES}. */
+  danosVisibles: string[];
+  /** Hasta 500 caracteres. Es lo que de verdad le sirve a quien va a evaluar. */
+  danoDescripcion: string | null;
+  /** QUE documento tiene la familia, no el documento. Ver {@link DOCUMENTOS_TENENCIA}. */
+  documentosTenencia: string[];
 
   /**
    * Si una entidad ya visito esta edificacion.
@@ -281,17 +316,32 @@ export interface AnexoRural {
   maquinariaDetalle: string | null;
 }
 
-/** Bloque 6. Anexo convenio de la federacion. */
-export interface AnexoConvenio {
-  afiliadaFederacion: boolean | null;
-  aplicaConvenio: boolean;
-  convenioLinea: string[];
-  convenioObs: string | null;
-}
 
 /** Bloque 7. Triaje y necesidad inmediata. */
 export interface Triaje {
+  /**
+   * La prioridad con la que el caso viaja.
+   *
+   * La CALCULA el servidor a partir de las respuestas —ver `calcularPrioridad`— y
+   * quien registra solo puede ELEVARLA, nunca bajarla. Es preliminar: no es una
+   * evaluacion tecnica ni una decision administrativa de la autoridad competente.
+   */
   prioridad: Prioridad;
+  /** Por que quedo ahi. Es lo que hace que la letra se sostenga sola ante una entidad. */
+  prioridadMotivos: string[];
+  /** False cuando alguien la elevo a mano por una emergencia que ninguna regla previo. */
+  prioridadCalculada: boolean;
+  /** Con que se sostiene el caso. Ver {@link TIPOS_EVIDENCIA}. */
+  tiposEvidencia: string[];
+  /**
+   * Si la familia quiere ser orientada hacia un programa de apoyo.
+   *
+   * Reemplaza la postulacion a un convenio concreto. La pertenencia a organizaciones
+   * sociales es dato sensible, y «el caso se postula al convenio» promete algo que
+   * depende de un tercero: Raiz no puede prometer una ayuda que no entrega.
+   */
+  deseaRutaApoyo: boolean | null;
+  rutaApoyoOrganizacion: string | null;
   necesidadesInmediatas: string[];
   yaRecibioAyuda: boolean | null;
   ayudaCual: string | null;
@@ -322,7 +372,6 @@ export interface CasoParaSincronizar {
   vivienda: Vivienda | null;
   anexoRural: AnexoRural | null;
   anexoUrbano: AnexoUrbano | null;
-  anexoConvenio: AnexoConvenio | null;
   triaje: Triaje | null;
 }
 
@@ -363,7 +412,7 @@ export interface ResumenTablero {
   estadoVerificacion: string;
   /** Nivel de afectacion de la vivienda principal, si se registro. */
   afectacion: string | null;
-  habitable: boolean | null;
+  habitabilidad: Habitabilidad | null;
   lat: number | null;
   lon: number | null;
   /** De donde salio el dato. No cambia. */

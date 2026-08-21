@@ -4,7 +4,12 @@ import { Caso } from '../domain/caso.model';
 import {
   FuenteCoordenada,
   FuenteDato,
+  Habitabilidad,
   NOMBRE_FUENTE_DATO,
+  NOMBRE_HABITABILIDAD,
+  NOMBRE_LUGAR_PERNOCTA,
+  NOMBRE_RIESGO_VISIBLE,
+  RiesgoVisible,
   Necesidad,
   OrigenDato,
   LugarPernocta,
@@ -91,10 +96,10 @@ export class CasoFormService {
         // llenaba describia una familia sin problema. En un censo de damnificados, el
         // silencio no puede leerse como que la casa esta bien.
         afectacion: [caso.vivienda?.afectacion ?? null, Validators.required],
-        habitable: [caso.vivienda?.habitable ?? null],
-        riesgoColapso: [caso.vivienda?.riesgoColapso ?? false],
-        riesgoColapsoDesc: [caso.vivienda?.riesgoColapsoDesc],
         dondeDuerme: [caso.vivienda?.dondeDuerme ?? null],
+        habitabilidad: [caso.vivienda?.habitabilidad ?? null],
+        riesgoVisible: [caso.vivienda?.riesgoVisible ?? null],
+        danoDescripcion: [caso.vivienda?.danoDescripcion ?? null],
         // Nulo y no false: nulo es «no se pregunto», y decir que no ha venido nadie
         // cuando nadie pregunto es afirmar algo distinto y probablemente falso.
         visitaOficial: [caso.vivienda?.visitaOficial ?? null],
@@ -120,12 +125,10 @@ export class CasoFormService {
         perdioMedioVida: [caso.anexoUrbano?.perdioMedioVida ?? false],
         medioVidaDesc: [caso.anexoUrbano?.medioVidaDesc]
       }),
-      convenio: this.fb.group({
-        afiliadaFederacion: [caso.anexoConvenio?.afiliadaFederacion ?? false],
-        aplicaConvenio: [caso.anexoConvenio?.aplicaConvenio ?? false]
-      }),
       triaje: this.fb.group({
-        prioridad: [caso.triaje?.prioridad ?? Prioridad.P2, Validators.required],
+        prioridad: [caso.triaje?.prioridad ?? Prioridad.P3, Validators.required],
+        deseaRutaApoyo: [caso.triaje?.deseaRutaApoyo ?? null],
+        rutaApoyoOrganizacion: [caso.triaje?.rutaApoyoOrganizacion ?? null],
         necesidadesOtra: [caso.triaje?.necesidadesOtra ?? null],
         observaciones: [caso.triaje?.observaciones]
       })
@@ -211,12 +214,14 @@ export class CasoFormService {
         materialParedes: caso.vivienda?.materialParedes ?? null,
         materialTecho: caso.vivienda?.materialTecho ?? null,
         afectacion: v.vivienda.afectacion,
-        habitable: v.vivienda.habitable,
-        riesgoColapso: v.vivienda.riesgoColapso,
-        riesgoColapsoDesc: v.vivienda.riesgoColapsoDesc,
         dondeDuerme: v.vivienda.dondeDuerme,
         requiereVivienda: seleccion.requiereVivienda,
         serviciosAfectados: seleccion.serviciosAfectados,
+        habitabilidad: v.vivienda.habitabilidad,
+        riesgoVisible: v.vivienda.riesgoVisible,
+        danosVisibles: seleccion.danosVisibles,
+        danoDescripcion: v.vivienda.danoDescripcion,
+        documentosTenencia: seleccion.documentosTenencia,
         visitaOficial: v.vivienda.visitaOficial,
         visitaOficialEntidad: v.vivienda.visitaOficialEntidad,
         visitaOficialFecha: v.vivienda.visitaOficialFecha,
@@ -255,19 +260,25 @@ export class CasoFormService {
             medioVidaDesc: v.urbano.medioVidaDesc,
             requiereUrbano: seleccion.requiereUrbano
           },
-      anexoConvenio: {
-        afiliadaFederacion: v.convenio.afiliadaFederacion,
-        aplicaConvenio: v.convenio.aplicaConvenio,
-        convenioLinea: seleccion.convenioLinea,
-        convenioObs: caso.anexoConvenio?.convenioObs ?? null
-      },
       triaje: {
         // El riesgo de colapso es riesgo de vida y manda sobre lo que diga la lista de
         // prioridad. Antes el formulario le PEDIA al voluntario que se acordara de
         // marcar P0 un paso despues; una advertencia que hay que recordar es una
         // advertencia que se pierde, y lo que se pierde aqui es una familia durmiendo
         // bajo algo que se puede caer.
-        prioridad: v.vivienda.riesgoColapso === true ? Prioridad.P0 : v.triaje.prioridad,
+        // LA PRIORIDAD LA CALCULA EL SERVIDOR. Lo que viaja desde aqui es lo que el
+        // voluntario eligio, y solo sirve para ELEVARLA: si la regla dice P2 y quien
+        // esta ahi ve una emergencia, gana la persona. Bajarla no se puede.
+        //
+        // Antes esta linea forzaba P0 cuando habia riesgo de colapso, que era la forma
+        // de que no se perdiera. Ahora esa regla vive en el calculo, junto a las demas,
+        // y ademas explica por que.
+        prioridad: v.triaje.prioridad,
+        prioridadMotivos: caso.triaje?.prioridadMotivos ?? [],
+        prioridadCalculada: caso.triaje?.prioridadCalculada ?? true,
+        tiposEvidencia: seleccion.tiposEvidencia,
+        deseaRutaApoyo: v.triaje.deseaRutaApoyo ?? null,
+        rutaApoyoOrganizacion: v.triaje.rutaApoyoOrganizacion ?? null,
         necesidadesInmediatas: seleccion.necesidades,
         yaRecibioAyuda: caso.triaje?.yaRecibioAyuda ?? null,
         ayudaCual: caso.triaje?.ayudaCual ?? null,
@@ -289,12 +300,14 @@ export class CasoFormService {
 export interface SeleccionMultiple {
   afiliacion: string[];
   requiereVivienda: string[];
+  danosVisibles: string[];
+  tiposEvidencia: string[];
+  documentosTenencia: string[];
   serviciosAfectados: string[];
   cultivos: string[];
   infraProductiva: string[];
   requiereAgro: string[];
   requiereUrbano: string[];
-  convenioLinea: string[];
   necesidades: string[];
 }
 
@@ -364,7 +377,9 @@ interface ValoresFormulario {
     afectacion: NivelAfectacion;
     habitable: boolean;
     riesgoColapso: boolean;
-    riesgoColapsoDesc: string | null;
+    habitabilidad: Habitabilidad | null;
+    riesgoVisible: RiesgoVisible | null;
+    danoDescripcion: string | null;
     visitaOficial: boolean | null;
     visitaOficialEntidad: string | null;
     visitaOficialFecha: string | null;
@@ -389,8 +404,13 @@ interface ValoresFormulario {
     perdioMedioVida: boolean;
     medioVidaDesc: string | null;
   };
-  convenio: { afiliadaFederacion: boolean; aplicaConvenio: boolean };
-  triaje: { prioridad: Prioridad; necesidadesOtra: string | null; observaciones: string | null };
+  triaje: {
+    prioridad: Prioridad;
+    deseaRutaApoyo: boolean | null;
+    rutaApoyoOrganizacion: string | null;
+    necesidadesOtra: string | null;
+    observaciones: string | null;
+  };
 }
 
 /** Catalogo de opciones para las pastillas. Centralizado para no duplicar literales. */
@@ -425,6 +445,8 @@ export const OPCIONES = {
     { v: FuenteDato.FuenteDocumental, t: NOMBRE_FUENTE_DATO[FuenteDato.FuenteDocumental] },
     { v: FuenteDato.Otra, t: NOMBRE_FUENTE_DATO[FuenteDato.Otra] }
   ],
+  habitabilidad: Object.values(Habitabilidad).map((v) => ({ v, t: NOMBRE_HABITABILIDAD[v] })),
+  riesgoVisible: Object.values(RiesgoVisible).map((v) => ({ v, t: NOMBRE_RIESGO_VISIBLE[v] })),
   tenencia: [
     { v: Tenencia.Propietario, t: 'Propietario' },
     { v: Tenencia.Arrendatario, t: 'Arrendatario o inquilino' },
@@ -442,14 +464,10 @@ export const OPCIONES = {
     { v: NivelAfectacion.Destruida, t: 'Destruida o colapsada' },
     { v: NivelAfectacion.Riesgo, t: 'En pie, riesgo de colapso' }
   ],
-  dondeDuerme: [
-    { v: LugarPernocta.MismaVivienda, t: 'En la misma vivienda' },
-    { v: LugarPernocta.FamiliarVecino, t: 'Casa de familiar o vecino' },
-    { v: LugarPernocta.Albergue, t: 'Albergue' },
-    { v: LugarPernocta.Carpa, t: 'Carpa o intemperie' },
-    { v: LugarPernocta.Arriendo, t: 'Pagando arriendo' },
-    { v: LugarPernocta.Otro, t: 'Otro' }
-  ],
+  // Se genera del enum para que no haya dos listas. El 20 de agosto se agregaron
+  // «en un vehiculo» y «en un espacio publico», que son intemperie con otro nombre y
+  // que antes caian en «otro», donde dejaban de poder contarse.
+  dondeDuerme: Object.values(LugarPernocta).map((v) => ({ v, t: NOMBRE_LUGAR_PERNOCTA[v] })),
   prioridad: [
     { v: Prioridad.P0, t: 'P0 riesgo de vida' },
     { v: Prioridad.P1, t: 'P1 sin techo' },
@@ -532,19 +550,28 @@ export const OPCIONES = {
     { v: 'vivienda_urbana', t: 'Vivienda urbana' },
     { v: 'psicosocial', t: 'Apoyo psicosocial' }
   ],
+  // EL ORDEN ES DE URGENCIA, no alfabetico ni el que quedo. Las tres primeras son las
+  // que disparan una ruta el mismo dia; el mercado y la ropa esperan a mañana.
   necesidades: [
-    { v: Necesidad.Alimentos, t: 'Alimentos o mercado' },
+    { v: Necesidad.AtencionMedica, t: 'Atención médica urgente' },
+    { v: Necesidad.Proteccion, t: 'Protección y seguridad' },
+    { v: Necesidad.AlojamientoTemporal, t: 'Alojamiento temporal' },
     { v: Necesidad.AguaPotable, t: 'Agua potable' },
-    { v: Necesidad.Aseo, t: 'Kit de aseo' },
-    { v: Necesidad.Cocina, t: 'Kit de cocina' },
+    { v: Necesidad.Alimentos, t: 'Alimentos o mercado' },
+    // «Medicamentos» a secas invitaba a anotar el tratamiento. Lo que hace falta saber
+    // es que alguien no puede quedarse sin su medicina, no cual es.
+    { v: Necesidad.Medicamentos, t: 'Medicamentos de uso permanente' },
+    { v: Necesidad.ApoyoDependencia, t: 'Apoyo para una persona dependiente' },
+    { v: Necesidad.AlimentacionEspecial, t: 'Alimentación especial' },
     { v: Necesidad.Dormir, t: 'Colchonetas y cobijas' },
     { v: Necesidad.Carpa, t: 'Carpa o plástico' },
+    { v: Necesidad.Aseo, t: 'Kit de aseo' },
+    { v: Necesidad.Cocina, t: 'Kit de cocina' },
     { v: Necesidad.Ropa, t: 'Ropa' },
-    { v: Necesidad.Medicamentos, t: 'Medicamentos' },
     { v: Necesidad.Panales, t: 'Pañales o leche infantil' },
     { v: Necesidad.Psicosocial, t: 'Apoyo psicosocial' },
     { v: Necesidad.Transporte, t: 'Transporte' },
-    { v: Necesidad.Documentos, t: 'Reposicion de documentos' }
+    { v: Necesidad.Documentos, t: 'Reposición de documentos' }
   ],
   viaAcceso: [
     'Transitable en vehiculo', 'Solo moto', 'Solo a pie o en bestia', 'Bloqueada por derrumbe'

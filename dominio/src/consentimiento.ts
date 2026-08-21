@@ -78,7 +78,6 @@ export const CAMPOS_SENSIBLES = [
   'heridosLeves',
   'heridosGraves',
   'requiereMedicamento',
-  'medicamentoCual',
   'etnia',
   'victimaConflicto'
 ] as const satisfies readonly (keyof Vulnerabilidad)[];
@@ -97,7 +96,6 @@ const VACIO_SENSIBLE: Vulnerabilidad = {
   heridosLeves: 0,
   heridosGraves: 0,
   requiereMedicamento: null,
-  medicamentoCual: null,
   etnia: null,
   victimaConflicto: null
 };

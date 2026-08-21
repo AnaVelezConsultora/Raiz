@@ -44,6 +44,9 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
           <span class="tenue">Paso {{ paso() }} de 4</span>
         </div>
         <h1>{{ titulos[paso() - 1] }}</h1>
+        @if (subtitulos[paso() - 1]; as bajada) {
+          <p class="pista" style="margin:.2rem 0 0">{{ bajada }}</p>
+        }
         <div style="display:flex;gap:4px">
           @for (p of [1, 2, 3, 4]; track p) {
             <span [style.flex]="1" [style.height.px]="5"
@@ -69,6 +72,8 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
               [form]="f"
               [heredado]="heredado()"
               [(requiereVivienda)]="seleccion.requiereVivienda"
+              [(danosVisibles)]="seleccion.danosVisibles"
+              [(documentosTenencia)]="seleccion.documentosTenencia"
               [(serviciosAfectados)]="seleccion.serviciosAfectados"
               [(cultivos)]="seleccion.cultivos"
               [(infraProductiva)]="seleccion.infraProductiva"
@@ -80,7 +85,7 @@ import { PasoViviendaComponent } from './paso-vivienda.component';
               [form]="f"
               [casoId]="caso()!.id"
               [fotos]="fotos()"
-              [(convenioLinea)]="seleccion.convenioLinea"
+              [(tiposEvidencia)]="seleccion.tiposEvidencia"
               [(necesidades)]="seleccion.necesidades"
               (fotoLista)="agregarFoto($event)"
               (eliminarFoto)="quitarFoto($event)" />
@@ -161,7 +166,24 @@ export class FormularioCasoComponent implements OnInit {
     'Quién reporta y dónde',
     'Personas y hogar',
     'La vivienda y el daño',
-    'Fotos, prioridad y necesidad'
+    // «Fotos» reducia toda la prueba a una modalidad. Raiz tambien sostiene un caso
+    // con la observacion presencial, el reporte de la familia, la coordenada y un
+    // documento; llamarla evidencia es lo que permite decir de donde salio el dato.
+    'Evidencia, prioridad y necesidades'
+  ];
+
+  /**
+   * Que hace cada pantalla, en una linea, debajo del titulo.
+   *
+   * No es decoracion. La del paso 3 resuelve una cuestion juridica: quien llena esta
+   * ficha es un lider comunal y no un ingeniero, y decirlo en la pantalla es lo que
+   * separa documentar un dano de dictaminarlo.
+   */
+  readonly subtitulos = [
+    null,
+    'Caracterizamos quiénes habitan el lugar afectado para identificar necesidades y prioridades de atención.',
+    'Documentamos las condiciones visibles de la vivienda, su habitabilidad, los servicios afectados y las necesidades inmediatas. Esta información no constituye una evaluación estructural ni reemplaza los conceptos técnicos de las autoridades competentes.',
+    'Registramos con qué se sostiene el caso, qué necesita la familia en las próximas 72 horas y con qué prioridad preliminar entra.'
   ];
 
   readonly paso = signal(1);
@@ -177,12 +199,14 @@ export class FormularioCasoComponent implements OnInit {
   readonly seleccion: Record<keyof SeleccionMultiple, ReturnType<typeof signal<string[]>>> = {
     afiliacion: signal<string[]>([]),
     requiereVivienda: signal<string[]>([]),
+    danosVisibles: signal<string[]>([]),
+    documentosTenencia: signal<string[]>([]),
+    tiposEvidencia: signal<string[]>([]),
     serviciosAfectados: signal<string[]>([]),
     cultivos: signal<string[]>([]),
     infraProductiva: signal<string[]>([]),
     requiereAgro: signal<string[]>([]),
     requiereUrbano: signal<string[]>([]),
-    convenioLinea: signal<string[]>([]),
     necesidades: signal<string[]>([])
   };
 
@@ -568,12 +592,14 @@ export class FormularioCasoComponent implements OnInit {
     return {
       afiliacion: this.seleccion.afiliacion(),
       requiereVivienda: this.seleccion.requiereVivienda(),
+      danosVisibles: this.seleccion.danosVisibles(),
+      documentosTenencia: this.seleccion.documentosTenencia(),
+      tiposEvidencia: this.seleccion.tiposEvidencia(),
       serviciosAfectados: this.seleccion.serviciosAfectados(),
       cultivos: this.seleccion.cultivos(),
       infraProductiva: this.seleccion.infraProductiva(),
       requiereAgro: this.seleccion.requiereAgro(),
       requiereUrbano: this.seleccion.requiereUrbano(),
-      convenioLinea: this.seleccion.convenioLinea(),
       necesidades: this.seleccion.necesidades()
     };
   }
@@ -586,7 +612,6 @@ export class FormularioCasoComponent implements OnInit {
     this.seleccion.infraProductiva.set(caso.anexoRural?.infraProductiva ?? []);
     this.seleccion.requiereAgro.set(caso.anexoRural?.requiereAgro ?? []);
     this.seleccion.requiereUrbano.set(caso.anexoUrbano?.requiereUrbano ?? []);
-    this.seleccion.convenioLinea.set(caso.anexoConvenio?.convenioLinea ?? []);
     this.seleccion.necesidades.set(caso.triaje?.necesidadesInmediatas ?? []);
   }
 

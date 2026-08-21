@@ -104,47 +104,33 @@ jobs:
           done
           echo 'La base no quedo estable en 60 segundos.' && exit 1
 
-      # Mismo orden que monta el compose en /docker-entrypoint-initdb.d. El
-      # esquema es EL MISMO ARCHIVO que va a produccion, sin modificar: si algo
-      # de aqui falla, tambien habria fallado alla.
+      # MISMO ORDEN QUE MONTA EL COMPOSE, y son cinco archivos y no dieciseis.
+      #
+      # Hasta el 21 de agosto aqui se cargaban el esquema mas nueve enmiendas, en un
+      # orden que habia que mantener a mano y que ya se habia roto una vez. Como nada
+      # de lo capturado era todavia real, esas enmiendas se plegaron dentro del propio
+      # `schema.sql`. Este paso quedo como esta justamente por eso: si manana alguien
+      # agrega una migracion nueva, tiene que aparecer en esta lista, y que la lista
+      # sea corta es lo que hace que se note cuando falta.
+      #
+      # El esquema es EL MISMO ARCHIVO que va a produccion, sin modificar: si algo de
+      # aqui falla, tambien habria fallado alla.
       - name: Shim de identidad
         run: $PSQL -f entorno/postgres/00-shim-auth.sql
       - name: Roles
         run: $PSQL -f entorno/postgres/01-roles.sql
       - name: Esquema
         run: $PSQL -f supabase/schema.sql
-      # Las dos migraciones que extienden el esquema, en el mismo punto en que las
-      # monta el compose: entre el esquema y los permisos. Sin ellas, las pruebas
-      # que tocan fotografias o la cadena de altas fallan aqui por columnas que no
-      # existen — y el rojo hablaria de la prueba y no del cambio.
-      - name: Subida de fotografias por bloques
-        run: $PSQL -f entorno/postgres/55-fotos-subida.sql
-      - name: Cedula y cadena de altas
-        run: $PSQL -f entorno/postgres/56-perfiles-alta.sql
       - name: Permisos
         run: $PSQL -f entorno/postgres/60-grants.sql
-      # Lo que raiz_api necesita ANTES de que exista sesion: leer el perfil de
-      # quien se autentica y reflejar a Cognito en auth.users. Sin este archivo el
-      # esquema de aqui deja de ser el que corre en produccion, que es justo lo que
-      # esta lista de pasos existe para evitar. Ver el hallazgo H15.
+      # Lo que raiz_api necesita ANTES de que exista sesion: leer el perfil de quien
+      # se autentica y reflejar a Cognito en auth.users. Sin este archivo el esquema
+      # de aqui deja de ser el que corre en produccion, que es justo lo que esta lista
+      # de pasos existe para evitar. Ver el hallazgo H15.
       - name: Acceso de la API
         run: $PSQL -f entorno/postgres/65-acceso-api.sql
-      - name: Campos que pidio el terreno
-        run: $PSQL -f entorno/postgres/66-campos-de-terreno.sql
-      - name: Autorizaciones y auditoria
-        run: $PSQL -f entorno/postgres/67-autorizaciones.sql
-      - name: Origen, verificacion y evento
-        run: $PSQL -f entorno/postgres/68-origen-y-verificacion.sql
-      # La infraestructura afectada cuelga sus puntos del evento que crea la 68,
-      # asi que va despues y no antes: al reves, la referencia no existe.
-      - name: Infraestructura afectada
-        run: $PSQL -f entorno/postgres/69-puntos-de-servicio.sql
       - name: Catalogos
         run: $PSQL -f entorno/postgres/70-semillas-catalogos.sql
-      - name: Constancia de visita oficial
-        run: $PSQL -f entorno/postgres/71-visita-oficial.sql
-      - name: Quien no esta y quien no puede salir solo
-        run: $PSQL -f entorno/postgres/72-hogar-y-atencion-prioritaria.sql
 
       # Sin Cognito: las filas de auth.users se insertan directo y el disparador
       # crea los perfiles igual que lo hace la API en produccion. (Decia "el

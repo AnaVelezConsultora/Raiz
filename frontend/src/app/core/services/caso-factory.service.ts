@@ -129,7 +129,6 @@ export class CasoFactoryService {
       vivienda: null,
       anexoRural: null,
       anexoUrbano: null,
-      anexoConvenio: null,
       triaje: null,
       pasoCompletado: 0,
       creadoEn: ahora,
@@ -239,7 +238,6 @@ export class CasoFactoryService {
       heridosLeves: 0,
       heridosGraves: 0,
       requiereMedicamento: null,
-      medicamentoCual: null,
       etnia: null,
       victimaConflicto: null
     };

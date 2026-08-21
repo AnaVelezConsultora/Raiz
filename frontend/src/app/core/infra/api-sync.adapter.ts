@@ -423,7 +423,6 @@ export class ApiSyncAdapter implements SincronizacionPort {
       vivienda: caso.vivienda,
       anexoRural: caso.anexoRural,
       anexoUrbano: caso.anexoUrbano,
-      anexoConvenio: caso.anexoConvenio,
       triaje: caso.triaje
     };
   }

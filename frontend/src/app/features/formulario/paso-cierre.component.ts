@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, model, out
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FotoLocal } from '../../core/domain/caso.model';
 import { TipoFoto } from '../../core/domain/enums';
+import { TIPOS_EVIDENCIA } from '../../core/domain/enums';
 import { OPCIONES } from '../../core/services/caso-form.service';
 import { FotoService } from '../../core/services/foto.service';
 import { PastillasComponent } from '../../shared/pastillas.component';
@@ -22,11 +23,24 @@ import { PastillasComponent } from '../../shared/pastillas.component';
   template: `
     <div class="pila" [formGroup]="form()">
       <section class="pila-sm">
-        <h3>Fotografias</h3>
+        <h3>Evidencia fotográfica</h3>
+        <!-- LA SEGURIDAD PRIMERO, Y ANTES QUE LA FOTO. Nunca se le pide al voluntario
+             que fotografíe: se le dice que lo haga SI es seguro. Una ficha que exige
+             una imagen es una ficha que empuja a alguien a entrar a una casa que se
+             puede caer. -->
         <p class="pista">
-          Fotografie la vivienda y el dano, no las caras. Nunca rostros de menores de
-          edad. Las imagenes se comprimen en el celular antes de guardarse.
+          Registre solo lo necesario para documentar la vivienda, los daños visibles y el
+          entorno. <strong>No fotografíe rostros</strong>, y nunca a niñas, niños ni
+          adolescentes.
         </p>
+        <p class="aviso">
+          <strong>Tome fotografías únicamente si hacerlo es seguro.</strong> No entre a
+          una estructura que pueda representar peligro: ninguna foto vale eso.
+        </p>
+        <span class="pista">
+          Cada imagen queda asociada al caso, con la fecha, la hora y la ubicación cuando
+          estén disponibles.
+        </span>
 
         @if (!consentimiento()) {
           <p class="aviso peligro">
@@ -67,37 +81,72 @@ import { PastillasComponent } from '../../shared/pastillas.component';
         }
       </section>
 
-      <section class="pila-sm" formGroupName="convenio">
-        <h3>Convenio de la federacion</h3>
-        <label class="pastilla" [class.activa]="afiliada()">
-          <input type="checkbox" formControlName="afiliadaFederacion" />
-          La familia esta afiliada a la federacion
-        </label>
-        <label class="pastilla" [class.activa]="postula()">
-          <input type="checkbox" formControlName="aplicaConvenio" />
-          El caso se postula al convenio
-        </label>
-        <span class="pista">Las familias no afiliadas tambien pueden postularse.</span>
+      <!-- CON QUÉ SE SOSTIENE ESTE CASO. Cuando una alcaldía pregunte de dónde salió
+           un dato, la respuesta útil no es «hay una foto»: es «visita presencial, más
+           lo que reportó la familia, más seis fotografías». -->
+      <app-pastillas etiqueta="¿Con qué se sostiene este caso?"
+                     [opciones]="opcTiposEvidencia" [(seleccion)]="tiposEvidencia" />
+
+      <!-- RUTA DE APOYO, EN LUGAR DEL CONVENIO CON UNA ORGANIZACIÓN CONCRETA.
+           Dos razones. La pertenencia a organizaciones sociales es dato sensible, así
+           que preguntarla como un campo más no corresponde. Y «el caso se postula al
+           convenio» promete algo que depende de un tercero: Raíz no entrega la ayuda y
+           no puede comprometerla.
+
+           Lo que sí puede ofrecer con verdad es preguntar si la familia QUIERE ser
+           orientada, y dejar constancia de a dónde se remitió. -->
+      <section class="pila-sm" formGroupName="triaje">
+        <h3>Ruta de apoyo</h3>
+        <div class="campo">
+          <label>¿La familia quiere que la orientemos hacia alguna organización o programa?</label>
+          <div class="pastillas">
+            <button type="button" class="pastilla" [class.activa]="deseaRuta() === true"
+                    (click)="fijarRuta(true)">Sí</button>
+            <button type="button" class="pastilla" [class.activa]="deseaRuta() === false"
+                    (click)="fijarRuta(false)">No</button>
+          </div>
+          <span class="pista">
+            La información podrá remitirse a una organización o programa cuando
+            corresponda, según sus propios criterios de atención. No es una ayuda
+            garantizada.
+          </span>
+        </div>
+
+        @if (deseaRuta() === true) {
+          <div class="campo">
+            <label for="ruta-org">¿Cuál?</label>
+            <input id="ruta-org" type="text" formControlName="rutaApoyoOrganizacion"
+                   placeholder="Si ya sabe a cuál. Si no, déjelo vacío." />
+          </div>
+        }
       </section>
 
-      @if (postula()) {
-        <app-pastillas etiqueta="Linea del convenio"
-                       [opciones]="opcConvenio" [(seleccion)]="convenioLinea" />
-      }
-
+      <!-- LA PRIORIDAD YA NO SE ELIGE. La calcula el servidor con las respuestas de
+           los cuatro pasos y devuelve además POR QUÉ. Lo que queda aquí es la única
+           excepción que tiene sentido: quien está ahí puede SUBIRLA si ve una
+           emergencia que ninguna regla previó. Bajarla no, para eso está la regla. -->
       <section class="pila-sm" formGroupName="triaje">
-        <h3>Prioridad</h3>
+        <h3>Prioridad preliminar</h3>
+        <p class="pista">
+          La calcula el sistema con lo que usted ya respondió, y viaja con sus razones
+          escritas. No es una evaluación técnica ni una decisión de la autoridad
+          competente.
+        </p>
         <div class="campo">
-          <label for="prio">Nivel</label>
+          <label for="prio">Si ve una emergencia que el formulario no alcanzó a recoger, súbala</label>
           <select id="prio" formControlName="prioridad">
             @for (o of prioridades; track o.v) {
               <option [value]="o.v">{{ o.t }}</option>
             }
           </select>
+          <span class="pista">
+            Solo se tiene en cuenta si es más alta que la calculada. Queda registrado que
+            la subió una persona.
+          </span>
         </div>
       </section>
 
-      <app-pastillas etiqueta="Necesidades de las próximas 72 horas"
+      <app-pastillas etiqueta="Necesidades inmediatas — próximas 72 horas"
                      [opciones]="opcNecesidades" [(seleccion)]="necesidades" />
 
       <section class="pila-sm" formGroupName="triaje">
@@ -111,9 +160,16 @@ import { PastillasComponent } from '../../shared/pastillas.component';
         </div>
 
         <div class="campo">
-          <label for="obs">Observaciones</label>
+          <label for="obs">Observación relevante</label>
           <textarea id="obs" formControlName="observaciones"
-                    placeholder="Lo que no cupo en los campos anteriores"></textarea>
+                    placeholder="Lo que hace falta para entender la afectación o la necesidad"></textarea>
+          <!-- «Lo que no cupo en los campos anteriores» invita a escribir de todo, y
+               en un campo libre lo que se escribe de más son datos personales que
+               nadie pidió y que después hay que proteger igual. -->
+          <span class="pista">
+            Solo lo necesario para entender la afectación, la necesidad o la evidencia.
+            No anote datos personales que no hagan falta, ni diagnósticos médicos.
+          </span>
         </div>
       </section>
     </div>
@@ -125,7 +181,7 @@ export class PasoCierreComponent {
   readonly form = input.required<FormGroup>();
   readonly casoId = input.required<string>();
   readonly fotos = input.required<FotoLocal[]>();
-  readonly convenioLinea = model.required<string[]>();
+  readonly tiposEvidencia = model.required<string[]>();
   readonly necesidades = model.required<string[]>();
 
   readonly fotoLista = output<FotoLocal>();
@@ -134,7 +190,7 @@ export class PasoCierreComponent {
   readonly errorFoto = model<string>('');
 
   readonly prioridades = OPCIONES.prioridad;
-  readonly opcConvenio = OPCIONES.convenioLinea;
+  readonly opcTiposEvidencia = TIPOS_EVIDENCIA;
   readonly opcNecesidades = OPCIONES.necesidades;
   readonly tipoFachada = TipoFoto.Fachada;
   readonly tipoDano = TipoFoto.Dano;
@@ -143,13 +199,22 @@ export class PasoCierreComponent {
     () => this.form().get('control.consentimiento')?.value === true
   );
 
-  afiliada(): boolean {
-    return this.form().get('convenio.afiliadaFederacion')?.value === true;
+  /** Tres estados. Sin responder no es un no: es que no se pregunto. */
+  deseaRuta(): boolean | null {
+    const valor = this.form().get('triaje.deseaRutaApoyo')?.value;
+    return valor === true ? true : valor === false ? false : null;
   }
 
-  postula(): boolean {
-    return this.form().get('convenio.aplicaConvenio')?.value === true;
+  fijarRuta(quiere: boolean): void {
+    const control = this.form().get('triaje.deseaRutaApoyo');
+    // Volver a tocar la misma respuesta la borra: es la unica forma de corregir un
+    // toque accidental sin un tercer boton que diga «sin responder».
+    control?.setValue(control.value === quiere ? null : quiere);
+
+    if (!quiere) this.form().get('triaje.rutaApoyoOrganizacion')?.setValue(null);
   }
+
+
 
   async alSeleccionar(evento: Event, tipo: TipoFoto): Promise<void> {
     const entrada = evento.target as HTMLInputElement;

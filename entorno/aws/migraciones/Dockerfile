@@ -36,32 +36,9 @@ COPY entorno/postgres/01-roles.sql      ./002-roles.sql
 COPY supabase/schema.sql                ./003-schema.sql
 COPY entorno/postgres/60-grants.sql     ./004-grants.sql
 COPY entorno/postgres/65-acceso-api.sql ./005-acceso-api.sql
-COPY entorno/postgres/55-fotos-subida.sql     ./006-fotos-subida.sql
-COPY entorno/postgres/56-perfiles-alta.sql    ./007-perfiles-alta.sql
-# Llego numerada como 006 en su rama y aqui va de 008: en produccion ya figuran
-# aplicadas una 006 y una 007 con otro contenido, y la clave del registro es el
-# NOMBRE. Dejarle el 006 no habria roto nada —se habria aplicado igual, por
-# llamarse distinto— pero la secuencia dejaria de leerse como una sola historia.
-COPY entorno/postgres/66-campos-de-terreno.sql ./008-campos-de-terreno.sql
 
-# Las tres autorizaciones y la auditoria que faltaba en viviendas, produccion y
-# ayudas. Misma regla de numeracion: la clave del registro es el nombre, asi que
-# aqui va la siguiente libre y no la que traia en su rama.
-COPY entorno/postgres/67-autorizaciones.sql ./009-autorizaciones.sql
-COPY entorno/postgres/68-origen-y-verificacion.sql ./010-origen-y-verificacion.sql
-
-# La infraestructura afectada. Va DESPUES de la 010 y no antes, porque cuelga sus
-# puntos del evento que aquella crea: aplicada al reves, la referencia no existe.
-COPY entorno/postgres/69-puntos-de-servicio.sql ./011-puntos-de-servicio.sql
-
-# Constancia de visitas oficiales a la edificacion.
-COPY entorno/postgres/71-visita-oficial.sql ./012-visita-oficial.sql
-
-# Los dos contadores de la segunda pantalla: quien no esta y quien no puede salir solo.
-COPY entorno/postgres/72-hogar-y-atencion-prioritaria.sql ./013-hogar-y-atencion-prioritaria.sql
-
-# Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con
-# esas palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
+# Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con esas
+# palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
 # `on conflict do nothing`— y no un cambio de estructura que ocurre una vez.
 COPY entorno/postgres/70-semillas-catalogos.sql ./catalogos.sql
 

@@ -5,6 +5,8 @@ import {
   aplicarAutorizacionSensibles,
   aplicarConsentimiento,
   aplicarConsentimientoUbicacion,
+  calcularPrioridad,
+  puedeElevarse,
   identidadResidual,
   sensiblesResiduales
 } from '@raiz/dominio';
@@ -43,7 +45,8 @@ export class RegistrarCasoService {
   async ejecutar(caso: CasoParaSincronizar, identidad: Identidad): Promise<CasoSincronizado> {
     const sinIdentidad = this.retirarIdentidadSinAutorizacion(caso);
     const sinPunto = this.degradarUbicacionSinAutorizacion(sinIdentidad);
-    const limpio = this.retirarSensiblesSinAutorizacion(sinPunto);
+    const sinSensibles = this.retirarSensiblesSinAutorizacion(sinPunto);
+    const limpio = this.fijarPrioridad(sinSensibles);
 
     this.verificarQueNoQuedeIdentidad(limpio);
     this.verificarQueNoQuedenSensibles(limpio);
@@ -71,6 +74,64 @@ export class RegistrarCasoService {
     }
 
     return { ...caso, hogar };
+  }
+
+  /**
+   * La prioridad la calcula el SERVIDOR, y quien registra solo puede elevarla.
+   *
+   * POR QUE NO SE ACEPTA LA QUE MANDA EL CLIENTE. Porque entonces vuelve a depender
+   * del criterio de cada voluntario, que varia entre dos personas de la misma vereda,
+   * y una entidad que recibe «P1» tiene que confiar en ese criterio sin poder
+   * discutirlo. Calculada, la letra viene con sus razones y se puede discutir con
+   * ellas.
+   *
+   * SUBIR SI SE PERMITE. Ninguna regla previo la emergencia que alguien tiene enfrente,
+   * y negarle a un lider la posibilidad de decir «esto es P0» seria peor que el problema
+   * que se esta resolviendo. Cuando eso pasa queda anotado —`prioridadCalculada` en
+   * falso— para poder revisar despues si la regla se quedo corta.
+   *
+   * Bajar NO. Para eso esta la regla.
+   */
+  private fijarPrioridad(caso: CasoParaSincronizar): CasoParaSincronizar {
+    const calculo = calcularPrioridad({
+      vivienda: caso.vivienda,
+      hogar: caso.hogar,
+      triaje: caso.triaje
+    });
+
+    const declarada = caso.triaje?.prioridad;
+    const elevada = declarada !== undefined && puedeElevarse(calculo.prioridad, declarada);
+
+    if (elevada) {
+      this.log.log(
+        `Caso ${caso.origenId}: la mesa elevo la prioridad de ${calculo.prioridad} a ` +
+          `${declarada}. Queda marcada como no calculada.`
+      );
+    }
+
+    return {
+      ...caso,
+      triaje: {
+        ...(caso.triaje ?? {
+          necesidadesInmediatas: [],
+          yaRecibioAyuda: null,
+          ayudaCual: null,
+          ayudaQuien: null,
+          necesidadesOtra: null,
+          observaciones: null,
+          tiposEvidencia: [],
+          deseaRutaApoyo: null,
+          rutaApoyoOrganizacion: null,
+          prioridadMotivos: [],
+          prioridadCalculada: true
+        }),
+        prioridad: elevada ? declarada : calculo.prioridad,
+        prioridadMotivos: elevada
+          ? ['Elevada por quien registró: emergencia observada en terreno', ...calculo.motivos]
+          : calculo.motivos,
+        prioridadCalculada: !elevada
+      }
+    };
   }
 
   /**
