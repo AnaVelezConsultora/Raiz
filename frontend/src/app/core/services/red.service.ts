@@ -18,24 +18,21 @@ interface InfoRed {
 }
 
 /**
- * Que tipo de red hay, para decidir que se manda solo y que pide permiso.
+ * Que tipo de red hay, para informar el costo probable del envio.
  *
  * POR QUE ESTO IMPORTA EN ESTE PROYECTO
  *
  * El voluntario pone su propio celular y su propio plan de datos. Nadie le paga los
- * megas. Un caso pesa unos 3 KB y mandarlo solo es gratis en la practica; veinte
- * fotografias son 4 MB y eso si se le nota en la factura. La aplicacion tiene que
- * saber en que red esta para no gastarle el plan sin avisar.
+ * megas. Veinte fotografias son unos 4 MB y eso se le puede notar en la factura. La
+ * aplicacion informa la red y el peso antes de enviarlas; la unica valvula que detiene
+ * el envio automatico es el ahorro de datos solicitado por la propia persona.
  *
  * LO QUE ESTA API NO GARANTIZA
  *
  * `navigator.connection` solo existe en navegadores basados en Chromium. En iOS y en
- * Firefox no hay nada, y el tipo queda en `desconocida`. Por eso la regla ante la duda
- * es la conservadora: si no se sabe si la red es gratis, se asume que se paga. Se
- * prefiere que el voluntario toque un boton de mas a que descubra el consumo despues.
- *
- * Tampoco distingue un wifi domestico con tope de un wifi libre. Por eso en wifi se
- * OFRECE mandar las fotografias, no se mandan solas.
+ * Firefox no hay nada, y el tipo queda en `desconocida`. Tampoco distingue un wifi
+ * domestico con tope de uno libre. Ninguna de esas incertidumbres bloquea la evidencia:
+ * la red se describe sin inventar certeza y las fotografias salen igual.
  *
  * @version 0.1.0
  */
@@ -54,10 +51,7 @@ export class RedService {
    */
   readonly ahorroDeDatos = this._ahorroDeDatos.asReadonly();
 
-  /** True cuando conviene ofrecer el envio de fotografias sin pensarlo mucho. */
-  readonly esGratis = computed(() => this._tipo() === 'wifi' && !this._ahorroDeDatos());
-
-  /** True cuando el envio automatico esta permitido, aunque sea solo de casos. */
+  /** True cuando casos y fotografias pueden salir automaticamente. */
   readonly permiteEnvioAutomatico = computed(() => !this._ahorroDeDatos());
 
   constructor() {

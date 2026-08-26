@@ -367,7 +367,7 @@ export class FormularioCasoComponent implements OnInit {
     this.preguntandoAlSalir.set(false);
     await this.persistir();
     this.recordarPerfil();
-    await this.sync.refrescarContadores();
+    await this.sync.revisarPendientes();
     void this.router.navigate(['/casos']);
   }
 
@@ -490,11 +490,11 @@ export class FormularioCasoComponent implements OnInit {
     // momento de registrar la siguiente. El voluntario todavia esta parado frente a
     // la casa; en la lista ya no lo esta.
     if (this.faltanFamilias()) {
-      await this.sync.refrescarContadores();
+      await this.sync.revisarPendientes();
       this.ofreciendoSiguiente.set(true);
       return;
     }
-    await this.sync.refrescarContadores();
+    await this.sync.revisarPendientes();
 
     // Segundo intento de asegurar el almacenamiento. La primera peticion, al abrir
     // la aplicacion, suele negarse por falta de senales de uso; despues de guardar

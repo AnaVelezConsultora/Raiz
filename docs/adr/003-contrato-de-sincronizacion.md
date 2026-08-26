@@ -195,28 +195,37 @@ dispositivo **no** decide es si algo ya llegó; eso lo dice la API.
 - Solo se borra del dispositivo lo confirmado por el servidor, y con el plazo que
   defina el frente F7.
 
-### 7. Consciente de la red, nunca automática
+### 7. Automática mientras la aplicación está abierta, con una válvula explícita
 
-La sincronización **la dispara siempre una persona**. Nada de sincronización en
-segundo plano, aunque el navegador la ofrezca: consumiría los datos del voluntario
-sin que él lo decida.
+La prueba de campo del 15 de agosto cambió esta decisión: pedir un botón para las
+fotografías no protegía al voluntario, sino que le dejaba una tarea fácil de olvidar.
+Una foto retenida en el celular no es ahorro; es evidencia del daño que todavía no
+puede sustentar la atención de la familia.
 
-Lo que sí se hace es modular **qué** se envía según la red disponible:
+Al abrir Raíz, recuperar conexión o terminar un caso mientras ya hay red, la cola sale
+sola. El tipo de conexión se informa, pero no decide qué viaja:
 
 | Red | Se envía |
 |---|---|
-| Datos móviles | Solo casos |
+| Datos móviles | Casos y fotografías |
 | WiFi | Casos y fotografías |
+| Tipo desconocido —iOS y Firefox— | Casos y fotografías |
 | Ahorro de datos activado | Nada hasta que el voluntario lo pida explícitamente |
 
-Es la regla "casos antes que fotos" llevada del orden al contenido. Y el botón
-dice qué va a mandar y cuánto pesa, antes de mandarlo.
+La pantalla dice cuánto pesan las fotografías antes de gastarlo, sin pedir permiso en
+cada pasada. El ahorro de datos es la válvula de la persona: pesa más que cualquier
+heurística sobre si una red parece gratis.
+
+Esto **no es sincronización con la aplicación cerrada**. No se registra Background
+Sync ni se delega trabajo al service worker; al cerrar Raíz no sale nada. Dentro de la
+cola se conserva el orden de casos antes que fotografías, el envío secuencial y el
+límite de intentos. Una pasada automática nunca revive una fotografía detenida; tocar
+«Volver a intentar» sí expresa una decisión nueva y la devuelve a la cola.
 
 > La intensidad de señal (barras, dBm) **no existe en la web**. Ningún navegador
-> la expone. Se usa la calidad estimada de conexión, que alcanza para decidir si
-> se mandan fotografías. Leer la señal real exigiría empaquetar la PWA como
-> aplicación nativa, y eso cambiaría el modelo de distribución: dejaría de ser
-> "abra este enlace" y pasaría a ser un archivo que hay que instalar.
+> la expone. Leerla exigiría empaquetar la PWA como aplicación nativa, y eso cambiaría
+> el modelo de distribución: dejaría de ser "abra este enlace" y pasaría a ser un
+> archivo que hay que instalar. La intensidad no se usa para bloquear el envío.
 
 ### 8. Sesión
 

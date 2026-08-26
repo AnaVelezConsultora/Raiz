@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ResumenCaso } from '../../core/domain/caso.model';
 import { EstadoSync, Prioridad, Zona } from '../../core/domain/enums';
@@ -45,7 +53,7 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
 
 
       @if (sync.estado() === 'en_curso') {
-        <p class="aviso">Enviando los casos...</p>
+        <p class="aviso">Enviando casos y fotografías...</p>
       }
 
       <!-- Con ahorro de datos no sale nada solo, ni siquiera los casos: quien lo
@@ -65,8 +73,7 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
         </div>
       }
 
-      <!-- Los casos salen solos al haber senal. Aqui solo se pide decision para las
-           fotografias, que son lo unico que pesa en el plan de datos del voluntario. -->
+      <!-- El peso se avisa antes de gastarlo, pero la evidencia no espera un boton. -->
       @if (!red.ahorroDeDatos() && sync.fotosPendientes() > 0 && sync.enLinea()) {
         <div class="tarjeta pila-sm">
           <strong>
@@ -84,21 +91,16 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
             </span>
           }
 
-          @if (sync.buenMomentoParaFotos()) {
-            <span class="tenue">
-              Buen momento: {{ red.descripcion() }}. Los casos ya se enviaron solos.
-            </span>
-          } @else {
-            <span class="tenue">
-              Los casos ya se enviaron solos. Las fotos esperan porque pesan.
-            </span>
-          }
+          <span class="tenue">
+            Se envían automáticamente apenas hay señal; {{ red.descripcion() }}.
+          </span>
 
-          <button type="button" class="btn-primario btn-ancho btn-grande"
-                  [disabled]="sync.estado() === 'en_curso'"
-                  (click)="sincronizar()">
-            {{ sync.estado() === 'en_curso' ? 'Enviando...' : 'Enviar las fotografias' }}
-          </button>
+          @if (sync.estado() !== 'en_curso') {
+            <button type="button" class="btn-primario btn-ancho btn-grande"
+                    (click)="sincronizar()">
+              {{ sync.fotosDetenidas() > 0 ? 'Volver a intentar' : 'Intentar ahora' }}
+            </button>
+          }
 
           <!-- El avance, mientras sube. Sin esto, en una red que falla rapido el
                boton parpadea «Enviando...» y vuelve, y el voluntario no tiene como
@@ -113,13 +115,11 @@ import { SincronizacionService } from '../../core/services/sincronizacion.servic
             </div>
           }
 
-          @if (!sync.buenMomentoParaFotos()) {
-            <span class="pista">
-              {{ red.tipo() === 'movil'
-                  ? 'Va a gastar de sus datos moviles. Si puede, espere al wifi.'
-                  : 'Si esta en datos moviles, esto le gasta del plan.' }}
-            </span>
-          }
+          <span class="pista">
+            {{ red.tipo() === 'movil'
+                ? 'La carga usa sus datos móviles. Active el ahorro de datos para detener los envíos automáticos.'
+                : 'Si esta red tiene costo, active el ahorro de datos para detener los envíos automáticos.' }}
+          </span>
         </div>
       }
 
@@ -270,6 +270,15 @@ export class ListaCasosComponent implements OnInit {
   readonly prioridades = Prioridad;
   readonly estadoSincronizado = EstadoSync.Sincronizado;
 
+  constructor() {
+    // La pasada automatica termina sin que nadie toque esta pantalla. Al confirmarse,
+    // se relee IndexedDB para que el caso completo deje de aparecer como pendiente sin
+    // exigir una recarga, que es uno de los criterios de HU 1.3.15.
+    effect(() => {
+      if (this.sync.ultimaSincronizacion()) void this.recargar();
+    });
+  }
+
   /** Borra el caso y sus fotos del dispositivo. Ya paso por confirmacion. */
   async borrar(casoId: string): Promise<void> {
     await this.almacen.eliminar(casoId);
@@ -281,7 +290,7 @@ export class ListaCasosComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.recargar();
-    await this.sync.refrescarContadores();
+    await this.sync.revisarPendientes();
     this.confirmarGuardado();
   }
 
@@ -295,8 +304,8 @@ export class ListaCasosComponent implements OnInit {
    * lo caro.
    *
    * Se nombra ademas lo que TODAVIA falta. Un caso con fotografias pendientes no
-   * esta entregado, y el boton que las manda es una decision del voluntario porque
-   * gastan su plan de datos: si nadie se lo dice, no lo toca.
+   * esta entregado; se informa el peso aunque ya no se le pase al voluntario la tarea
+   * de acordarse de tocar un boton.
    */
   private confirmarGuardado(): void {
     const codigo = this.rutaActual.snapshot.queryParamMap.get('guardado');
@@ -304,11 +313,12 @@ export class ListaCasosComponent implements OnInit {
 
     const caso = this.casos().find((c) => c.codigo === codigo);
     const pendientes = caso?.fotosPendientes ?? 0;
+    const peso = this.sync.pesoFotosPendientes();
 
     this.mensaje.set(
       `Caso ${codigo} guardado en este celular.` +
         (pendientes > 0
-          ? ` Sus ${pendientes} fotografia(s) esperan a que toque «Enviar las fotografias».`
+          ? ` Sus ${pendientes} fotografia(s) se envian automaticamente apenas haya senal${peso ? `; pesan ${peso}` : ''}.`
           : ' Se envia solo cuando haya senal.')
     );
 

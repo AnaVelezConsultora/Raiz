@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { FotoLocal } from '../domain/caso.model';
 import { AvanceFoto, CASO_STORAGE, FOTO_STORAGE, SINCRONIZACION } from '../domain/ports';
 import { RedService } from './red.service';
@@ -42,6 +42,7 @@ export class SincronizacionService {
   private readonly fotos = inject(FOTO_STORAGE);
   private readonly transporte = inject(SINCRONIZACION);
   private readonly red = inject(RedService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly _estado = signal<EstadoSincronizacion>('inactiva');
   private readonly _casosPendientes = signal(0);
@@ -53,6 +54,7 @@ export class SincronizacionService {
   private readonly _avanceFoto = signal<AvanceFoto | null>(null);
   private readonly _fotosEsperandoCaso = signal(0);
   private readonly _fotosDetenidas = signal(0);
+  private pasadaEnCurso = false;
 
   readonly estado = this._estado.asReadonly();
   readonly casosPendientes = this._casosPendientes.asReadonly();
@@ -120,27 +122,26 @@ export class SincronizacionService {
     return `unos ${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
   });
 
-  /**
-   * True si conviene ofrecer el envio de fotografias sin rodeos.
-   *
-   * En wifi se OFRECE, no se manda solo: un wifi domestico con tope tambien se paga, y
-   * el navegador no distingue uno de otro.
-   */
-  readonly buenMomentoParaFotos = computed(
-    () => this.red.esGratis() && this._fotosPendientes() > 0
-  );
-
   constructor() {
-    window.addEventListener('online', () => this.alRecuperarConexion());
-    window.addEventListener('offline', () => {
+    const alEntrarEnLinea = (): void => this.alRecuperarConexion();
+    const alSalirDeLinea = (): void => {
       this._enLinea.set(false);
       this._estado.set('sin_conexion');
+    };
+
+    window.addEventListener('online', alEntrarEnLinea);
+    window.addEventListener('offline', alSalirDeLinea);
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('online', alEntrarEnLinea);
+      window.removeEventListener('offline', alSalirDeLinea);
     });
+
     // Tambien al abrir, no solo al reconectar: el evento `online` no se dispara si la
-    // aplicacion arranca con senal, y ese es el caso corriente del voluntario que baja
-    // al pueblo y abre Raiz ya conectado.
-    void this.refrescarContadores().then(() => {
-      if (this._enLinea() && this.convieneEnviarCasosSolo()) void this.sincronizar(true);
+    // aplicacion arranca con senal. El efecto vuelve a revisar cuando alguien desactiva
+    // el ahorro de datos sin cerrar Raiz; ese cambio equivale a abrir la valvula.
+    effect(() => {
+      const permiteEnvioAutomatico = this.red.permiteEnvioAutomatico();
+      void this.revisarPendientes(permiteEnvioAutomatico);
     });
   }
 
@@ -172,12 +173,39 @@ export class SincronizacionService {
   }
 
   /**
+   * Relee las colas y, si la valvula de ahorro esta abierta, inicia una pasada.
+   *
+   * Es publico porque guardar un caso mientras el telefono YA esta en linea no emite
+   * un evento `online`: el formulario avisa aqui que aparecio trabajo nuevo. La pasada
+   * se lanza sin bloquear la navegacion ni la captura de la siguiente familia.
+   */
+  async revisarPendientes(
+    permiteEnvioAutomatico = this.red.permiteEnvioAutomatico()
+  ): Promise<void> {
+    await this.refrescarContadores();
+    if (this.convieneEnviarAutomaticamente(permiteEnvioAutomatico)) {
+      void this.sincronizarAutomaticamente();
+    }
+  }
+
+  /**
    * Ejecuta una pasada completa de la cola.
    *
    * Es idempotente y segura de invocar varias veces: si ya hay una pasada en curso,
    * retorna sin hacer nada.
    */
-  async sincronizar(soloCasos = false): Promise<ResultadoSincronizacion> {
+  async sincronizar(): Promise<ResultadoSincronizacion> {
+    return this.ejecutarPasada(true);
+  }
+
+  /** La ruta automatica nunca revive elementos que ya agotaron sus intentos. */
+  private async sincronizarAutomaticamente(): Promise<ResultadoSincronizacion> {
+    return this.ejecutarPasada(false);
+  }
+
+  private async ejecutarPasada(
+    reactivarDetenidas: boolean
+  ): Promise<ResultadoSincronizacion> {
     const vacio: ResultadoSincronizacion = {
       casosEnviados: 0,
       casosFallidos: 0,
@@ -186,31 +214,40 @@ export class SincronizacionService {
       interrumpida: false
     };
 
-    if (this._estado() === 'en_curso') return vacio;
+    if (this.pasadaEnCurso) return vacio;
 
-    if (!navigator.onLine || !(await this.transporte.disponible())) {
+    if (!navigator.onLine) {
       this._enLinea.set(navigator.onLine);
       this._estado.set('sin_conexion');
       return { ...vacio, interrumpida: true };
     }
 
+    // Se fija ANTES de la primera espera. Abrir la lista y recibir el evento `online`
+    // pueden ocurrir juntos; si ambos alcanzaran disponible() con estado inactivo, se
+    // abririan dos pasadas sobre la misma foto.
+    this.pasadaEnCurso = true;
     this._estado.set('en_curso');
     this._ultimoError.set(null);
 
-    // Si quien pide la pasada es una persona —y no el arranque automatico, que solo
-    // manda casos— se devuelven a la cola las fotografias que agotaron sus intentos.
-    // Tocar el boton ES la decision de volver a intentarlo.
-    if (!soloCasos) {
-      const revividas = await this.fotos.reactivarDetenidas();
-      if (revividas > 0) {
-        await this.refrescarContadores();
-      }
-    }
-
     try {
+      if (!(await this.transporte.disponible())) {
+        this._estado.set('sin_conexion');
+        return { ...vacio, interrumpida: true };
+      }
+
+      // Una pasada automatica respeta el limite de intentos. La manual significa que
+      // alguien decidio probar de nuevo —otra red, otra hora o una version corregida—
+      // y por eso si devuelve a la cola lo que se habia detenido.
+      if (reactivarDetenidas) {
+        const revividas = await this.fotos.reactivarDetenidas();
+        if (revividas > 0) {
+          await this.refrescarContadores();
+        }
+      }
+
       const resultadoCasos = await this.enviarCasos();
       const resultadoFotos =
-        soloCasos || resultadoCasos.interrumpida
+        resultadoCasos.interrumpida
           ? { enviadas: 0, fallidas: 0, interrumpida: resultadoCasos.interrumpida }
           : await this.enviarFotos();
 
@@ -233,6 +270,8 @@ export class SincronizacionService {
       this._estado.set('error');
       this._ultimoError.set(this.mensajeDeError(error));
       return { ...vacio, interrumpida: true };
+    } finally {
+      this.pasadaEnCurso = false;
     }
   }
 
@@ -379,47 +418,27 @@ export class SincronizacionService {
     return fotos.filter((f) => casos.get(f.casoId));
   }
 
-  /**
-   * Al volver la senal: los CASOS salen solos. Las FOTOS esperan.
-   *
-   * La regla anterior era no enviar nada sin que el voluntario tocara el boton, para
-   * no gastarle los datos sin permiso. La intencion era correcta pero el corte estaba
-   * en el lugar equivocado, porque trata igual dos cosas que no cuestan igual:
-   *
-   *   un caso   ~3 KB    veinte casos son unos 60 KB: un mensaje de texto largo
-   *   una foto  ~200 KB  veinte fotos son 4 MB, y eso si es el plan del voluntario
-   *
-   * Con el boton unico, el costo real de olvidarlo no lo pagaba el voluntario sino la
-   * familia: el caso se quedaba en el celular y nadie sabia que existia. Pedirle a
-   * alguien que camino hasta una vereda que ademas se acuerde de tocar un boton al
-   * bajar es cargarle trabajo a quien menos sobra.
-   *
-   * Asi que el registro que permite atender a la familia viaja solo, y el binario
-   * pesado sigue necesitando una decision. Es el mismo principio que ya rige el orden
-   * de la cola: casos antes que fotos, porque si la ventana de senal alcanza para una
-   * sola cosa, que sea el registro.
-   *
-   * No se toca la regla de que iniciar sesion exige conexion y capturar no.
-   */
+  /** Al volver la senal, casos y fotos salen solos salvo que ahorro de datos lo impida. */
   private alRecuperarConexion(): void {
     this._enLinea.set(true);
-    this._estado.set('inactiva');
-
-    void this.refrescarContadores().then(() => {
-      if (this.convieneEnviarCasosSolo()) void this.sincronizar(true);
-    });
+    void this.revisarPendientes();
   }
 
   /**
-   * Si el envio automatico de casos esta permitido ahora mismo.
+   * Si hay algo que enviar automaticamente ahora mismo.
    *
    * El ahorro de datos manda sobre todo lo demas. Es una peticion explicita de alguien
-   * que esta cuidando su plan, y pesa mas que nuestra idea de que 3 KB no se notan:
-   * quien lo activo sabe por que lo hizo. Con eso puesto, ni siquiera los casos salen
-   * sin que lo pidan.
+   * que esta cuidando su plan: con eso puesto no salen ni casos ni fotografias sin que
+   * lo pida. El tipo de red no interviene; la peticion de campo fue que las fotografias
+   * viajen apenas haya cualquier conexion.
    */
-  private convieneEnviarCasosSolo(): boolean {
-    return this._casosPendientes() > 0 && this.red.permiteEnvioAutomatico();
+  private convieneEnviarAutomaticamente(permiteEnvioAutomatico: boolean): boolean {
+    return (
+      this._enLinea() &&
+      !this.pasadaEnCurso &&
+      this.totalPendientes() > 0 &&
+      permiteEnvioAutomatico
+    );
   }
 
   private mensajeDeError(error: unknown): string {
