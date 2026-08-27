@@ -9,8 +9,8 @@ sin necesidad de mirar el tablero.
 | Hito | Qué deja | Historias |
 |---|---|---|
 | **0 · Base construida** | Lo que ya funciona y no se reescribe | 4 |
-| **1 · Captura real** | El líder captura sin señal, sincroniza, y el dato llega | 23 |
-| **2 · Evidencia** | Cifras y mapa para sustentar una petición ante una entidad | 8 |
+| **1 · Captura real** | El líder captura sin señal, sincroniza, y el dato llega | 34 |
+| **2 · Evidencia** | Cifras y mapa para sustentar una petición ante una entidad | 11 |
 | **3 · Exigibilidad** | Remisión con radicado, mora medida, respuesta registrada | 5 |
 | **4 · Escala** | Otro municipio usa Raíz sin tocar código | 3 |
 
@@ -26,6 +26,7 @@ llegue vea de dónde parte y no rehaga lo que ya está.
 |---|---|
 | `tablero-raiz.json` | **Fuente de verdad.** Se edita este; el CSV se regenera |
 | `tablero-raiz.csv` | Para la importación por CSV de Trello |
+| `generar-csv.mjs` | Regenera el CSV desde la fuente de verdad, sin hablar con Trello |
 
 **Las herramientas que hablan con Trello no viven aquí.** Crear el tablero,
 marcar lo cerrado y tomar una historia son tareas de quien cura el tablero, no
@@ -100,3 +101,7 @@ Ninguna es invento: cada una cita su origen en el campo *Origen*.
 Se edita `tablero-raiz.json` y se regenera el CSV. La numeración no se reordena:
 si una historia se descarta, su numeral se retira y no se reutiliza, para que las
 referencias en propuestas de cambio y en el chat sigan apuntando a lo mismo.
+
+```bash
+node docs/backlog/generar-csv.mjs
+```

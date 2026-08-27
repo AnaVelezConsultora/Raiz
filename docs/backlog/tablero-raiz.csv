@@ -29,6 +29,7 @@ Criterios de aceptacion:
 - Quien trabaje formulario, listado, tablero o mapa no necesita Docker
 - Quien trabaje contra la base levanta el entorno con un comando
 
+Responsable: yonathangutierrez
 Origen: entorno/README.md, ADR 004","Infra,hecha",Hito 0 · Base construida,,
 HU 0.3.2 · Verificar el control de acceso en cada cambio,"Apartado 0.3 · Entorno de trabajo
 
@@ -39,10 +40,18 @@ Criterios de aceptacion:
 - Falla al primer error y devuelve código distinto de cero
 - Verificada en negativo: detecta la regresión que busca
 
+Responsable: yonathangutierrez
 Origen: entorno/pruebas/seguridad.sql, SEGURIDAD.md","Infra,BackEnd,hecha",Hito 0 · Base construida,,
 HU 1.1.1 · Infraestructura reproducible desde código,"Apartado 1.1 · Plataforma base
 
 Como responsable de plataforma, quiero levantar y destruir el entorno completo desde código, para que el sistema no quede irreproducible el día que quien lo montó no esté.
+
+Nota:
+PARCIAL. Cognito montado en AWS real desde entorno/aws/desplegar-cognito.sh, idempotente, con las variables generadas en entorno/generado/nube.env, que no se versiona. Alta de voluntarios con crear-voluntario.sh.
+
+FALTA todo lo demas del despliegue: Dockerfile de la API, registro de imagenes, VPC con tres grupos de seguridad, RDS PRIVADA, cluster de ECS y balanceador. Son unas 3 a 4 horas con verificacion real.
+
+DOS DECISIONES QUE NO SE DEBEN REABRIR A MITAD DE CAMINO: la API va en contenedor sobre Fargate y no en la maquina de nadie —se intento lo segundo por celeridad y se descarto porque obligaba a exponer la base a internet—; y la base no recibe trafico publico, su grupo de seguridad solo acepta al contenedor. Sesion del 15 de agosto de 2026.
 
 Criterios de aceptacion:
 - RDS PostgreSQL con PostGIS habilitado
@@ -51,8 +60,8 @@ Criterios de aceptacion:
 - Sin puerta de enlace NAT: se usan endpoints de VPC
 - Se levanta y se destruye completo desde cero
 
+Responsable: yonathangutierrez
 Origen: ADR 002, ADR 004
-
 Desbloquea: todo el hito 1",Infra,Hito 1 · Captura real,,
 HU 1.1.2 · Desplegar sin llaves de larga vida,"Apartado 1.1 · Plataforma base
 
@@ -63,6 +72,7 @@ Criterios de aceptacion:
 - Ningún secreto de AWS en la configuración del repositorio
 - Los devs no reciben consola de la nube; quien depure recibe lectura de registros
 
+Responsable: yonathangutierrez
 Origen: ADR 004",Infra,Hito 1 · Captura real,,
 HU 1.1.3 · Cambiar el esquema sin coordinar con nadie,"Apartado 1.1 · Plataforma base
 
@@ -74,6 +84,7 @@ Criterios de aceptacion:
 - Nunca se asume que todos los clientes están actualizados: un celular puede correr la versión de la semana pasada durante días
 - Los catálogos NO son migraciones
 
+Responsable: yonathangutierrez
 Origen: ADR 004","Infra,BackEnd",Hito 1 · Captura real,,
 HU 1.1.4 · Que no llegue una factura sorpresa,"Apartado 1.1 · Plataforma base
 
@@ -84,6 +95,7 @@ Criterios de aceptacion:
 - Sin puerta de enlace NAT, sin intermediario de conexiones, sin base sin servidor con mínimo de capacidad
 - Costo mensual verificado dentro del rango del ADR 002
 
+Responsable: yonathangutierrez
 Origen: ADR 002",Infra,Hito 1 · Captura real,,
 HU 1.2.1 · Contrato de la API antes de repartir el trabajo,"Apartado 1.2 · API de sincronización
 
@@ -95,8 +107,8 @@ Criterios de aceptacion:
 - Los errores se clasifican en transporte, sesión y rechazo, según ADR 003
 - Acepta cargas de clientes viejos: ningún campo nuevo es obligatorio
 
+Responsable: yonathangutierrez
 Origen: ADR 003, ADR 002
-
 Desbloquea: casi todo el apartado 1.2 y la HU 1.3.4",BackEnd,Hito 1 · Captura real,,
 HU 1.2.2 · Servicio que arranca igual en cualquier entorno,"Apartado 1.2 · API de sincronización
 
@@ -109,7 +121,6 @@ Criterios de aceptacion:
 - Corre contra el entorno local sin tocar la nube
 
 Origen: ADR 002, ADR 004
-
 Depende de: HU 1.2.1",BackEnd,Hito 1 · Captura real,,
 HU 1.2.3 · Que el líder siga viendo sólo lo suyo,"Apartado 1.2 · API de sincronización
 
@@ -121,8 +132,8 @@ Criterios de aceptacion:
 - La identidad es local a la transacción: una conexión reutilizada del pool no arrastra al usuario anterior
 - Ninguna autorización se decide en código de la aplicación
 
+Responsable: yonathangutierrez
 Origen: ADR 002, entorno/postgres/00-shim-auth.sql
-
 Depende de: HU 1.2.2",BackEnd,Hito 1 · Captura real,,
 HU 1.2.4 · Que un corte de señal no duplique a una familia,"Apartado 1.2 · API de sincronización
 
@@ -135,24 +146,40 @@ Criterios de aceptacion:
 - Prueba automática del reintento tras respuesta perdida
 
 Origen: ADR 003
-
 Depende de: HU 1.2.3",BackEnd,Hito 1 · Captura real,,
 HU 1.2.5 · Subir la fotografía sin gastar el plan de datos de más,"Apartado 1.2 · API de sincronización
 
 Como líder territorial, quiero que la fotografía vaya directo al almacenamiento, para que la subida sea lo más liviana y rápida posible.
 
+Nota:
+HECHA el 15 de agosto de 2026. Rama feature/hu-1.2.5-fotos.
+
+SE CAMBIO EL MECANISMO frente a lo que decia el ADR 003, y la seccion 5 se reescribio: no se usa la subida multiparte de S3 porque exige partes de 5 MiB minimo, de modo que una foto de 200 KB no se podria partir. Cada bloque es un objeto propio bajo `partes/` y la API los une al confirmar, en flujo.
+
+Verificado contra la API, PostgreSQL y el almacenamiento reales con `entorno/pruebas/ciclo-api.mjs`: 27 comprobaciones, incluida la reanudacion —se corta la subida a la mitad y solo se vuelven a firmar los bloques que faltan— y la integridad, con un bloque danado DEL TAMANO CORRECTO que se rechaza y no queda guardado.
+
+Falta correr `entorno/aws/desplegar-fotos.sh` contra AWS y volver a desplegar la API para que reciba S3_BUCKET_FOTOS.
+
 Criterios de aceptacion:
-- URL de subida de vida corta, limitada a la ruta del caso
-- La fotografía no atraviesa la API en ningún momento
-- Sin consentimiento no se emite URL: la regla en el borde, no en la interfaz
+- Toda fotografia se sube por bloques, tambien una de 200 KB: lo transmitido no se vuelve a pagar
+- Cada bloque lleva su tamano dentro de la firma, y el permiso caduca en 15 minutos
+- La imagen no atraviesa la API en su viaje desde el celular
+- Sin consentimiento no se emite autorizacion: la regla en el borde, no en la interfaz
 - El objeto no queda legible sin firma
+- Que bloques llegaron lo dice el almacenamiento, no el dispositivo: se reanuda tras perder la bateria
+- La confirmacion consulta cada objeto concreto, nunca listando un prefijo
+- Integridad de extremo a extremo: SHA-256 declarado en el dispositivo y verificado al unir
+- Una fotografia no se envia si su caso todavia no llego al servidor
+- Ruta de cancelacion que libera los bloques a medias
 
 Origen: ADR 003
-
-Depende de: HU 1.2.3",BackEnd,Hito 1 · Captura real,,
+Depende de: HU 1.2.3","BackEnd,FrontEnd,hecha",Hito 1 · Captura real,,
 HU 1.2.6 · Que un token vencido no me cueste la jornada,"Apartado 1.2 · API de sincronización
 
 Como líder territorial, quiero seguir capturando aunque mi sesión haya expirado en el monte, para no perder el trabajo de un día por algo que no puedo resolver sin señal.
+
+Nota:
+HECHA. La verificacion de token vive detras de una interfaz, con implementacion de nube y modo local que AVISA en el arranque que no esta verificando. Entra ademas SesionGuard como guarda global: toda ruta pide token salvo tres marcadas con `@RutaAbierta()`. El valor por defecto queda invertido a proposito, porque una ruta que alguien olvide marcar debe pedir token, no quedar abierta. El rol NO se lee del token: se lee de perfiles en cada peticion, asi revocar surte efecto de inmediato. Sesion del 15 de agosto de 2026.
 
 Criterios de aceptacion:
 - Verificación de tokens detrás de una interfaz, con implementación de nube y local
@@ -161,11 +188,15 @@ Criterios de aceptacion:
 - Iniciar sesión exige conexión; capturar, no
 
 Origen: ADR 002, ADR 003
-
-Depende de: HU 1.2.2",BackEnd,Hito 1 · Captura real,,
+Depende de: HU 1.2.2","BackEnd,hecha",Hito 1 · Captura real,,
 HU 1.2.7 · Entrar y encontrar mi perfil ya creado,"Apartado 1.2 · API de sincronización
 
 Como voluntario recién dado de alta, quiero que mi perfil exista la primera vez que entro, para no quedar sin rol, sin poder hacer nada y sin mensaje que lo explique.
+
+Nota:
+HECHA POR OTRO CAMINO. El ADR 002 asignaba esta cadena a una Lambda de post-confirmacion; en vez de eso, POST /voluntarios crea la cuenta en Cognito Y refleja el usuario en auth.users, de donde el disparador crea el perfil con rol lider. Ambas escrituras son idempotentes, asi que reintentar el alta arregla un corte a mitad.
+
+La Lambda NO se construyo y ya no hace falta: solo se disparia con registro por cuenta propia, y aqui no lo hay a proposito. no hay registro abierto, porque lo que se escribe con esa cuenta es el padron de familias damnificadas. Da de alta el custodio. Sesion del 15 de agosto de 2026.
 
 Criterios de aceptacion:
 - Al confirmar la cuenta se refleja el usuario en la base y el disparador crea el perfil
@@ -173,7 +204,28 @@ Criterios de aceptacion:
 - Es idempotente: los reintentos no duplican
 - El disparador existente no se modifica
 
-Origen: ADR 002, schema.sql §10.b","Infra,BackEnd",Hito 1 · Captura real,,
+Responsable: yonathangutierrez
+Origen: ADR 002, schema.sql §10.b","Infra,BackEnd,hecha",Hito 1 · Captura real,,
+HU 1.2.8 · Entrar desde el celular sin que el navegador hable con el proveedor,"Apartado 1.2 · API de sincronización
+
+Como lider territorial, quiero entrar con mi correo y mi clave contra la API de Raiz, para no depender de una pantalla de un tercero ni de que mi celular sepa hablarle.
+
+Nota:
+HECHA. Las tres rutas de sesion contra Cognito real. Verificado contra AWS, no supuesto: token de acceso de 12 horas, emisor correcto, llaves publicas alcanzables. Es el mismo protocolo HTTPS directo que usa el adaptador, asi que lo probado es el camino real y no una simulacion.
+
+El SDK de AWS se agrego SOLO para el alta de voluntarios, porque AdminCreateUser exige firma SigV4 y firmarla a mano es donde un error no da la cara. InitiateAuth no va firmada y sigue yendo por fetch. Sesion del 15 de agosto de 2026.
+
+Criterios de aceptacion:
+- POST /sesion valida contra el proveedor y devuelve token, vencimiento, correo y perfil
+- El perfil viaja resuelto en la MISMA respuesta, no en una segunda llamada
+- GET /sesion responde 200 si el token sirve para enviar y 401 si no
+- DELETE /sesion cierra del lado del servidor y responde 204
+- El rol se lee de perfiles en cada peticion, nunca del token
+- Un usuario con activo en false no entra aunque la clave sea correcta
+- 401 es respuesta legitima y se traduce a clase sesion, nunca a clase rechazo
+
+Origen: ADR 003 seccion 8, ampliada el 15 de agosto de 2026
+Depende de: HU 1.2.6 (verificacion de token) y HU 1.2.7 (perfil creado al alta)","BackEnd,hecha",Hito 1 · Captura real,,
 HU 1.3.1 · Que el sistema no me borre lo capturado,"Apartado 1.3 · Cliente en el dispositivo
 
 Como líder territorial, quiero que lo que guardo en el celular no lo borre el teléfono para liberar espacio, para no perder casos que todavía no he podido sincronizar.
@@ -198,26 +250,38 @@ Criterios de aceptacion:
 Origen: hallazgos-revision.md H10, ADR 003","FrontEnd,defecto",Hito 1 · Captura real,,
 HU 1.3.3 · Decidir yo cuándo se gastan mis datos,"Apartado 1.3 · Cliente en el dispositivo
 
-Como líder territorial, quiero que en datos móviles se manden sólo los casos y las fotos esperen al wifi, para que sincronizar no me consuma el plan del mes.
+Como líder territorial, quiero que los casos salgan solos al haber senal y que las fotografias esperen mi decision, para que sincronizar no me consuma el plan del mes ni dependa de que yo me acuerde.
+
+Nota:
+HECHA. Los casos salen solos al reconectar y al abrir; las fotografias siguen pidiendo el boton. Se agrego RedService, que lee la API de informacion de red: en wifi la tarjeta invita a mandar las fotos, y con ahorro de datos activo no sale NADA sin que lo pidan, ni siquiera los casos. La tarjeta dice cuanto pesa lo pendiente antes de gastarlo.
+
+Limite conocido y aceptado: navigator.connection solo existe en navegadores Chromium. En iOS y Firefox el tipo queda 'desconocida' y se aplica la regla conservadora, que es la de datos moviles. Se prefiere un boton de mas a un consumo que el voluntario descubre despues.
+
+REEMPLAZA la decision anterior de que la sincronizacion nunca es automatica: el corte trataba igual un caso de 3 KB y una foto de 200 KB, y el costo de olvidar el boton lo pagaba la familia, no el voluntario. ESTADO.md ya corregido; falta la lamina 10 del pitch.
 
 Criterios de aceptacion:
-- En datos móviles sólo casos; en wifi casos y fotografías; con ahorro de datos, nada sin pedirlo
-- El botón dice qué va a mandar y cuánto pesa antes de mandarlo
-- Nada de sincronización automática en segundo plano
+- Los casos se envian solos al reconectar y al abrir la aplicacion: pesan unos 3 KB
+- Las fotografias, de unos 200 KB, siguen esperando el boton
+- En wifi se ofrece mandar tambien las fotografias
+- Con ahorro de datos activo no se manda nada sin pedirlo
+- Nada de sincronizacion automatica en segundo plano: solo con la aplicacion abierta
 
-Origen: ADR 003",FrontEnd,Hito 1 · Captura real,,
+Origen: ADR 003","FrontEnd,hecha",Hito 1 · Captura real,,
 HU 1.3.4 · Cambiar de backend sin tocar la aplicación,"Apartado 1.3 · Cliente en el dispositivo
 
 Como equipo, quiero reemplazar sólo los adaptadores, para comprobar que la frontera de puertos era real y no una promesa.
+
+Nota:
+HECHA. Se reemplazaron los dos adaptadores de Supabase por adaptadores contra la API propia. Costo dos lineas y dos importaciones en app.config.ts; ningun componente ni servicio de dominio se modifico, y la aplicacion sigue corriendo completa en modo local con apiUrl vacio. Se retiro @supabase/supabase-js de las dependencias. Sesion del 15 de agosto de 2026, rama del frontend.
 
 Criterios de aceptacion:
 - Sólo cambian los adaptadores y una línea de composición
 - Ningún componente ni servicio de dominio se modifica
 - La aplicación sigue corriendo completa en modo local sin backend
 
+Responsable: yonathangutierrez
 Origen: ADR 002
-
-Depende de: HU 1.2.1",FrontEnd,Hito 1 · Captura real,,
+Depende de: HU 1.2.1","FrontEnd,hecha",Hito 1 · Captura real,,
 HU 1.3.5 · Que un cambio no rompa la protección de datos en silencio,"Apartado 1.3 · Cliente en el dispositivo
 
 Como custodia de datos, quiero pruebas que fallen si la identidad empieza a viajar sin autorización, para no depender de que alguien revise a mano en cada cambio.
@@ -227,7 +291,160 @@ Criterios de aceptacion:
 - El comportamiento de la cola ante sesión vencida y red caída
 - Corren en el pipeline de cada PR
 
+Responsable: yonathangutierrez
 Origen: hallazgos-revision.md H13","FrontEnd,defecto",Hito 1 · Captura real,,
+HU 1.3.6 · Que lo que lleno de la vivienda llegue al servidor,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero que el bloque de vivienda y los anexos rural y urbano viajen con el caso, para que el paso mas largo del formulario no sea trabajo descartado en silencio.
+
+Nota:
+HECHA del lado del cliente. El adaptador anterior solo escribia en la tabla familias: 13 campos de vivienda, 16 del anexo rural y 5 del urbano nunca viajaban. No se habia notado porque no hay servidor. Falta el lado del servidor, que es HU 1.2.1 y HU 1.2.2. Sesion del 15 de agosto de 2026, rama del frontend.
+
+Criterios de aceptacion:
+- El caso viaja como un solo documento y el servidor lo reparte entre familias, viviendas y produccion
+- El reparto ocurre en una transaccion: no quedan hogares a medias si la senal se cae
+- Ningun campo que el formulario captura se queda sin enviar
+
+Origen: Revision del adaptador de sincronizacion, 15 de agosto de 2026","FrontEnd,defecto,hecha",Hito 1 · Captura real,,
+HU 1.3.7 · Llenar el hogar sin pelear con el teclado,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero contar personas con botones y no con diez campos numericos, para no abandonar el formulario en el bloque que las entidades mas exigen.
+
+Nota:
+HECHA. Diez campos numericos eran diez aperturas de teclado, y el teclado tapa la mitad inferior de la pantalla. Se reemplazaron por un contador de menos y mas. Se cambio type=number por texto con teclado numerico en todo el paso, porque el campo numerico cambia de valor al deslizar. El aviso de descuadre subio sobre la rejilla. Sesion del 15 de agosto de 2026, rama del frontend.
+
+Criterios de aceptacion:
+- La rejilla de edad y sexo se llena sin abrir el teclado
+- Se ve la rejilla completa mientras se llena, y el aviso de descuadre no queda tapado
+- Ningun campo numerico cambia de valor al deslizar el dedo encima
+- Los objetivos tactiles usan la medida del sistema, no una menor
+
+Origen: Revision de ergonomia del paso 2, 15 de agosto de 2026","FrontEnd,hecha",Hito 1 · Captura real,,
+HU 1.3.8 · Que abrir un caso y arrepentirse no deje un registro fantasma,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero que un caso sin nada del hogar no se guarde, para que la lista muestre familias y no filas vacias que despues inflan el total.
+
+Nota:
+HECHA. persistir() escribia en IndexedDB sin preguntar si habia algo, y lo llamaban tanto Salir como Continuar. Los fantasmas se contaban como pendientes de envio y el dia que exista servidor habrian viajado, inflando el total consolidado. Sesion del 15 de agosto de 2026, rama del frontend.
+
+Criterios de aceptacion:
+- Un caso nuevo no se escribe hasta que haya telefono, nombre, lugar, personas, foto o coordenada
+- Los datos que vienen rellenados de antemano no cuentan como dato del hogar
+- Un caso que ya existe se sigue guardando aunque quede vacio
+- Guardar caso sin nada escrito avisa que falta, en vez de no hacer nada en silencio
+
+Origen: Defecto encontrado en revision de flujo, 15 de agosto de 2026","FrontEnd,defecto,hecha",Hito 1 · Captura real,,
+HU 1.3.9 · Borrar del celular un registro equivocado,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero poder decidir si guardo o descarto, y borrar despues lo que quedo mal, para que no viaje a la entidad un registro que se creo por error.
+
+Nota:
+HECHA. Se agrego eliminar() al puerto de almacenamiento, que no existia. Borrar un caso ya enviado es supresion de datos y va por el canal del custodio, no por un boton en el celular. Sesion del 15 de agosto de 2026, rama del frontend.
+
+Criterios de aceptacion:
+- Al salir con algo escrito se pregunta: guardar, descartar o seguir llenando
+- Descartar borra tambien lo que ya se habia guardado en pasadas anteriores
+- La lista tiene boton de borrar en cada caso sin enviar
+- La confirmacion ocurre en la misma tarjeta, para ver cual caso se borra
+- Borrar se lleva las fotografias en la misma transaccion
+- Un caso ya sincronizado NO se puede borrar desde el celular
+
+Origen: Revision de flujo, 15 de agosto de 2026","FrontEnd,hecha",Hito 1 · Captura real,,
+HU 1.3.10 · Que mi nombre no se aprenda de un caso que descarte,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero que la aplicacion recuerde quien soy, pero solo de un registro que decidi conservar, para no encontrar rellenado lo que escribi por error y despues borre.
+
+Nota:
+HECHA. guardarPerfil corria en cada persistir(), asi que un caso borrado seguia ensenandole a la aplicacion. Persistir el nombre es correcto y es buen UX: el dato es del voluntario, no del registro. Sesion del 15 de agosto de 2026, rama del frontend.
+
+Criterios de aceptacion:
+- El perfil se guarda al conservar un caso, nunca en el guardado automatico
+- El campo dice que el dato es del voluntario y no de la familia
+- Sigue sin pedirse el nombre en cada registro
+
+Origen: Defecto reportado en pruebas manuales, 15 de agosto de 2026","FrontEnd,defecto,hecha",Hito 1 · Captura real,,
+HU 1.3.11 · Que un paso sin llenar no describa una familia sin problema,"Apartado 1.3 · Cliente en el dispositivo
+
+Como coordinador de la mesa, quiero que los campos de dano no vengan con un valor por defecto, para que el silencio no entre a la base como una casa en buen estado.
+
+Nota:
+HECHA. El formulario traia afectacion en 'moderado', habitable en true y donde duerme en 'la misma vivienda'. Un paso que nadie llenaba describia una familia sin problema, y en un censo de damnificados el silencio no puede leerse como que la casa esta bien. La habitabilidad pasa de casilla a dos botones porque una casilla sin marcar no distingue 'no es habitable' de 'no me preguntaron', y de ese dato depende si la familia entra en la lista de quienes necesitan techo esta noche. Sesion del 15 de agosto de 2026.
+
+Criterios de aceptacion:
+- Nivel de afectacion, habitabilidad y donde duerme la familia arrancan sin responder
+- La habitabilidad se pregunta con dos opciones, no con una casilla
+- Se distingue 'no se puede vivir ahi' de 'nadie pregunto'
+
+Origen: Revision del paso 3, 15 de agosto de 2026","FrontEnd,defecto,hecha",Hito 1 · Captura real,,
+HU 1.3.12 · Que el riesgo de colapso no dependa de que alguien se acuerde,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero que marcar riesgo de colapso deje el caso en P0 automaticamente, para que una familia bajo una estructura que se puede caer no quede en la cola normal.
+
+Nota:
+HECHA. El aviso decia 'Marque prioridad P0 en el ultimo paso'. Una advertencia que hay que recordar un paso despues es una advertencia que se pierde, y lo que se pierde aqui es una familia durmiendo bajo algo que se puede caer. Sesion del 15 de agosto de 2026.
+
+Criterios de aceptacion:
+- Marcar riesgo de colapso fija prioridad P0 al guardar
+- El aviso dice que ya quedo en P0, no pide recordarlo
+- Se mantiene el aviso de avisar al coordinador el mismo dia
+
+Origen: Revision del paso 3, 15 de agosto de 2026","FrontEnd,defecto,hecha",Hito 1 · Captura real,,
+HU 1.3.13 · Avisar cuando el dano y la habitabilidad se contradicen,"Apartado 1.3 · Cliente en el dispositivo
+
+Como coordinador de la mesa, quiero que el formulario avise si dice dano severo y a la vez que si se puede vivir ahi, para que no entre a la base un dato que decide si la familia recibe techo.
+
+Nota:
+HECHA. Mismo criterio que el descuadre de personas del paso 2: avisar sin bloquear, porque un formulario que bloquea es un formulario que se abandona. Sesion del 15 de agosto de 2026.
+
+Criterios de aceptacion:
+- Avisa con severo, destruida o riesgo de colapso mas habitable en si
+- Avisa y no bloquea: en campo puede haber una razon
+- El aviso queda arriba, donde el teclado no lo tapa
+
+Origen: Revision del paso 3, 15 de agosto de 2026","FrontEnd,hecha",Hito 1 · Captura real,,
+HU 1.3.14 · Registrar la siguiente familia de la misma casa sin repetir la ubicacion,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero crear el caso de otra familia de la misma estructura con el lugar ya puesto, para no escribir cuatro veces la misma vereda cuando una casa alojaba cuatro familias.
+
+Nota:
+HECHA. El ofrecimiento aparece al guardar, no en la lista: el voluntario todavia esta parado frente a la casa y en la lista ya no lo esta.
+
+Que se copia el estado del inmueble fue una correccion sobre la marcha. La primera version solo copiaba el lugar, y eso dejaba el registro parcial y obligaba a re-responder el dano de la MISMA casa: la grieta es la misma grieta, y volver a preguntarla invita a que un inmueble quede con 'severo' en una familia y 'moderado' en la siguiente, de modo que la entidad recibe dos verdades del mismo predio y ninguna sirve. Lo copiado queda editable y avisado.
+
+La navegacion va por /nuevo?desde=<id> para que la creacion siga estando en un solo lugar. Se reacciona a los parametros de la ruta y no se leen una sola vez, porque Angular reutiliza el componente cuando solo cambian y el voluntario se quedaria mirando el caso que acaba de guardar.
+
+Criterios de aceptacion:
+- Al guardar un caso donde vivian varias familias se ofrece registrar la siguiente
+- Se copia el lugar completo, incluida la coordenada ya tomada
+- Se copia el estado del INMUEBLE: afectacion, riesgo de colapso, materiales y servicios
+- NO se copia nada del hogar: ni nombre, ni documento, ni telefono, ni composicion
+- NO se copia la autorizacion: cada familia la da por separado
+- NO se copian tenencia ni donde duerme: son de cada familia
+- El paso 3 avisa que el estado del inmueble viene del registro anterior
+- El caso nuevo es independiente y tiene su propio identificador de origen
+
+Origen: Revision del paso 3, 15 de agosto de 2026","FrontEnd,hecha",Hito 1 · Captura real,,
+HU 1.3.15 · Que las fotografias suban solas apenas haya red,"Apartado 1.3 · Cliente en el dispositivo
+
+Como lider territorial, quiero no tener que acordarme de tocar un boton para que las fotos viajen, para dedicar el tiempo a atender a la familia y no a manejar la aplicacion.
+
+Nota:
+HECHA el 26 de agosto de 2026. Al abrir Raiz, recuperar conexion, desactivar el ahorro de datos o guardar un caso mientras ya hay red, una pasada automatica envia primero los casos y despues las fotografias. No distingue wifi de datos moviles y la tarjeta informa el peso antes de gastarlo.
+
+La ruta automatica no revive fotografias que agotaron sus intentos; «Volver a intentar» sigue siendo una decision manual. La lista escucha el final de la pasada y relee IndexedDB, de modo que el caso completo deja de aparecer pendiente sin recargar. No se registra Background Sync ni trabajo en el service worker: con la aplicacion cerrada no sale nada.
+
+Verificado con cuatro pruebas unitarias: apertura con red, ahorro de datos como valvula, recuperacion del evento online y reintento manual de detenidas.
+
+Pedido en campo con estas palabras: «quitarle tareas al voluntario, que esta buscando atender y entregar ayudas a quienes realmente las necesitan».
+
+Criterios de aceptacion:
+- Apenas hay conexion, las fotografias salen: no se distingue wifi de datos moviles
+- Con el ahorro de datos activo sigue sin salir nada sin pedirlo: es la valvula del voluntario
+- Nunca hay envio en segundo plano con la aplicacion cerrada
+- Se avisa cuanto se va a gastar, pero no se pide permiso cada vez
+- El caso completo —texto y fotos— deja de aparecer como pendiente sin que nadie toque nada
+
+Origen: prueba en iPhone del 15 de agosto de 2026; enmienda a ESTADO.md seccion 2","FrontEnd,hecha",Hito 1 · Captura real,,
 HU 1.4.1 · Probar la aplicación en un Android de verdad,"Apartado 1.4 · Prueba en campo
 
 Como equipo, quiero saber qué se siente usar esto de pie, bajo el sol, con la familia esperando, para corregir lo que ninguna prueba automática detecta.
@@ -248,8 +465,8 @@ Criterios de aceptacion:
 - La vista previa funciona sin backend, en modo local
 - Se retira al cerrar la propuesta
 
+Responsable: yonathangutierrez
 Origen: ADR 004, FRENTES.md F6
-
 Desbloquea: HU 1.4.1",Infra,Hito 1 · Captura real,,
 HU 1.5.1 · DECISIÓN · Si el teléfono viaja sin autorización de la familia,"Apartado 1.5 · Protección de datos mínima
 
@@ -261,10 +478,9 @@ Criterios de aceptacion:
 - Escoger una de tres: que el teléfono entre en la regla; mantenerlo y CORREGIR la documentación; o pedir autorización específica para el contacto
 - La decisión queda escrita en docs/cumplimiento/
 
+Responsable: yonathangutierrez
 Origen: hallazgos-revision.md H7
-
 Depende de: que la custodia de datos resuelva
-
 Desbloquea: HU 1.5.2 (alcance)","decisión F7,sin código,bloqueada",Hito 1 · Captura real,,
 HU 1.5.2 · Que ninguna ruta pueda guardar identidad sin autorización,"Apartado 1.5 · Protección de datos mínima
 
@@ -275,8 +491,8 @@ Criterios de aceptacion:
 - Se aplica ANTES de que haya datos: después es una migración con filas adentro
 - Prueba automática que verifica el rechazo
 
+Responsable: yonathangutierrez
 Origen: hallazgos-revision.md H9
-
 Depende de: HU 1.5.1 sólo para el alcance del teléfono","BackEnd,defecto",Hito 1 · Captura real,,
 HU 1.5.3 · Que retractarse borre también las fotografías,"Apartado 1.5 · Protección de datos mínima
 
@@ -287,6 +503,7 @@ Criterios de aceptacion:
 - Al desmarcar la autorización, las fotografías del caso se descartan
 - Prueba automática del escenario: se autoriza, se toman fotos, se retracta
 
+Responsable: yonathangutierrez
 Origen: hallazgos-revision.md H8","FrontEnd,defecto",Hito 1 · Captura real,,
 HU 1.6.1 · Recalcular el plan con el equipo real,"Apartado 1.6 · Documentación y coordinación
 
@@ -298,6 +515,7 @@ Criterios de aceptacion:
 - Varios revisores por capacidad: con 15 contribuyentes el cuello de botella es la revisión, no la capacidad
 - La plataforma va ANTES de los frentes que dependen de ella
 
+Responsable: yonathangutierrez
 Origen: ADR 004, capacidades del equipo",sin código,Hito 1 · Captura real,,
 HU 1.6.2 · Que la documentación no contradiga al código,"Apartado 1.6 · Documentación y coordinación
 
@@ -308,44 +526,137 @@ Criterios de aceptacion:
 - El prefijo de código del tablero estático frente al del esquema
 - Política de seguridad de contenido en las cabeceras de despliegue
 
+Responsable: yonathangutierrez
 Origen: hallazgos-revision.md, desajustes menores",sin código,Hito 1 · Captura real,,
-HU 2.1.1 · DECISIÓN · Qué puede mostrar el mapa público,"Apartado 2.1 · Tablero y mapa
+HU 2.1.1 · DECISIÓN · Qué puede mostrar el mapa público,"Apartado 2.1 · Vistas de consulta dentro de la aplicacion
 
-Como custodia de datos, quiero definir el nivel de agregación de la vista pública, para que el mapa ubique la afectación sin señalar la casa de una familia.
+Como custodia de datos, quiero definir el nivel de agregación de cualquier vista que salga sin sesión, para que una familia no quede señalada por un mapa abierto.
+
+Nota:
+DEJO DE BLOQUEAR EL TRABAJO DE PANTALLAS. Las vistas de la aplicacion llevan sesion y roles, asi que no dependen de esta decision: la que depende es cualquier cosa que se publique SIN sesion.
+
+Hoy lo unico en esa situacion es el tablero estatico de `tablero/`, que no esta desplegado y se usa para mostrar en reuniones. Ver HU 2.1.3.
 
 Criterios de aceptacion:
-- Tres documentos dicen que toda vista pública es agregada; el mapa no lo es: es una fila por familia con vereda, personas, menores y coordenada a 110 m
+- Tres documentos dicen que toda vista pública es agregada; v_mapa_publico no lo es: una fila por familia con vereda, personas, menores y coordenada a 110 m
 - En una vereda con pocos hogares eso puede identificar a una familia
 - Escoger: umbral de anonimato por vereda, retirar código y desglose, o agregar por vereda
-- Confirmar si el archivo del tablero estático contiene dato inventado o real
+- Mientras no se tome, NADA que salga de esta vista se publica sin sesión
 
+Responsable: yonathangutierrez
 Origen: hallazgos-revision.md H12
-
 Depende de: que la custodia de datos resuelva
-
 Desbloquea: HU 2.1.2","decisión F7,sin código,bloqueada",Hito 2 · Evidencia,,
-HU 2.1.2 · Sustentar una petición ante una entidad con cifras y mapa,"Apartado 2.1 · Tablero y mapa
+"HU 2.1.2 · Cifras y mapa dentro del dashboard, para sustentar una petición","Apartado 2.1 · Vistas de consulta dentro de la aplicacion
 
-Como mesa de sistematización, quiero mostrar cuántas familias, dónde y con qué prioridad, para tener con qué negociar ante la entidad competente.
+Como integrante de la mesa, quiero ver cuántas familias, dónde y con qué prioridad, para llegar a una entidad con una cifra que se sostenga.
+
+Nota:
+HECHA. Seis cifras —familias, personas, menores, mayores de 60, riesgo de vida y sin ubicar— y un mapa con un circulo por afectacion, del color de su prioridad, con filtros por zona y por P0 que mueven cifras y mapa a la vez.
+
+`GET /casos` lee `v_familias_tablero`, que es `security_invoker`: quien filtra es PostgreSQL. Comprobado contra la base local —la custodia ve 4 casos y Ana, lider, 3— y las cifras dieron exactas: 4, 18, 4, 1 y 3.
+
+`ResumenTablero` no lleva nombre, documento ni telefono: lo que no viaja no se puede filtrar mal en el navegador. Sin conexion no hay tablero, a proposito. Leaflet se carga solo al abrir la pantalla, asi que el paquete inicial no crece.
+
+Rama feature/hu-2.1.4-dashboard, version 0.6.0.
+
+---
+
+NO DEPENDE DE LA HU 2.1.1. Dependia cuando se penso como pagina publica; como vista con sesion, la decision de que puede mostrarse SIN sesion no la toca.
+
+El mapa es de la mesa: el coordinador lo ve y el lider no. Lo que el lider necesita es otra cosa y esta en la HU 2.1.5.
 
 Criterios de aceptacion:
-- Consume la vista pública, nunca la tabla con identidad
-- Funciona con los datos inventados del entorno local
-- Las cifras cuadran con el total consolidado: si no cuadran, se pierde la palanca
+- Es la primera vista DENTRO del dashboard administrativo, no una pantalla suelta
+- Las cifras salen de la API y obedecen las políticas por fila: cada rol suma lo que alcanza
+- Mapa y contadores en la misma pantalla; el mapa ubica la afectación, no la vivienda
+- El total cuadra con el listado: si no cuadra, se pierde la palanca
+- Funciona con los datos de ejemplo del entorno local
 
 Origen: FRENTES.md F4
+Depende de: HU 2.1.4 (el contenedor)","FrontEnd,BackEnd",Hito 2 · Evidencia,,
+"HU 2.1.3 · Mostrar el avance en una reunión, sin desplegar nada","Apartado 2.1 · Vistas de consulta dentro de la aplicacion
 
-Depende de: HU 2.1.1",FrontEnd,Hito 2 · Evidencia,,
-HU 2.1.3 · Que el mapa público no toque la base,"Apartado 2.1 · Tablero y mapa
+Como coordinador, quiero abrir el tablero estático en un portátil y mostrar el mapa en una reunión, para no depender de que haya internet ni de publicar nada en abierto.
 
-Como responsable de plataforma, quiero servir el mapa como archivo regenerado periódicamente, para eliminar la superficie anónima contra la base de datos.
+Nota:
+CAMBIA DE INTENCION. Decia «que el mapa publico no toque la base» y describia un archivo regenerado y servido al mundo. Se replantea: eso exigiria la decision HU 2.1.1, y el valor que el tablero da hoy no lo necesita.
+
+Lo que hace falta ya esta hecho: el generador lee `v_mapa_publico` poniendose en el rol `anon`, de modo que es imposible que el archivo lleve mas de lo que un visitante podria ver. Y avisa cuando un lugar tiene menos de tres registros, que es la senal de la HU 2.1.1.
+
+La base no es alcanzable desde una maquina; para generar contra produccion se abre el tunel con `entorno/aws/tunel-a-la-base.sh --abrir`.
 
 Criterios de aceptacion:
-- Regeneración programada, sin acceso anónimo a la base
-- Se revoca el permiso del rol anónimo cuando el archivo esté en uso
-- Coordenada degradada y sin identidad, verificado en la generación
+- `tablero/index.html` se abre desde el disco y funciona sin servidor
+- Los datos los genera `tablero/generar-datos.mjs`, que lee la vista pública como el rol anónimo
+- El archivo del repositorio lleva datos inventados y lo dice adentro
+- NO se despliega en ninguna parte: publicarlo exige la decisión HU 2.1.1
 
-Origen: ADR 002","Infra,BackEnd",Hito 2 · Evidencia,,
+Responsable: yonathangutierrez
+Origen: decisión del 16 de agosto de 2026",sin código,Hito 2 · Evidencia,,
+"HU 2.1.4 · Dashboard administrativo, donde se cuelga todo lo demás","Apartado 2.1 · Vistas de consulta dentro de la aplicacion
+
+Como coordinador o custodio, quiero un lugar en la aplicación donde estén las vistas de gestión, para trabajar el conjunto sin salirme de la herramienta con la que se captura.
+
+Nota:
+HECHA. Modulo `/tablero` dentro de la PWA, con carga diferida y enlace en la cabecera solo para quien tiene el permiso. La puerta es `permisoGuard('verTodosLosCasos')`, la misma frontera que `es_mesa()` en la base; no se invento una lista de roles nueva.
+
+De paso se cerro un hueco que aparecio probando esto: las guardas devolvian `true` cuando la direccion de la API venia vacia, asi que en desarrollo cualquiera abria cualquier pantalla sin identificarse. Se quito la excepcion y se comprobo que las seis rutas terminan en /acceso. Capturar sin senal sigue funcionando: la guarda exige haber entrado en el dispositivo, no un token vigente.
+
+Rama feature/hu-2.1.4-dashboard, version 0.6.0.
+
+---
+
+ES EL CONTENEDOR, no una pantalla suelta. Se pide asi a proposito: las vistas de gestion que vienen —seguimiento de remisiones, mora por entidad, duplicados— no deben nacer cada una con su propia ruta, su propia guarda y su propia forma de preguntar quien es quien.
+
+LA PUERTA YA ESTA ESCRITA y no se inventa una nueva: `permisosDe(rol)` en el dominio compartido dice `verTodosLosCasos` para la mesa, y es la misma frontera que usa `es_mesa()` en las politicas de la base. Tres capas diciendo lo mismo, sin una cuarta definicion que se separe.
+
+El mapa entra aqui: el coordinador lo ve, el lider no.
+
+Criterios de aceptacion:
+- Es un módulo de la PWA existente, con su ruta y su navegación: no una aplicación aparte
+- LA PUERTA ES `verTodosLosCasos`, que hoy es la mesa: coordinación, custodia y validación
+- El líder y el digitador NO lo ven ni alcanzan la ruta: solo ven lo suyo, y para eso está la HU 2.1.5
+- Ocultar el enlace no es la protección: la API vuelve a decidir en cada petición con el rol leído de la base
+- Nace con una sola vista dentro —cifras y mapa— y con sitio para las que vengan
+
+Origen: decisión del 16 de agosto de 2026","FrontEnd,BackEnd",Hito 2 · Evidencia,,
+"HU 2.1.5 · Que el líder vea lo suyo, no solo lo que tiene el celular","Apartado 2.1 · Vistas de consulta dentro de la aplicacion
+
+Como líder territorial, quiero ver los casos que ya entregué, aunque no estén en este teléfono, para saber qué llevo hecho y qué me falta sin depender de un aparato.
+
+Nota:
+HOY LA PANTALLA SE LLAMA «Casos en este celular» Y ES LITERAL: lo que se ve sale de IndexedDB. Un lider que cambie de telefono, reinstale la aplicacion o preste el suyo pierde de vista su propio trabajo — aunque el servidor lo tenga entero. En campo eso se lee como «la aplicacion me borro los casos», que es lo unico que hace que un voluntario deje de usar la herramienta.
+
+NO ES EL DASHBOARD. El lider no entra ahi —no ve el mapa ni el conjunto— y esta historia es su equivalente: lo suyo, completo, venga del celular o del servidor. La politica por fila ya garantiza que sea solo lo suyo.
+
+La API ya sabe responder con las politicas puestas; falta la ruta de consulta y que la lista junte las dos fuentes sin confundirlas.
+
+Criterios de aceptacion:
+- La lista distingue lo que está en este celular de lo que ya está en el servidor
+- Un líder ve únicamente los casos que él reportó: lo garantiza la política por fila, no la pantalla
+- Funciona con el celular cambiado o la aplicación reinstalada
+- Sin conexión sigue mostrando lo del celular, que es lo que no se puede perder
+- Se ve cuántas fotografías faltan por subir de cada caso
+
+Origen: prueba en terreno de Miguel, 16 de agosto de 2026","FrontEnd,BackEnd",Hito 2 · Evidencia,,
+HU 2.1.6 · Ver la fotografía del daño desde el caso,"Apartado 2.1 · Vistas de consulta dentro de la aplicacion
+
+Como integrante de la mesa, quiero abrir las fotografías de una familia desde su caso, para sustentar la remisión ante la entidad con la prueba del daño.
+
+Nota:
+Se separa de la HU 2.1.4 porque es trabajo de servidor que necesitan DOS pantallas: el modulo de administracion y la vista del lider. Hacerla una sola vez evita que cada pantalla invente su forma de pedir una imagen.
+
+Es lo que falta para cerrar el ciclo de la evidencia: la fotografia sube, se verifica y hoy no se puede volver a ver.
+
+Criterios de aceptacion:
+- Una ruta de lectura devuelve enlaces firmados de vida corta; la imagen no pasa por la API
+- Las políticas de acceso mandan: un líder ve las suyas y la mesa las de su alcance
+- El bucket sigue sin lectura anónima, verificado contra la nube real
+- El enlace caduca y no sirve reenviado horas después
+- Queda registro de quién pidió ver qué fotografía
+
+Origen: HU 1.2.5 (hecha): la subida existe y la lectura no",BackEnd,Hito 2 · Evidencia,,
 HU 2.2.1 · Marco de tratamiento de datos que se pueda aplicar,"Apartado 2.2 · Datos y cumplimiento
 
 Como custodia de datos, quiero política, autorización, retención y procedimiento de supresión escritos, para que el listado sea admisible y ninguna familia quede expuesta.
@@ -356,6 +667,7 @@ Criterios de aceptacion:
 - Nombra explícitamente el paso de borrar las fotografías del almacenamiento y quién lo ejecuta
 - Define qué pasa con la base cuando la emergencia se cierre y quién la custodia
 
+Responsable: yonathangutierrez
 Origen: cumplimiento/README.md","decisión F7,sin código",Hito 2 · Evidencia,,
 HU 2.2.2 · Que el celular no acumule datos de familias para siempre,"Apartado 2.2 · Datos y cumplimiento
 
@@ -366,8 +678,8 @@ Criterios de aceptacion:
 - Sólo se borra lo confirmado por el servidor
 - Procedimiento escrito para cuando un voluntario se retira o pierde el teléfono
 
+Responsable: yonathangutierrez
 Origen: cumplimiento/README.md §3, ADR 003
-
 Depende de: HU 2.2.1 define el plazo","FrontEnd,decisión F7",Hito 2 · Evidencia,,
 HU 2.3.1 · Que nada llegue a producción sin que alguien lo apruebe,"Apartado 2.3 · Entrega controlada
 
@@ -380,6 +692,7 @@ Criterios de aceptacion:
 - Un cambio que toque exportación nominal, vistas públicas o políticas requiere aprobación de la custodia
 - Preproducción NUNCA recibe datos reales: garantía del pipeline, no disciplina de las personas
 
+Responsable: yonathangutierrez
 Origen: ADR 004",Infra,Hito 2 · Evidencia,,
 HU 2.3.2 · Comprobar que las fotografías no son públicas,"Apartado 2.3 · Entrega controlada
 
@@ -391,6 +704,7 @@ Criterios de aceptacion:
 - El asesor de seguridad no reporta advertencias
 - Las seis verificaciones de SEGURIDAD.md corren contra el proyecto real
 
+Responsable: yonathangutierrez
 Origen: SEGURIDAD.md punto 6, entorno/pruebas/flujo-completo.sh",Infra,Hito 2 · Evidencia,,
 HU 2.4.1 · Traer lo capturado en Kobo sin duplicar nada,"Apartado 2.4 · Vía paralela de Kobo
 
@@ -454,9 +768,7 @@ Criterios de aceptacion:
 - Formato oficial de censo del consejo municipal de gestión del riesgo
 
 Origen: ESTADO.md §4, FRENTES.md
-
 Depende de: gestión ante las entidades
-
 Bloquea: radicar el primer reporte","sin código,bloqueada",Hito 3 · Exigibilidad,,
 HU 4.1.1 · Listado oficial de veredas,"Apartado 4.1 · Multi-municipio
 
@@ -467,9 +779,7 @@ Criterios de aceptacion:
 - Criterio de normalización de nombres definido
 
 Origen: ESTADO.md §4
-
 Depende de: gestión ante la alcaldía
-
 Bloquea: HU 4.1.2 y las cifras por vereda","sin código,bloqueada",Hito 4 · Escala,,
 HU 4.1.2 · Usar Raíz en otro municipio sin tocar código,"Apartado 4.1 · Multi-municipio
 
@@ -480,8 +790,8 @@ Criterios de aceptacion:
 - Catálogo de veredas por municipio
 - Un municipio nuevo no requiere desplegar código
 
+Responsable: yonathangutierrez
 Origen: FRENTES.md F8
-
 Depende de: HU 4.1.1","BackEnd,Infra",Hito 4 · Escala,,
 HU 4.2.1 · Agregar una vereda sin pedirle nada a un programador,"Apartado 4.2 · Catálogos administrables
 

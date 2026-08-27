@@ -801,10 +801,11 @@
                 "El caso completo —texto y fotos— deja de aparecer como pendiente sin que nadie toque nada"
               ],
               "etiquetas": [
-                "FrontEnd"
+                "FrontEnd",
+                "hecha"
               ],
               "origen": "prueba en iPhone del 15 de agosto de 2026; enmienda a ESTADO.md seccion 2",
-              "nota": "CAMBIA UNA DECISION ESCRITA, y por eso es una historia y no un ajuste. ESTADO.md dice «el caso viaja solo; la fotografia espera el boton», con un argumento que no era malo: un caso son 3 KB y veinte fotografias son 4 MB del plan de datos de alguien.\n\nLa decision se revisa con lo aprendido en campo: el boton no protege al voluntario, le pasa una tarea. Y una fotografia que se queda en el celular no es un ahorro, es evidencia del dano que no llega. APENAS HAYA RED, SUBEN — sin distinguir wifi de datos moviles.\n\nLo que se conserva es la valvula: con el ahorro de datos activo no sale nada sin pedirlo, y nunca hay envio en segundo plano con la aplicacion cerrada.\n\nPedido en campo con estas palabras: «quitarle tareas al voluntario, que esta buscando atender y entregar ayudas a quienes realmente las necesitan»."
+              "nota": "HECHA el 26 de agosto de 2026. Al abrir Raiz, recuperar conexion, desactivar el ahorro de datos o guardar un caso mientras ya hay red, una pasada automatica envia primero los casos y despues las fotografias. No distingue wifi de datos moviles y la tarjeta informa el peso antes de gastarlo.\n\nLa ruta automatica no revive fotografias que agotaron sus intentos; «Volver a intentar» sigue siendo una decision manual. La lista escucha el final de la pasada y relee IndexedDB, de modo que el caso completo deja de aparecer pendiente sin recargar. No se registra Background Sync ni trabajo en el service worker: con la aplicacion cerrada no sale nada.\n\nVerificado con cuatro pruebas unitarias: apertura con red, ahorro de datos como valvula, recuperacion del evento online y reintento manual de detenidas.\n\nPedido en campo con estas palabras: «quitarle tareas al voluntario, que esta buscando atender y entregar ayudas a quienes realmente las necesitan»."
             }
           ]
         },
