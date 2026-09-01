@@ -29,13 +29,14 @@ AQUI="$(cd "$(dirname "$0")" && pwd)"
 SALIDA="$AQUI/../generado"
 RAIZ_REPO="$(cd "$AQUI/../.." && pwd)"
 
+# Los archivos generados se cargan SI ESTAN, y lo que falte se le pregunta a AWS. Eran
+# obligatorios, y como los escribe el despliegue inicial vivian en una sola maquina:
+# solo esa persona podia aplicar migraciones. Ver descubrir-infraestructura.sh.
 for f in red.env base.env cluster.env; do
-  if [ ! -f "$SALIDA/$f" ]; then
-    echo "ERROR: falta entorno/generado/$f" >&2
-    exit 1
+  if [ -f "$SALIDA/$f" ]; then
+    # shellcheck disable=SC1090
+    . "$SALIDA/$f"
   fi
-  # shellcheck disable=SC1090
-  . "$SALIDA/$f"
 done
 
 . "$AQUI/cuenta-correcta.sh"
@@ -44,6 +45,9 @@ aws_() { aws --region "$REGION" $PERFIL_FLAG "$@"; }
 # Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
 # no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
 exigir_cuenta_de_raiz
+
+. "$AQUI/descubrir-infraestructura.sh"
+descubrir_infraestructura
 
 echo "==> cuenta y region"
 echo "    cuenta: $RAIZ_CUENTA   region: $REGION"

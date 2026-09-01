@@ -148,7 +148,7 @@ jobs:
 
       - name: Desplegar el servicio
         run: |
-          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICIO"             --force-new-deployment >/dev/null
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICIO" --force-new-deployment >/dev/null
           aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICIO"
 
       - name: Comprobar que la API responde

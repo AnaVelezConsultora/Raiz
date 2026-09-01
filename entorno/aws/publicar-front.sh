@@ -71,7 +71,8 @@ if [ -z "${RAIZ_FRONT_BUCKET:-}" ]; then
 fi
 
 if [ -z "${RAIZ_FRONT_DISTRIBUCION:-}" ]; then
-  RAIZ_FRONT_DISTRIBUCION="$(aws_ cloudfront list-distributions     --query "DistributionList.Items[?Comment=='PWA de Raiz'] | [0].Id" --output text 2>/dev/null || true)"
+  CONSULTA="DistributionList.Items[?Comment=='PWA de Raiz'] | [0].Id"
+  RAIZ_FRONT_DISTRIBUCION="$(aws_ cloudfront list-distributions --query "$CONSULTA" --output text 2>/dev/null || true)"
 fi
 
 if [ -z "$RAIZ_FRONT_DISTRIBUCION" ] || [ "$RAIZ_FRONT_DISTRIBUCION" = "None" ]; then
