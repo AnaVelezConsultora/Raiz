@@ -41,7 +41,7 @@ exigir_cuenta_de_raiz
 
 echo "==> cuenta y region"
 aws_ sts get-caller-identity --query 'Account' --output text | sed 's/^/    cuenta: /'
-echo "    region: $REGION   perfil: $PERFIL"
+echo "    region: $REGION   perfil: $PERFIL_NOMBRE"
 
 # -----------------------------------------------------------------------------
 # 1. El pool

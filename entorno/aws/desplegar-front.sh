@@ -295,7 +295,7 @@ fi
 # del proyecto cambia, este certificado se queda.
 echo ""
 echo "==> certificado"
-ARN_CERT="$(aws --region us-east-1 --profile "$PERFIL" acm list-certificates \
+ARN_CERT="$(aws --region us-east-1 $PERFIL_FLAG acm list-certificates \
   --certificate-statuses ISSUED \
   --query "CertificateSummaryList[?DomainName=='$DOMINIO'] | [0].CertificateArn" --output text)"
 if [ -z "$ARN_CERT" ] || [ "$ARN_CERT" = "None" ]; then

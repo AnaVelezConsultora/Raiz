@@ -139,6 +139,21 @@ condición escrita que obliga a pagarla. En resumen: la llave de larga vida (D3,
 urgente), el certificado de RDS sin validar (D1), las claves sin rotación
 automática (D2) y estos guiones sin código declarativo detrás (D4).
 
+### La base de producción se pone al día sola
+
+El 21 de agosto el esquema se colapsó de dieciséis archivos a uno, dando por hecho que
+la base de producción se recrearía porque «todo era prueba». Al mirarla de verdad
+aparecieron **catorce perfiles**: catorce personas que habrían perdido el acceso, con
+sus cuentas de Cognito huérfanas.
+
+Así que no se recrea: converge. La migración `006-converger-al-esquema-unico.sql`
+aplica lo que esa base nunca recibió y retira las once columnas muertas, y corre sola en
+el despliegue. Sobre una base nueva no hace nada, porque `003-schema.sql` ya la deja
+así.
+
+Se comprobó levantando una réplica exacta de producción, aplicándole la migración y
+comparándola columna por columna con una base creada desde cero: **cero diferencias**.
+
 ## Desplegar una versión nueva: no se corre nada
 
 Desde el 21 de agosto **no hace falta abrir una terminal para desplegar**. Al

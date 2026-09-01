@@ -84,10 +84,11 @@ echo "==> migraciones"
 # existian habia que leer un archivo mas catorce parches. Como nada de lo capturado
 # era todavia real, se colapsaron en un solo `schema.sql` que se lee de arriba abajo.
 #
-# El dia que haya datos que no se puedan perder, esto vuelve a crecer: la proxima
-# migracion sera la 006 y ya no se colapsa nunca mas. Ese dia es el limite, y conviene
-# saber que existe.
-for archivo in 001-shim-auth.sql 002-roles.sql 003-schema.sql 004-grants.sql 005-acceso-api.sql; do
+# Ese dia llego el 1 de septiembre, ocho dias despues: al mirar la base de produccion
+# aparecieron catorce perfiles. La 006 es la que lleva esa base al esquema unico sin
+# recrearla, y a partir de aqui la lista solo crece.
+for archivo in 001-shim-auth.sql 002-roles.sql 003-schema.sql 004-grants.sql 005-acceso-api.sql \
+               006-converger-al-esquema-unico.sql; do
   YA="$(psql_ --tuples-only --no-align \
     -c "select 1 from public.migraciones_aplicadas where archivo = '$archivo';")"
 

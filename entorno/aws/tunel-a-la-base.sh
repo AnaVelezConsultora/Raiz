@@ -329,7 +329,7 @@ if [ "$1" = "--abrir" ]; then
   echo "==> abriendo la sesion en localhost:$PUERTO_LOCAL"
   echo "    Ctrl-C la cierra. La instancia se apaga sola 15 minutos despues."
   echo ""
-  exec aws ssm start-session --region "$REGION" --profile "$PERFIL" \
+  exec aws ssm start-session --region "$REGION" $PERFIL_FLAG \
     --target "$ID" \
     --document-name AWS-StartPortForwardingSessionToRemoteHost \
     --parameters "{\"host\":[\"$BASE_HOST\"],\"portNumber\":[\"5432\"],\"localPortNumber\":[\"$PUERTO_LOCAL\"]}"
@@ -341,7 +341,7 @@ cat <<FIN
 
 Abra la sesion en una terminal aparte y dejela abierta:
 
-  aws ssm start-session --region $REGION --profile $PERFIL \\
+  aws ssm start-session --region $REGION $PERFIL_FLAG \\
     --target $ID \\
     --document-name AWS-StartPortForwardingSessionToRemoteHost \\
     --parameters '{"host":["$BASE_HOST"],"portNumber":["5432"],"localPortNumber":["$PUERTO_LOCAL"]}'

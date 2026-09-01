@@ -74,7 +74,7 @@ exigir_cuenta_de_raiz
 
 echo "==> cuenta"
 CUENTA="$(aws_ sts get-caller-identity --query 'Account' --output text)"
-echo "    cuenta: $CUENTA   perfil: $PERFIL"
+echo "    cuenta: $CUENTA   perfil: $PERFIL_NOMBRE"
 echo "    alerta a: $CORREO"
 
 # -----------------------------------------------------------------------------

@@ -40,6 +40,11 @@ COPY entorno/postgres/65-acceso-api.sql ./005-acceso-api.sql
 # Los catalogos NO son una migracion, y el criterio de la HU 1.1.3 lo dice con esas
 # palabras. Son datos que se reconcilian en cada despliegue —el archivo usa
 # `on conflict do nothing`— y no un cambio de estructura que ocurre una vez.
+# La sexta, y la que reabre la numeracion. Lleva a la base que YA EXISTE al esquema
+# unico: aplica lo que nunca recibio y retira las columnas muertas. Sobre una base
+# nueva no hace nada, porque `003-schema.sql` ya la deja asi.
+COPY entorno/postgres/006-converger-al-esquema-unico.sql ./006-converger-al-esquema-unico.sql
+
 COPY entorno/postgres/70-semillas-catalogos.sql ./catalogos.sql
 
 COPY entorno/aws/migraciones/aplicar.sh  ./aplicar.sh

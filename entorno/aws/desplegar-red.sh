@@ -75,7 +75,7 @@ etiquetar() { # etiquetar <id> <nombre>
 
 echo "==> cuenta y region"
 CUENTA="$(aws_ sts get-caller-identity --query 'Account' --output text)"
-echo "    cuenta: $CUENTA   region: $REGION   perfil: $PERFIL"
+echo "    cuenta: $CUENTA   region: $REGION   perfil: $PERFIL_NOMBRE"
 
 # -----------------------------------------------------------------------------
 # 1. La VPC
