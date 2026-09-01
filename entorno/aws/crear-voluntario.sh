@@ -38,11 +38,11 @@ fi
 . "$ENV_NUBE"
 
 PERFIL="${AWS_PROFILE:-default}"
-aws_() { aws --region "$AWS_REGION" --profile "$PERFIL" "$@"; }
+. "$AQUI/cuenta-correcta.sh"
+aws_() { aws --region "$AWS_REGION" $PERFIL_FLAG "$@"; }
 
 # Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
 # no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
-. "$AQUI/cuenta-correcta.sh"
 exigir_cuenta_de_raiz
 
 ya="$(aws_ cognito-idp list-users --user-pool-id "$COGNITO_USER_POOL_ID" \

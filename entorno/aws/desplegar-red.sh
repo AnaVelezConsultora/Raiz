@@ -56,11 +56,11 @@ AQUI="$(cd "$(dirname "$0")" && pwd)"
 SALIDA="$AQUI/../generado"
 mkdir -p "$SALIDA"
 
-aws_() { aws --region "$REGION" --profile "$PERFIL" "$@"; }
+. "$AQUI/cuenta-correcta.sh"
+aws_() { aws --region "$REGION" $PERFIL_FLAG "$@"; }
 
 # Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
 # no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
-. "$AQUI/cuenta-correcta.sh"
 exigir_cuenta_de_raiz
 
 # Todo este archivo es idempotente por lo mismo: cada recurso se busca por su

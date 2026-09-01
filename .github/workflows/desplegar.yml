@@ -43,6 +43,22 @@
 # detalle posterior.
 #
 # -----------------------------------------------------------------------------
+# ESTE ARCHIVO NO IMPLEMENTA EL DESPLIEGUE: LLAMA A LOS GUIONES QUE YA EXISTEN
+# -----------------------------------------------------------------------------
+#
+# Durante un dia este flujo tuvo los comandos escritos adentro, copiados de
+# entorno/aws/. Eso dejaba la misma logica en dos sitios, y con ella la garantia de que
+# un dia divergirian: el guion se cambia, el flujo no, y como el flujo es el que corre
+# de verdad, el guion se convierte en documentacion que miente.
+#
+# Peor: cuando algo falla de noche, quien lo mire va a abrir una terminal y correr el
+# guion. Si ese guion no es el que despliega, esta depurando otra cosa.
+#
+# Ahora los guiones son la unica implementacion y esto es una lista de pasos. La unica
+# diferencia entre correrlos aqui y correrlos a mano son las credenciales, y de eso se
+# encarga cuenta-correcta.sh.
+#
+# -----------------------------------------------------------------------------
 # EL ORDEN NO ES NEGOCIABLE
 # -----------------------------------------------------------------------------
 #
@@ -108,69 +124,37 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
-      - name: Publicar la imagen de la API
-        run: |
-          docker buildx build --platform linux/arm64 \
-            -f api/Dockerfile \
-            -t "$CUENTA.dkr.ecr.$AWS_REGION.amazonaws.com/raiz-api:latest" \
-            -t "$CUENTA.dkr.ecr.$AWS_REGION.amazonaws.com/raiz-api:${{ github.sha }}" \
-            --push .
+      # Cada paso es un guion de entorno/aws/, el mismo que se corre a mano. Las
+      # credenciales llegan por el entorno y `cuenta-correcta.sh` las resuelve sin
+      # perfil, ademas de comprobar que apuntan a la cuenta de Raiz y no a otra.
+      #
+      # RAIZ_COMMIT hace que la imagen quede etiquetada tambien con el sha, que es lo
+      # que permite volver atras desplegando una anterior sin reconstruir.
 
-      - name: Publicar la imagen de migraciones
-        run: |
-          docker buildx build --platform linux/arm64 \
-            -f entorno/aws/migraciones/Dockerfile \
-            -t "$CUENTA.dkr.ecr.$AWS_REGION.amazonaws.com/raiz-migraciones:latest" \
-            --push .
-
-      # Se etiqueta ademas con el sha del commit. `latest` dice que hay desplegado
-      # ahora; la etiqueta con sha es lo que permite volver atras desplegando una
-      # anterior, sin reconstruir. El ADR 004 pide exactamente eso.
+      - name: Publicar las imagenes
+        working-directory: entorno/aws
+        env:
+          RAIZ_COMMIT: ${{ github.sha }}
+        run: ./publicar-api.sh
 
       - name: Aplicar migraciones
-        run: |
-          REV="$(aws ecs describe-task-definition --task-definition raiz-migraciones \
-                   --query 'taskDefinition.revision' --output text)"
-          SUBRED="$(aws ec2 describe-subnets --filters Name=tag:Name,Values=raiz-publica-a \
-                     --query 'Subnets[0].SubnetId' --output text)"
-          SG="$(aws ec2 describe-security-groups --filters Name=group-name,Values=raiz-sg-api \
-                 --query 'SecurityGroups[0].GroupId' --output text)"
+        working-directory: entorno/aws
+        run: ./aplicar-migraciones.sh
 
-          TAREA="$(aws ecs run-task --cluster "$CLUSTER" \
-            --task-definition "raiz-migraciones:$REV" --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBRED],securityGroups=[$SG],assignPublicIp=ENABLED}" \
-            --query 'tasks[0].taskArn' --output text)"
-
-          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TAREA"
-
-          ID="${TAREA##*/}"
-          aws logs get-log-events --log-group-name /raiz/migraciones \
-            --log-stream-name "ecs/migraciones/$ID" --start-from-head \
-            --query 'events[].message' --output text | tr '\t' '\n'
-
-          CODIGO="$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TAREA" \
-                     --query 'tasks[0].containers[0].exitCode' --output text)"
-          if [ "$CODIGO" != "0" ]; then
-            echo "Las migraciones fallaron. NO se despliega la version nueva." >&2
-            exit 1
-          fi
-
-      # Si las migraciones fallan, el paso anterior corta el flujo y el servicio
-      # se queda con la version que ya tenia, funcionando contra el esquema que ya
-      # tenia. Es el resultado correcto: no desplegar es mejor que desplegar
+      # Si las migraciones fallan, el guion sale distinto de cero, el flujo se corta y
+      # el servicio se queda con la version que ya tenia, funcionando contra el esquema
+      # que ya tenia. Es el resultado correcto: no desplegar es mejor que desplegar
       # contra una base a medio migrar.
 
       - name: Desplegar el servicio
         run: |
-          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICIO" \
-            --force-new-deployment >/dev/null
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICIO"             --force-new-deployment >/dev/null
           aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICIO"
 
-      - name: Comprobar que responde
+      - name: Comprobar que la API responde
         run: |
-          # Se comprueba contra el nombre publico, no contra la IP de la tarea: lo
-          # que importa es que el camino completo funcione, incluidos el
-          # certificado y el balanceador.
+          # Contra el nombre publico y no contra la IP de la tarea: lo que importa es
+          # que el camino completo funcione, incluidos el certificado y el balanceador.
           for i in 1 2 3 4 5; do
             CODIGO="$(curl -s -o /tmp/salud -w '%{http_code}' https://api.apoyo-colombia.com/salud || true)"
             if [ "$CODIGO" = "200" ]; then
@@ -182,109 +166,14 @@ jobs:
           echo "La API no respondio 200 en /salud despues del despliegue." >&2
           exit 1
 
-      # -----------------------------------------------------------------------
-      # LA PWA
-      # -----------------------------------------------------------------------
+      # LA PWA VA AL FINAL Y NO ANTES. Si la aplicacion llegara primero, los campos
+      # nuevos que el servidor todavia no conoce se perderian en silencio: el envio
+      # responde 200 y el dato no queda.
       #
-      # Esta es la parte que nunca estuvo automatizada, y la que obligaba a que
-      # alguien abriera una terminal. El guion equivalente
-      # —entorno/aws/publicar-front.sh— depende de `front.env`, un archivo que
-      # genera el despliegue inicial y que vive en UNA maquina. Aqui el bucket y la
-      # distribucion se descubren de AWS, igual que ya se descubren la subred y el
-      # grupo de seguridad para las migraciones. Sin archivos locales, cualquiera
-      # puede desplegar.
-      #
-      # VA DESPUES DE LA API Y NO ANTES. Si la aplicacion llegara primero, los
-      # campos nuevos que el servidor todavia no conoce se perderian en silencio:
-      # el envio responde 200 y el dato no queda. Es el peor fallo posible aqui,
-      # porque nadie lo nota.
-
-      - name: Compilar la PWA
-        run: |
-          npm ci
-          npm run build --workspace @raiz/dominio
-          npm run build --workspace frontend
-
-      - name: Comprobar que el paquete apunta a la API
-        run: |
-          DIST=frontend/dist/frontend/browser
-          test -f "$DIST/index.html" || { echo "No se genero el index." >&2; exit 1; }
-
-          # Compilado en modo local, el paquete apunta a localhost y NO sincroniza
-          # nunca. La aplicacion abre, deja capturar, y los casos se quedan en el
-          # telefono. Es exactamente el fallo que no da error.
-          if ! grep -rq "api.apoyo-colombia.com" "$DIST"; then
-            echo "El paquete no contiene la direccion de la API: se compilo en modo local." >&2
-            exit 1
-          fi
-
-      - name: Comprobar que la aplicacion y la API son la misma version
-        run: |
-          VERSION="$(node -p "require('./frontend/package.json').version")"
-          SALUD="$(curl -s -m 20 https://api.apoyo-colombia.com/salud)"
-          VERSION_API="$(printf '%s' "$SALUD" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).version ?? ""')"
-
-          # En este flujo coinciden por construccion —la API se acaba de desplegar
-          # arriba— y justamente por eso la comprobacion vale: si NO coinciden, algo
-          # que se creia cierto no lo es, y conviene enterarse aqui.
-          if [ "$VERSION" != "$VERSION_API" ]; then
-            echo "La aplicacion es la $VERSION y la API responde la $VERSION_API." >&2
-            echo "Publicarla asi haria que los campos nuevos se pierdan en silencio." >&2
-            exit 1
-          fi
-          echo "las dos son la $VERSION"
+      # El guion trae sus propias comprobaciones —que el paquete no apunte a localhost,
+      # que la version coincida con la que responde la API, que la aplicacion abra al
+      # terminar— y ahora protegen tambien a quien publique a mano.
 
       - name: Publicar la PWA
-        run: |
-          DIST=frontend/dist/frontend/browser
-          BUCKET="raiz-front-$CUENTA"
-          VERSION="$(node -p "require('./frontend/package.json').version")"
-
-          # PRIMERO LO QUE LLEVA HASH EN EL NOMBRE, DESPUES EL INDEX.
-          # Al reves habria unos segundos con un index nuevo apuntando a paquetes
-          # que todavia no existen, y quien abra la aplicacion en esa ventana recibe
-          # una pagina rota. Son segundos y en campo casi nunca se notaria: «casi
-          # nunca» es la clase de fallo que aparece el dia de la jornada.
-          EXCLUIR="--exclude index.html --exclude ngsw.json --exclude ngsw-worker.js"
-          EXCLUIR="$EXCLUIR --exclude safety-worker.js --exclude worker-basic.min.js"
-          aws s3 sync "$DIST" "s3://$BUCKET/" $EXCLUIR --cache-control "public, max-age=31536000, immutable" --only-show-errors
-
-          # Sellar el worker con la version es lo que hace que el navegador lo
-          # reinstale. Sin esto, un telefono que ya tiene la aplicacion en cache
-          # sigue con la anterior aunque el servidor ya sirva otra.
-          echo "" >> "$DIST/ngsw-worker.js"
-          echo "// Raiz $VERSION" >> "$DIST/ngsw-worker.js"
-
-          for archivo in index.html ngsw.json ngsw-worker.js safety-worker.js worker-basic.min.js; do
-            [ -f "$DIST/$archivo" ] || continue
-            case "$archivo" in
-              *.html) TIPO="text/html; charset=utf-8" ;;
-              *.json) TIPO="application/json" ;;
-              *.js)   TIPO="text/javascript; charset=utf-8" ;;
-              *)      TIPO="application/octet-stream" ;;
-            esac
-            aws s3 cp "$DIST/$archivo" "s3://$BUCKET/$archivo" --cache-control "no-store, must-revalidate" --content-type "$TIPO" --only-show-errors
-          done
-
-      - name: Invalidar la cache y comprobar que la PWA responde
-        run: |
-          CONSULTA="DistributionList.Items[?Comment=='PWA de Raiz'] | [0].Id"
-          DISTRIBUCION="$(aws cloudfront list-distributions --query "$CONSULTA" --output text)"
-
-          if [ -z "$DISTRIBUCION" ] || [ "$DISTRIBUCION" = "None" ]; then
-            echo "No se encontro la distribucion de CloudFront." >&2
-            exit 1
-          fi
-
-          RUTAS="/index.html /ngsw.json /ngsw-worker.js"
-          INV="$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUCION" --paths $RUTAS --query 'Invalidation.Id' --output text)"
-          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUCION" --id "$INV"
-
-          # Que el despliegue termine sin error no dice que la aplicacion abra. Esto
-          # si lo dice.
-          CODIGO="$(curl -s -o /dev/null -w '%{http_code}' https://apoyo-colombia.com/)"
-          if [ "$CODIGO" != "200" ]; then
-            echo "La PWA no respondio 200 despues de publicar (fue $CODIGO)." >&2
-            exit 1
-          fi
-          echo "la aplicacion abre"
+        working-directory: entorno/aws
+        run: ./publicar-front.sh

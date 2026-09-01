@@ -44,19 +44,43 @@ AQUI="$(cd "$(dirname "$0")" && pwd)"
 SALIDA="$AQUI/../generado"
 RAIZ_REPO="$(cd "$AQUI/../.." && pwd)"
 
-if [ ! -f "$SALIDA/front.env" ]; then
-  echo "ERROR: falta entorno/generado/front.env. Corra antes ./desplegar-front.sh" >&2
+. "$AQUI/cuenta-correcta.sh"
+aws_() { aws --region "$REGION" $PERFIL_FLAG "$@"; }
+exigir_cuenta_de_raiz
+
+# -----------------------------------------------------------------------------
+# DONDE PUBLICAR: SE PREGUNTA, NO SE LEE DE UN ARCHIVO
+# -----------------------------------------------------------------------------
+#
+# Esto leia `entorno/generado/front.env`, que lo escribe `desplegar-front.sh` y que por
+# lo tanto vive en UNA maquina: la de quien levanto la infraestructura. El efecto era
+# que solo esa persona podia publicar la aplicacion, y cuando no estaba disponible no
+# habia despliegue. Tampoco servia desde un corredor de CI, que empieza siempre en
+# blanco.
+#
+# El bucket se llama por la cuenta y la distribucion se reconoce por su comentario, que
+# es como ya se buscaban la subred y el grupo de seguridad para las migraciones. Un
+# archivo generado menos es una persona indispensable menos.
+#
+# Si alguna vez hace falta apuntar a otro sitio —una copia, una prueba— se declara al
+# llamar y entonces es una decision:
+#
+#   RAIZ_FRONT_BUCKET=otro ./publicar-front.sh
+if [ -z "${RAIZ_FRONT_BUCKET:-}" ]; then
+  RAIZ_FRONT_BUCKET="raiz-front-$RAIZ_CUENTA"
+fi
+
+if [ -z "${RAIZ_FRONT_DISTRIBUCION:-}" ]; then
+  RAIZ_FRONT_DISTRIBUCION="$(aws_ cloudfront list-distributions     --query "DistributionList.Items[?Comment=='PWA de Raiz'] | [0].Id" --output text 2>/dev/null || true)"
+fi
+
+if [ -z "$RAIZ_FRONT_DISTRIBUCION" ] || [ "$RAIZ_FRONT_DISTRIBUCION" = "None" ]; then
+  echo "ERROR: no se encontro la distribucion de CloudFront de la PWA." >&2
+  echo "       Corra antes ./desplegar-front.sh, o declare RAIZ_FRONT_DISTRIBUCION." >&2
   exit 1
 fi
-# shellcheck disable=SC1091
-. "$SALIDA/front.env"
 
-aws_() { aws --region "$REGION" --profile "$PERFIL" "$@"; }
-
-# Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
-# no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
-. "$AQUI/cuenta-correcta.sh"
-exigir_cuenta_de_raiz
+RAIZ_FRONT_URL="${RAIZ_FRONT_URL:-https://apoyo-colombia.com}"
 
 DIST="$RAIZ_REPO/frontend/dist/frontend/browser"
 
@@ -242,6 +266,17 @@ echo "    $INV, esperando..."
 aws_ cloudfront wait invalidation-completed \
   --distribution-id "$RAIZ_FRONT_DISTRIBUCION" --id "$INV"
 echo "    completada"
+
+# QUE EL GUION TERMINE SIN ERROR NO DICE QUE LA APLICACION ABRA. Esto si lo dice, y es
+# la ultima oportunidad de enterarse antes que un voluntario en una vereda.
+echo ""
+echo "==> comprobando que la aplicacion abre"
+CODIGO="$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$RAIZ_FRONT_URL/" || true)"
+if [ "$CODIGO" != "200" ]; then
+  echo "ERROR: $RAIZ_FRONT_URL respondio $CODIGO despues de publicar." >&2
+  exit 1
+fi
+echo "    abre"
 
 echo ""
 echo "==> listo"

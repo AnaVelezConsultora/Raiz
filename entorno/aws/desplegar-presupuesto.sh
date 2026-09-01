@@ -65,11 +65,11 @@ fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-aws_() { aws --region "$REGION_BUDGETS" --profile "$PERFIL" "$@"; }
+. "$AQUI/cuenta-correcta.sh"
+aws_() { aws --region "$REGION_BUDGETS" $PERFIL_FLAG "$@"; }
 
 # Antes de tocar nada: comprobar que estas credenciales son de la cuenta de Raiz y
 # no de otro proyecto. Ver cuenta-correcta.sh — paso de verdad.
-. "$AQUI/cuenta-correcta.sh"
 exigir_cuenta_de_raiz
 
 echo "==> cuenta"

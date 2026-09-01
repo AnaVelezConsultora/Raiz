@@ -147,10 +147,15 @@ lo aprueba —desde el teléfono sirve— y él solo construye las imágenes, ap
 migraciones, actualiza la API, publica la PWA e invalida la caché, en ese orden y
 comprobando cada paso.
 
-Los guiones de abajo siguen existiendo y siguen siendo la referencia de lo que hace
-el flujo, pero **el camino normal es Actions**. Se usan a mano en dos casos: cuando
-se levanta la infraestructura por primera vez, y cuando algo falló y hay que mirar
-de cerca.
+**El flujo no reimplementa nada: llama a estos mismos guiones.** `publicar-api.sh`,
+`aplicar-migraciones.sh` y `publicar-front.sh` son la única implementación, y el YAML
+es una lista de pasos. Eso importa el día que algo falle de noche: quien abra una
+terminal corre exactamente lo que corrió el despliegue, no una versión parecida.
+
+La única diferencia entre correrlos en Actions y correrlos a mano son las
+credenciales, y de eso se encarga `cuenta-correcta.sh`: con `AWS_PROFILE` usa ese
+perfil, con credenciales en el entorno no pasa `--profile`, y sin ninguna de las dos
+usa `default` como siempre.
 
 ### Antes de correr cualquier guion: el perfil
 
@@ -178,9 +183,13 @@ Poner esto en marcha exige dos cosas que solo se hacen una vez:
 
 ## El front
 
-`desplegar-front.sh` se corre una vez. `publicar-front.sh` es lo que el flujo hace
-por su cuenta en cada entrega; se corre a mano solo para publicar sin desplegar la
-API, y avisa si las versiones no coinciden.
+`desplegar-front.sh` se corre una vez. `publicar-front.sh` es lo que el flujo ejecuta
+en cada entrega, y se corre a mano para publicar sin desplegar la API.
+
+Ya **no depende de `front.env`**. Ese archivo lo escribía el despliegue inicial y vivía
+en una sola máquina, así que solo esa persona podía publicar. Ahora el bucket se llama
+por la cuenta y la distribución se reconoce por su comentario. Un archivo generado
+menos es una persona indispensable menos.
 
 **El bucket no es público** — lleva los cuatro bloqueos y solo lo lee CloudFront,
 identificándose con un control de acceso de origen. No es por rendimiento: sobre un
